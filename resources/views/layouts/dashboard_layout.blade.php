@@ -257,7 +257,37 @@
                         <i class="bi bi-people"></i>
                         Customers
                     </a>
-                </li>
+                </li> 
+
+
+
+                <li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="bi bi-truck"></i>
+        Suppliers
+    </a>
+</li>
+
+<li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="bi bi-arrow-left-right"></i>
+        Stock
+    </a>
+</li>
+
+<li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="bi bi-cart-check"></i>
+        Sales
+    </a>
+</li>
+
+<li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="bi bi-bar-chart"></i>
+        Reports
+    </a>
+</li>
 
 
             </ul>

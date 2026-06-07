@@ -1,65 +1,100 @@
-@extends('layouts.app')
-
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Reset Password') }}</div>
+    <div class="container ">
+        <div class="row justify-content-center align-items-center ">
+            <div class="col-md-6">
 
-                <div class="card-body">
-                    <form method="POST" action="{{ route('password.update') }}">
-                        @csrf
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-                        <input type="hidden" name="token" value="{{ $token }}">
+                    <!-- Header -->
+                    <div class="bg-primary text-white text-center py-4">
+                        <h2 class="fw-bold mb-1">Welcome Back</h2>
+                        <p class="mb-0 opacity-75">Login to continue</p>
+                    </div>
 
-                        <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
+                    <!-- Body -->
+                    <div class="card-body p-5">
 
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ $email ?? old('email') }}" required autocomplete="email" autofocus>
+                        <form method="POST" action="{{ route('login') }}">
+                            @csrf
+
+                            <!-- Email -->
+                            <div class="mb-4">
+                                <label for="email" class="form-label fw-semibold">
+                                    Email Address
+                                </label>
+
+                                <input id="email" type="email"
+                                    class="form-control form-control-lg rounded-3 @error('email') is-invalid @enderror"
+                                    name="email" value="{{ old('email') }}" placeholder="Enter your email" required
+                                    autocomplete="email" autofocus>
 
                                 @error('email')
-                                    <span class="invalid-feedback" role="alert">
+                                    <span class="invalid-feedback">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
                             </div>
-                        </div>
 
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
+                            <!-- Password -->
+                            <div class="mb-4">
+                                <label for="password" class="form-label fw-semibold">
+                                    Password
+                                </label>
 
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                                <input id="password" type="password"
+                                    class="form-control form-control-lg rounded-3 @error('password') is-invalid @enderror"
+                                    name="password" placeholder="Enter your password" required
+                                    autocomplete="current-password">
 
                                 @error('password')
-                                    <span class="invalid-feedback" role="alert">
+                                    <span class="invalid-feedback">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
                             </div>
-                        </div>
 
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
+                            <!-- Remember -->
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remember" id="remember"
+                                        {{ old('remember') ? 'checked' : '' }}>
 
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
+                                    <label class="form-check-label" for="remember">
+                                        Remember Me
+                                    </label>
+                                </div>
+
+                                @if (Route::has('password.request'))
+                                    <a class="text-decoration-none small" href="{{ route('password.request') }}">
+                                        Forgot Password?
+                                    </a>
+                                @endif
                             </div>
-                        </div>
 
-                        <div class="row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Reset Password') }}
+                            <!-- Login Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold">
+                                    Login
                                 </button>
                             </div>
-                        </div>
-                    </form>
+
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    if you don't have an account?
+                                </small>
+
+                                <a href="{{ route('register') }}" class="text-decoration-none fw-semibold">
+                                    Register
+                                </a>
+                            </div>
+
+                        </form>
+
+                    </div>
+
                 </div>
+
             </div>
         </div>
     </div>
-</div>
 @endsection
