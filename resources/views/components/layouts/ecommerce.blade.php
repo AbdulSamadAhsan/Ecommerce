@@ -68,11 +68,7 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a href="#" class="nav-link fw-semibold">
-                            Shop
-                        </a>
-                    </li>
+
 
                     <li class="nav-item">
                         <a href="#" class="nav-link fw-semibold">
@@ -96,9 +92,10 @@
 
                     </a>
 
-                    <button class="btn btn-primary rounded-pill px-4">
-                        Login
-                    </button>
+
+                    <a class="btn btn-primary rounded-pill px-4" wire:navigate href="{{ route('customer.login') }}">
+                        Login</a>
+
 
                 </div>
 
