@@ -16,6 +16,7 @@ return new class extends Migration
                 $table->string('title')->nullable();
     $table->text('description')->nullable();
     $table->string('logo')->nullable();
+     $table->string('status')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +26,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+
+           Schema::table('products', function (Blueprint $table) {
+             
+    if (Schema::hasColumn('products', 'brand_id')) {
+        $table->dropForeign(['brand_id']);
+        $table->dropColumn('brand_id');
+    }
+        });
         Schema::dropIfExists('brands');
     }
 };

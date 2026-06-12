@@ -1,4 +1,5 @@
 @extends('layouts.dashboard_layout')
+
 @section('content')
     <div class="content-wrapper">
 

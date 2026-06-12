@@ -1,69 +1,103 @@
 <?php
 
+use App\Models\Brand;
 use Livewire\Component;
+use Livewire\WithPagination;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
-    //
+    use WithPagination;
+
+    protected string $paginationTheme = 'bootstrap';
+
+    public string $search = '';
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function delete(int $id): void
+    {
+        $brand = Brand::find($id);
+
+        if (!$brand) {
+            return;
+        }
+
+        if ($brand->logo && Storage::disk('public')->exists($brand->logo)) {
+            Storage::disk('public')->delete($brand->logo);
+        }
+
+        $brand->delete();
+
+        session()->flash('success', 'Brand deleted successfully.');
+    }
+
+    public function with(): array
+    {
+        return [
+            'brands' => Brand::query()->when($this->search, fn($query) => $query->where('title', 'like', '%' . $this->search . '%'))->latest()->paginate(10),
+        ];
+    }
 };
+
 ?>
 
-{{-- No surplus words or unnecessary actions. - Marcus Aurelius --}}
 <div>
-    {{-- You must be the change you wish to see in the world. - Mahatma Gandhi --}}
-
-
-    <!-- Header -->
 
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-
             <h3 class="fw-bold mb-1">
-                Product List
+                Brand List
             </h3>
 
             <p class="text-muted mb-0">
-                Manage all products
+                Manage all brands
             </p>
-
         </div>
 
 
 
     </div>
 
-    <!-- Product Table -->
+    @if (session()->has('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+
+            {{ session('success') }}
+
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        </div>
+    @endif
 
     <div class="dashboard-card">
-
-        <!-- Search -->
 
         <div class="row mb-4">
 
             <div class="col-md-6">
 
-                <input type="text" class="form-control rounded-4" placeholder="Search product...">
+                <input type="text" wire:model.live.debounce.300ms="search" class="form-control rounded-4"
+                    placeholder="Search Brand...">
 
             </div>
 
         </div>
 
-        <!-- Table -->
-
         <div class="table-responsive">
 
-            <table class="table align-middle">
+            <table class="table table-hover align-middle">
 
                 <thead class="table-light">
 
                     <tr>
 
                         <th>ID</th>
-                        <th>Brand Image</th>
+                        <th>Logo</th>
                         <th>Brand Name</th>
-
                         <th>Status</th>
-                        <th>Action</th>
+                        <th width="180">Action</th>
 
                     </tr>
 
@@ -71,135 +105,92 @@ new class extends Component {
 
                 <tbody>
 
-                    <!-- Product 1 -->
+                    @forelse($brands as $brand)
+                        <tr>
 
-                    <tr>
+                            <td>#{{ $brand->id }}</td>
 
-                        <td>#1001</td>
+                            <td>
 
-                        <td>
+                                @if ($brand->logo)
+                                    <img src="{{ asset('storage/' . $brand->logo) }}" width="50" height="50"
+                                        class="rounded-3 border" style="object-fit:cover;">
+                                @else
+                                    <div class="border rounded-3 d-flex align-items-center justify-content-center bg-light"
+                                        style="width:50px;height:50px;">
 
-                            <img src="{{ asset('asset/laptop.jpg') }}" width="50" class="rounded-3">
+                                        <i class="bi bi-image"></i>
 
-                        </td>
+                                    </div>
+                                @endif
 
-                        <td>
+                            </td>
 
-                            <div class="fw-semibold">
-                                HP
-                            </div>
+                            <td>
+                                <div class="fw-semibold">
+                                    {{ $brand->title }}
+                                </div>
+                            </td>
 
-                        </td>
+                            <td>
 
+                                @if ($brand->status)
+                                    <span class="badge bg-success rounded-pill">
+                                        Active
+                                    </span>
+                                @else
+                                    <span class="badge bg-danger rounded-pill">
+                                        Inactive
+                                    </span>
+                                @endif
 
+                            </td>
 
-                        <td>
+                            <td>
 
-                            <span class="badge bg-success rounded-pill">
-                                Active
-                            </span>
+                                <div class="d-flex gap-2">
 
-                        </td>
+                                    <a href="{{ route('brands.edit', $brand->id) }}" wire:navigate
+                                        class="btn btn-sm btn-primary rounded-pill">
 
-                        <td>
+                                        Edit
 
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
+                                    </a>
 
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
+                                    <button wire:click="delete({{ $brand->id }})"
+                                        wire:confirm="Are you sure you want to delete this brand?"
+                                        class="btn btn-sm btn-danger rounded-pill">
 
-                        </td>
+                                        Delete
 
-                    </tr>
+                                    </button>
 
-                    <!-- Product 2 -->
+                                </div>
 
-                    <tr>
+                            </td>
 
-                        <td>#1002</td>
+                        </tr>
 
-                        <td>
+                    @empty
 
-                            <img src="{{ asset('asset/keyboard.jpg') }}" width="50" class="rounded-3">
+                        <tr>
 
-                        </td>
+                            <td colspan="5" class="text-center py-5">
+                                No brands found
+                            </td>
 
-                        <td>
-
-                            <div class="fw-semibold">
-                                DELL
-                            </div>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="badge bg-primary rounded-pill">
-                                Active
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                    <!-- Product 3 -->
-
-
-
-                    <!-- Product 4 -->
-
-                    <tr>
-
-                        <td>#1004</td>
-
-                        <td>
-
-                            <img src="{{ asset('asset/mouse.jpg') }}" width="50" class="rounded-3">
-
-                        </td>
-
-
-
-
-
-
-                        <td>
-
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                    <!-- Product 5 -->
-
-
+                        </tr>
+                    @endforelse
 
                 </tbody>
 
             </table>
+
+        </div>
+
+        <div class="mt-3">
+
+            {{ $brands->links() }}
 
         </div>
 

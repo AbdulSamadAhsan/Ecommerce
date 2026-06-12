@@ -482,7 +482,7 @@
 
                 <div class="sidebar-dropdown-menu {{ request()->routeIs('brands.*') ? 'show' : '' }}">
 
-                    <a href="#" @class(['nav-link', 'active' => request()->routeIs('brands.index')])>
+                    <a href="{{ route('brands.index') }}" @class(['nav-link', 'active' => request()->routeIs('brands.index')])>
 
                         <i class="bi bi-list-ul"></i>
                         All Brands
@@ -500,6 +500,38 @@
 
             </li>
 
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+
+                    <span>
+                        <i class="bi bi-building-fill"></i>
+                        Warehouses
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="#" class="nav-link">
+
+                        <i class="bi bi-list-ul"></i>
+                        All Warehouses
+
+                    </a>
+
+                    <a href="#" class="nav-link">
+
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Warehouse
+
+                    </a>
+
+                </div>
+
+            </li>
 
 
             {{-- Orders --}}
@@ -546,11 +578,37 @@
             </li>
 
             {{-- Suppliers --}}
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-truck"></i>
-                    Suppliers
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+
+                    <span>
+                        <i class="bi bi-truck"></i>
+                        Suppliers
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
                 </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="#" class="nav-link">
+
+                        <i class="bi bi-list-ul"></i>
+                        All Suppliers
+
+                    </a>
+
+                    <a href="#" class="nav-link">
+
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Supplier
+
+                    </a>
+
+                </div>
+
             </li>
 
             {{-- Stock --}}

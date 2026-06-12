@@ -31,5 +31,13 @@ Route::prefix('sales')->name('sales.')->group(function () {
 Route::prefix("brands")->name("brands.")->group(function(){
    Route::livewire("/","pages::brands.all")->name("index");
    Route::livewire("/create","pages::brands.create")->name("create");
+   Route::livewire("/edit/{id}","pages::brands.edit")->name("edit");
 
 });
+Route::livewire("/","pages::frontend.home")->name("front");
+Route::livewire("/cart","pages::frontend.cart")->name("cart");
+Route::livewire("/checkout","pages::frontend.checkout")->name("checkout");
+Route::livewire("customer/register","pages::frontend.register")->name("customer.register");
+Route::livewire("customer/login","pages::frontend.login")->name("customer.login");
+Route::livewire("customer/forget_password","pages::frontend.forget_password")->name("customer.forget_password");
+Route::livewire("customer/reset_password/{token}","pages::frontend.reset_password")->name("customer.password_reset");

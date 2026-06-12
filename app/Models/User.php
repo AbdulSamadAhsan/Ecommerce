@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -39,6 +40,15 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    public function sendPasswordResetNotification($token): void
+    {
+        $url = route('customer.password_reset', [
+            'token' => $token,
+            'email' => $this->email,
+        ]);
+
+        $this->notify(new ResetPasswordNotification($url));
+    }
     protected function casts(): array
     {
         return [

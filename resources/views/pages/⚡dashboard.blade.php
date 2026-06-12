@@ -161,11 +161,7 @@ new class extends Component {};
 </div>
 
 <style>
-    .chart-container {
-        position: relative;
-        height: 400px;
-        width: 100%;
-    }
+
 </style>
 
 @script
