@@ -71,6 +71,8 @@ Route::livewire("/cart","pages::frontend.cart")->name("cart");
 Route::livewire("/checkout","pages::frontend.checkout")->name("checkout");
 Route::livewire('/customers/{id}', 'pages::customers.show')
     ->name('customers.show');
+    Route::livewire('/customers/', 'pages::customers.all')
+    ->name('customers.index');
 Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
 Route::prefix('customer')->name('customer.')->group(function () {

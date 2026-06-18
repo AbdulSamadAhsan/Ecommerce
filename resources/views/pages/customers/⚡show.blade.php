@@ -82,14 +82,7 @@ new class extends Component {
             </div>
         </div>
 
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6>Reward Points</h6>
-                    <h3 class="fw-bold text-warning">{{ number_format($customer['reward_points']) }}</h3>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <div class="card border-0 shadow mb-4">
