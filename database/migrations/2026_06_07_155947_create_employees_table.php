@@ -17,8 +17,8 @@ return new class extends Migration
 $table->string('phone')->nullable();
 
 $table->string('designation')->nullable();
-
-
+$table->string('education')->nullable();
+$table->string('organization')->nullable();
 $table->date('joining_date')->nullable();
 
 $table->decimal('salary', 15, 2)->nullable();

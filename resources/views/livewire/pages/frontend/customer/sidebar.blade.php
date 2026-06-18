@@ -47,5 +47,9 @@
             class="list-group-item list-group-item-action {{ request()->routeIs('customer.wishlist') ? 'active' : '' }}">
             <i class="bi bi-heart-fill me-2"></i> Wishlist
         </a>
+        <a href="#" class="list-group-item list-group-item-action text-danger">
+            <i class="bi bi-box-arrow-right me-2"></i>
+            Logout
+        </a>
     </div>
 </div>

@@ -1,35 +1,32 @@
 <?php
 
-use App\Models\Supplier;
+use App\Models\Employee;
+use App\Models\Warehouse;
 use Livewire\Component;
 
 new class extends Component {
-    public $company_name = '';
-    public $email = '';
-    public $phone = '';
-    public $mobile = '';
-    public $address = '';
-    public $opening_balance = 0;
-    public $status = 1;
     public $name = '';
+    public $code = '';
+    public $manager_id = '';
+    public $address = '';
+    public $phone = '';
+    public $status = 1;
 
     protected $rules = [
-        'company_name' => 'required|min:2|max:255|unique:suppliers,company_name',
-        'email' => 'nullable|email|max:255',
-        'phone' => 'nullable|max:50',
-        'name' => 'nullable|max:50',
+        'name' => 'required|min:2|max:255',
+        'code' => 'required|min:2|max:100|unique:warehouses,code',
+        'manager_id' => 'nullable|exists:employees,id',
         'address' => 'nullable|max:1000',
-        'opening_balance' => 'required|numeric|min:0',
+        'phone' => 'nullable|max:50',
         'status' => 'required|boolean',
     ];
 
     protected $messages = [
-        'company_name.required' => 'Company name is required.',
-        'company_name.min' => 'Company name must contain at least 2 characters.',
-        'company_name.unique' => 'Supplier already exists.',
-        'email.email' => 'Please enter a valid email address.',
-        'opening_balance.required' => 'Opening balance is required.',
-        'opening_balance.numeric' => 'Opening balance must be a number.',
+        'name.required' => 'Warehouse name is required.',
+        'name.min' => 'Warehouse name must contain at least 2 characters.',
+        'code.required' => 'Warehouse code is required.',
+        'code.unique' => 'Warehouse code already exists.',
+        'manager_id.exists' => 'Selected manager is invalid.',
     ];
 
     public function updated($property)
@@ -41,23 +38,25 @@ new class extends Component {
     {
         $this->validate();
 
-        Supplier::create([
-            'user_id' => auth()->id(),
-            'company_name' => $this->company_name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-            'mobile' => $this->mobile,
+        Warehouse::create([
+            'name' => $this->name,
+            'code' => $this->code,
+            'manager_id' => $this->manager_id ?: null,
             'address' => $this->address,
-            'opening_balance' => $this->opening_balance,
+            'phone' => $this->phone,
             'status' => $this->status,
         ]);
 
-        $this->reset(['company_name', 'email', 'phone', 'mobile', 'address', 'opening_balance']);
+        $this->reset(['name', 'code', 'manager_id', 'address', 'phone']);
 
         $this->status = 1;
-        $this->opening_balance = 0;
 
-        session()->flash('success', 'Supplier added successfully.');
+        session()->flash('success', 'Warehouse added successfully.');
+    }
+
+    public function managers()
+    {
+        return Employee::with('user')->where('status', true)->get();
     }
 };
 ?>
@@ -71,7 +70,7 @@ new class extends Component {
             <div class="card-header bg-primary text-white">
 
                 <h4 class="mb-0">
-                    Add Supplier
+                    Add Warehouse
                 </h4>
 
             </div>
@@ -87,14 +86,15 @@ new class extends Component {
                 <form wire:submit="save">
 
                     <div class="row">
+
                         <div class="col-md-6 mb-3">
 
                             <label class="form-label">
-                                Name
+                                Warehouse Name
                             </label>
 
                             <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                placeholder="Enter Name" wire:model.live="name">
+                                placeholder="Enter warehouse name" wire:model.live="name">
 
                             @error('name')
                                 <div class="invalid-feedback">
@@ -103,16 +103,17 @@ new class extends Component {
                             @enderror
 
                         </div>
+
                         <div class="col-md-6 mb-3">
 
                             <label class="form-label">
-                                Company Name
+                                Warehouse Code
                             </label>
 
-                            <input type="text" class="form-control @error('company_name') is-invalid @enderror"
-                                placeholder="Enter company name" wire:model.live="company_name">
+                            <input type="text" class="form-control @error('code') is-invalid @enderror"
+                                placeholder="Example: WH-001" wire:model.live="code">
 
-                            @error('company_name')
+                            @error('code')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -123,13 +124,25 @@ new class extends Component {
                         <div class="col-md-6 mb-3">
 
                             <label class="form-label">
-                                Email
+                                Manager
                             </label>
 
-                            <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                placeholder="Enter email" wire:model.live="email">
+                            <select class="form-select @error('manager_id') is-invalid @enderror"
+                                wire:model.live="manager_id">
 
-                            @error('email')
+                                <option value="">
+                                    Select manager
+                                </option>
+
+                                @foreach ($this->managers() as $manager)
+                                    <option value="{{ $manager->id }}">
+                                        {{ $manager->user->name }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                            @error('manager_id')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -144,7 +157,7 @@ new class extends Component {
                             </label>
 
                             <input type="text" class="form-control @error('phone') is-invalid @enderror"
-                                placeholder="Enter phone" wire:model.live="phone">
+                                placeholder="Enter phone number" wire:model.live="phone">
 
                             @error('phone')
                                 <div class="invalid-feedback">
@@ -154,36 +167,16 @@ new class extends Component {
 
                         </div>
 
-
-
                         <div class="col-md-12 mb-3">
 
                             <label class="form-label">
                                 Address
                             </label>
 
-                            <textarea class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Enter address"
-                                wire:model.live="address"></textarea>
+                            <textarea class="form-control @error('address') is-invalid @enderror" rows="3"
+                                placeholder="Enter warehouse address" wire:model.live="address"></textarea>
 
                             @error('address')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-
-                            <label class="form-label">
-                                Opening Balance
-                            </label>
-
-                            <input type="number" step="0.01"
-                                class="form-control @error('opening_balance') is-invalid @enderror"
-                                placeholder="Enter opening balance" wire:model.live="opening_balance">
-
-                            @error('opening_balance')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -222,10 +215,10 @@ new class extends Component {
                     <div class="d-flex justify-content-end">
 
                         <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save"
-                            @disabled($errors->has('company_name') || empty($company_name))>
+                            @disabled($errors->has('name') || $errors->has('code') || empty($name) || empty($code))>
 
                             <span wire:loading.remove wire:target="save">
-                                Save Supplier
+                                Save Warehouse
                             </span>
 
                             <span wire:loading wire:target="save">

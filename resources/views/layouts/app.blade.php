@@ -432,6 +432,12 @@
 
                     </a>
 
+                    <a href="" @class(['nav-link'])>
+                        <i class="bi bi-star-fill"></i>
+
+                        Reviews
+
+                    </a>
                 </div>
 
             </li>
@@ -503,38 +509,6 @@
 
             </li>
 
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-building-fill"></i>
-                        Warehouses
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="#" class="nav-link">
-
-                        <i class="bi bi-list-ul"></i>
-                        All Warehouses
-
-                    </a>
-
-                    <a href="#" class="nav-link">
-
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Warehouse
-
-                    </a>
-
-                </div>
-
-            </li>
 
 
             {{-- Orders --}}
@@ -571,16 +545,38 @@
                 </div>
 
             </li>
+            <li class="nav-item sidebar-dropdown">
 
-            {{-- Customers --}}
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-people-fill"></i>
-                    Customers
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+
+                    <span>
+                        <i class="bi bi-building-fill"></i>
+                        Warehouses
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
                 </a>
-            </li>
 
-            {{-- Suppliers --}}
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="#" class="nav-link">
+
+                        <i class="bi bi-list-ul"></i>
+                        All Warehouses
+
+                    </a>
+
+                    <a href="{{ route('warehouses.create') }}" class="nav-link">
+
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Warehouse
+
+                    </a>
+
+                </div>
+
+            </li>
             <li class="nav-item sidebar-dropdown">
 
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
@@ -603,7 +599,7 @@
 
                     </a>
 
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('suppliers.create') }}" class="nav-link">
 
                         <i class="bi bi-plus-circle-fill"></i>
                         Add Supplier
@@ -613,6 +609,436 @@
                 </div>
 
             </li>
+
+
+
+
+
+            {{-- Departments --}}
+            <li class="nav-item sidebar-dropdown {{ request()->routeIs('departments.*') ? 'open' : '' }}">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-diagram-3"></i>
+                        Departments
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ request()->routeIs('departments.*') ? 'show' : '' }}">
+
+                    <a href="{{ route('departments.index') }}"
+                        class="nav-link {{ request()->routeIs('departments.index') ? 'active' : '' }}">
+                        <i class="bi bi-list-ul"></i>
+                        All Departments
+                    </a>
+
+                    <a href="{{ route('departments.create') }}"
+                        class="nav-link {{ request()->routeIs('departments.create') ? 'active' : '' }}">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Department
+                    </a>
+
+
+                </div>
+            </li>
+
+
+            {{-- Employees --}}
+            <li class="nav-item sidebar-dropdown {{ request()->routeIs('employees.*') ? 'open' : '' }}">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-people-fill"></i>
+                        Employees
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ request()->routeIs('employees.*') ? 'show' : '' }}">
+
+                    <a href="{{ route('employees.index') }}"
+                        class="nav-link {{ request()->routeIs('employees.index') ? 'active' : '' }}">
+                        <i class="bi bi-list-ul"></i>
+                        All Employees
+                    </a>
+
+                    <a href="{{ route('employees.create') }}"
+                        class="nav-link {{ request()->routeIs('employees.create') ? 'active' : '' }}">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Employee
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Shipments --}}
+            <li class="nav-item sidebar-dropdown ">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-truck"></i>
+                        Shipments
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="#" class="nav-link ">
+                        <i class="bi bi-list-ul"></i>
+                        All Shipments
+                    </a>
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Shipment
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Purchases --}}
+            <li class="nav-item sidebar-dropdown ">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-bag-plus-fill"></i>
+                        Purchases
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu ">
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-list-ul"></i>
+                        All Purchases
+                    </a>
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Purchase
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Wallet Topup Requests --}}
+            <li class="nav-item sidebar-dropdown ">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-wallet2"></i>
+                        Wallet Topups
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu ">
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-list-ul"></i>
+                        All Topup Requests
+                    </a>
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Topup Request
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Customer Support Tickets --}}
+            <li class="nav-item sidebar-dropdown ">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-headset"></i>
+                        Tickets
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu ">
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-list-ul"></i>
+                        All Tickets
+                    </a>
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Ticket
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Delivery Boys --}}
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-person-badge-fill"></i>
+                        Delivery Boys
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu ">
+
+                    <a href="" class="nav-link ">
+                        <i class="bi bi-list-ul"></i>
+                        All Delivery Boys
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Delivery Boy
+                    </a>
+
+                </div>
+            </li>
+
+
+            {{-- Product Reviews --}}
+
+
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-ticket-perforated-fill"></i>
+                        Coupons
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Coupons
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Coupon
+                    </a>
+
+                </div>
+
+            </li>
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-truck"></i>
+                        Shipments
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Shipments
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Shipment
+                    </a>
+
+                </div>
+
+            </li>
+
+
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-cash-stack"></i>
+                        Salaries
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Salaries
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Salary
+                    </a>
+
+                </div>
+
+            </li>
+
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-arrow-left-right"></i>
+                        Transactions
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Transactions
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Transaction
+                    </a>
+
+                </div>
+
+            </li>
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-percent"></i>
+                        Taxes
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Taxes
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Tax
+                    </a>
+
+                </div>
+
+            </li>
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-calendar-check-fill"></i>
+                        Attendance
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Attendance
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Mark Attendance
+                    </a>
+
+                </div>
+
+            </li>
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-calendar-x-fill"></i>
+                        Leaves
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Leaves
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Leave
+                    </a>
+
+                </div>
+
+            </li>
+            <li class="nav-item sidebar-dropdown">
+
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-wallet2"></i>
+                        Payroll
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu">
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-list-ul"></i>
+                        All Payrolls
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Generate Payroll
+                    </a>
+
+                </div>
+
+            </li>
+            {{-- Customers --}}
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="bi bi-people-fill"></i>
+                    Customers
+                </a>
+            </li>
+
+
+
 
             {{-- Stock --}}
             <li class="nav-item">

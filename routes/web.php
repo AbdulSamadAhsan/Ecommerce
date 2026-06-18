@@ -39,6 +39,30 @@ Route::prefix("brands")->name("brands.")->group(function(){
    Route::livewire("/edit/{id}","pages::brands.edit")->name("edit");
 
 });
+Route::prefix("suppliers")->name("suppliers.")->group(function(){
+   Route::livewire("/","pages::suppliers.all")->name("index");
+   Route::livewire("/create","pages::suppliers.create")->name("create");
+  
+
+});
+Route::prefix("warehouses")->name("warehouses.")->group(function(){
+   Route::livewire("/","pages::warehouses.all")->name("index");
+   Route::livewire("/create","pages::warehouses.create")->name("create");
+  
+
+});
+Route::prefix("departments")->name("departments.")->group(function(){
+   Route::livewire("/","pages::departments.all")->name("index");
+   Route::livewire("/create","pages::departments.create")->name("create");
+  
+
+});
+Route::prefix("employees")->name("employees.")->group(function(){
+   Route::livewire("/","pages::employees.all")->name("index");
+   Route::livewire("/create","pages::employees.create")->name("create");
+  
+
+});
 Route::livewire("/","pages::frontend.home")->name("front");
 Route::livewire("/cart","pages::frontend.cart")->name("cart");
 Route::livewire("/checkout","pages::frontend.checkout")->name("checkout");

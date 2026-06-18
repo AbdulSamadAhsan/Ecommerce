@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Category;
+use App\Models\Department;
 use Livewire\Component;
 
 new class extends Component {
@@ -9,15 +9,15 @@ new class extends Component {
     public $status = 1;
 
     protected $rules = [
-        'name' => 'required|min:2|max:255|unique:categories,name',
+        'name' => 'required|min:2|max:255|unique:departments,name',
         'description' => 'nullable|max:1000',
         'status' => 'required|boolean',
     ];
 
     protected $messages = [
-        'name.required' => 'Category name is required.',
-        'name.min' => 'Category name must contain at least 2 characters.',
-        'name.unique' => 'Category already exists.',
+        'name.required' => 'Department name is required.',
+        'name.min' => 'Department name must contain at least 2 characters.',
+        'name.unique' => 'Department already exists.',
         'description.max' => 'Description must not exceed 1000 characters.',
     ];
 
@@ -30,7 +30,7 @@ new class extends Component {
     {
         $this->validate();
 
-        Category::create([
+        Department::insert([
             'name' => $this->name,
             'description' => $this->description,
             'status' => $this->status,
@@ -40,24 +40,21 @@ new class extends Component {
 
         $this->status = 1;
 
-        session()->flash('success', 'Category added successfully.');
+        session()->flash('success', 'Department added successfully.');
     }
 };
 
 ?>
 
 <div class="row">
-
     <div class="col-lg-12">
 
         <div class="card shadow border-0">
 
             <div class="card-header bg-primary text-white">
-
                 <h4 class="mb-0">
-                    Add Category
+                    Add Department
                 </h4>
-
             </div>
 
             <div class="card-body">
@@ -71,47 +68,41 @@ new class extends Component {
                 <form wire:submit="save">
 
                     <div class="mb-3">
-
                         <label class="form-label">
-                            Category Name
+                            Department Name
                         </label>
 
                         <input type="text" class="form-control @error('name') is-invalid @enderror"
-                            placeholder="Enter category name" wire:model.live="name">
+                            placeholder="Enter department name" wire:model.live="name">
 
                         @error('name')
                             <div class="invalid-feedback">
                                 {{ $message }}
                             </div>
                         @enderror
-
                     </div>
 
                     <div class="mb-3">
-
                         <label class="form-label">
                             Description
                         </label>
 
                         <textarea class="form-control @error('description') is-invalid @enderror" rows="4"
-                            placeholder="Enter category description" wire:model.live="description"></textarea>
+                            placeholder="Enter department description" wire:model.live="description"></textarea>
 
                         @error('description')
                             <div class="invalid-feedback">
                                 {{ $message }}
                             </div>
                         @enderror
-
                     </div>
 
                     <div class="mb-4">
-
                         <label class="form-label">
                             Status
                         </label>
 
                         <select class="form-select" wire:model="status">
-
                             <option value="1">
                                 Active
                             </option>
@@ -119,18 +110,15 @@ new class extends Component {
                             <option value="0">
                                 Inactive
                             </option>
-
                         </select>
-
                     </div>
 
                     <div class="d-flex justify-content-end">
-
                         <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save"
                             @disabled($errors->has('name') || empty($name))>
 
                             <span wire:loading.remove wire:target="save">
-                                Save Category
+                                Save Department
                             </span>
 
                             <span wire:loading wire:target="save">
@@ -138,7 +126,6 @@ new class extends Component {
                             </span>
 
                         </button>
-
                     </div>
 
                 </form>
@@ -148,5 +135,4 @@ new class extends Component {
         </div>
 
     </div>
-
 </div>
