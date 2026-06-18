@@ -15,10 +15,12 @@ Route::prefix('products')->name("products.")->group(function () {
     Route::livewire('/create', 'pages::products.create')->name('create');
     Route::livewire('/edit/{id}', 'pages::products.edit')->name('edit');
     Route::livewire('/', 'pages::products.all')->name('index');
+    Route::livewire('/{id}', 'pages::products.show')
+    ->name('show');
 });
 Route::prefix('category')->name("categories.")->group(function () {
     Route::livewire('/create', 'pages::categories.add')->name('create');
-   
+   Route::livewire('/{id}', 'pages::categories.show')->name('show');
     Route::livewire('/', 'pages::categories.categories')->name('index');
 });
 Route::prefix('report')->name('reports.')->group(function () {
@@ -37,19 +39,20 @@ Route::prefix("brands")->name("brands.")->group(function(){
    Route::livewire("/","pages::brands.all")->name("index");
    Route::livewire("/create","pages::brands.create")->name("create");
    Route::livewire("/edit/{id}","pages::brands.edit")->name("edit");
+   Route::livewire('/{id}', 'pages::brands.show')->name('show');
 
 });
 Route::prefix("suppliers")->name("suppliers.")->group(function(){
    Route::livewire("/","pages::suppliers.all")->name("index");
    Route::livewire("/create","pages::suppliers.create")->name("create");
-  
-
+ 
+Route::livewire('/{id}', 'pages::suppliers.show')->name('suppliers.show');  
 });
 Route::prefix("warehouses")->name("warehouses.")->group(function(){
    Route::livewire("/","pages::warehouses.all")->name("index");
    Route::livewire("/create","pages::warehouses.create")->name("create");
-  
 
+ Route::livewire('/{id}', 'pages::warehouses.show')->name('show');
 });
 Route::prefix("departments")->name("departments.")->group(function(){
    Route::livewire("/","pages::departments.all")->name("index");
@@ -66,8 +69,10 @@ Route::prefix("employees")->name("employees.")->group(function(){
 Route::livewire("/","pages::frontend.home")->name("front");
 Route::livewire("/cart","pages::frontend.cart")->name("cart");
 Route::livewire("/checkout","pages::frontend.checkout")->name("checkout");
-
-
+Route::livewire('/customers/{id}', 'pages::customers.show')
+    ->name('customers.show');
+Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
+    ->name('product.detail');
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
     Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
@@ -89,4 +94,5 @@ Route::prefix('customer')->name('customer.')->group(function () {
     ->name('ticket.detail');
     Route::livewire('/wishlist', 'pages::frontend.customer.wishlist')
     ->name('wishlist');
+    
 });

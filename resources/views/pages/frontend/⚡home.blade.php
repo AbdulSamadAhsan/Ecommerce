@@ -29,9 +29,10 @@ new class extends Component {
         [
             'id' => 3,
             'name' => 'Smart Watch Ultra',
+            'img' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900',
             'price' => 99,
             'old' => 140,
-            'img' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900',
+
             'badge' => 'New',
         ],
         [
@@ -294,7 +295,12 @@ new class extends Component {
                                     <span class="price">${{ $product['price'] }}</span>
                                     <span class="old-price">${{ $product['old'] }}</span>
                                 </div>
-
+                                <a wire:navigate href="{{ route('product.detail', $product['id']) }}"
+                                    class="text-decoration-none text-dark">
+                                    <h5 class="fw-bold text-primary">
+                                        View Detail
+                                    </h5>
+                                </a>
                                 <button wire:click="addToCart" class="btn btn-primary w-100 rounded-pill">
                                     <i class="bi bi-cart-plus me-1"></i>
                                     Add to Cart

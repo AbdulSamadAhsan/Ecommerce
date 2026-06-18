@@ -111,7 +111,9 @@ new class extends Component {
                             <button class="btn btn-sm btn-primary rounded-pill">
                                 Edit
                             </button>
-
+                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
+                                View
+                            </a>
                             <button class="btn btn-sm btn-danger rounded-pill">
                                 Delete
                             </button>
@@ -159,7 +161,9 @@ new class extends Component {
                             <button class="btn btn-sm btn-primary rounded-pill">
                                 Edit
                             </button>
-
+                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
+                                View
+                            </a>
                             <button class="btn btn-sm btn-danger rounded-pill">
                                 Delete
                             </button>
@@ -211,7 +215,9 @@ new class extends Component {
                             <button class="btn btn-sm btn-primary rounded-pill">
                                 Edit
                             </button>
-
+                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
+                                View
+                            </a>
                             <button class="btn btn-sm btn-danger rounded-pill">
                                 Delete
                             </button>
@@ -259,7 +265,9 @@ new class extends Component {
                             <button class="btn btn-sm btn-primary rounded-pill">
                                 Edit
                             </button>
-
+                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
+                                View
+                            </a>
                             <button class="btn btn-sm btn-danger rounded-pill">
                                 Delete
                             </button>
