@@ -2,8 +2,7 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public array $stats = [
         'orders' => 12,
         'returns' => 2,
@@ -67,7 +66,8 @@ class extends Component {
             <div class="card border-0 shadow-sm rounded-4 mt-4">
                 <div class="card-body">
                     <h4 class="fw-bold">Welcome Back</h4>
-                    <p class="text-muted mb-0">Manage your orders, returns, wallet balance and profile from your account dashboard.</p>
+                    <p class="text-muted mb-0">Manage your orders, returns, wallet balance and profile from your account
+                        dashboard.</p>
                 </div>
             </div>
         </div>

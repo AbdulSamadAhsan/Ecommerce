@@ -2,8 +2,7 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public string $name = 'Customer Name';
     public string $email = 'customer@example.com';
     public string $phone = '03000000000';
@@ -45,25 +44,33 @@ class extends Component {
                             <div class="col-md-6">
                                 <label class="form-label">Name</label>
                                 <input type="text" wire:model="name" class="form-control rounded-pill">
-                                @error('name') <small class="text-danger">{{ $message }}</small> @enderror
+                                @error('name')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input type="email" wire:model="email" class="form-control rounded-pill">
-                                @error('email') <small class="text-danger">{{ $message }}</small> @enderror
+                                @error('email')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label">Phone</label>
                                 <input type="text" wire:model="phone" class="form-control rounded-pill">
-                                @error('phone') <small class="text-danger">{{ $message }}</small> @enderror
+                                @error('phone')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label">Address</label>
                                 <input type="text" wire:model="address" class="form-control rounded-pill">
-                                @error('address') <small class="text-danger">{{ $message }}</small> @enderror
+                                @error('address')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
 
                             <div class="col-12">

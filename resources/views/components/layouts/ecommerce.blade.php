@@ -71,10 +71,16 @@
 
 
                     <li class="nav-item">
-                        <a href="#" class="nav-link fw-semibold">
-                            Contact
+                        <a href="{{ route('customer.dashboard') }}" class="nav-link fw-semibold">
+                            My Account
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('customer.contact-us') }}" class="nav-link fw-semibold">
+                            Contact Us
+                        </a>
+                    </li>
+
 
                 </ul>
 

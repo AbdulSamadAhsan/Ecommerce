@@ -2,12 +2,8 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
-    public array $returns = [
-        ['id' => 1, 'order_id' => 1001, 'item' => 'Wireless Mouse', 'reason' => 'Wrong item received', 'status' => 'Pending', 'date' => '2026-06-18'],
-        ['id' => 2, 'order_id' => 998, 'item' => 'Headphones', 'reason' => 'Damaged product', 'status' => 'Approved', 'date' => '2026-06-12'],
-    ];
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
+    public array $returns = [['id' => 1, 'order_id' => 1001, 'item' => 'Wireless Mouse', 'reason' => 'Wrong item received', 'status' => 'Pending', 'date' => '2026-06-18'], ['id' => 2, 'order_id' => 998, 'item' => 'Headphones', 'reason' => 'Damaged product', 'status' => 'Approved', 'date' => '2026-06-12']];
 };
 ?>
 
@@ -44,7 +40,8 @@ class extends Component {
                                         <td>{{ $return['item'] }}</td>
                                         <td>{{ $return['reason'] }}</td>
                                         <td>
-                                            <span class="badge {{ $return['status'] === 'Approved' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                            <span
+                                                class="badge {{ $return['status'] === 'Approved' ? 'bg-success' : 'bg-warning text-dark' }}">
                                                 {{ $return['status'] }}
                                             </span>
                                         </td>

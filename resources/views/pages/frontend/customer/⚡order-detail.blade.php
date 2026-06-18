@@ -2,8 +2,7 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public int $id;
     public string $returnReason = '';
     public array $order = [];
@@ -18,10 +17,7 @@ class extends Component {
             'status' => 'Delivered',
             'payment' => 'Paid',
             'total' => 185000,
-            'items' => [
-                ['id' => 1, 'name' => 'MacBook Pro M3', 'price' => 160000, 'qty' => 1, 'subtotal' => 160000],
-                ['id' => 2, 'name' => 'Wireless Mouse', 'price' => 25000, 'qty' => 1, 'subtotal' => 25000],
-            ],
+            'items' => [['id' => 1, 'name' => 'MacBook Pro M3', 'price' => 160000, 'qty' => 1, 'subtotal' => 160000], ['id' => 2, 'name' => 'Wireless Mouse', 'price' => 25000, 'qty' => 1, 'subtotal' => 25000]],
         ];
     }
 
@@ -57,10 +53,18 @@ class extends Component {
                     <h3 class="fw-bold">Order #{{ $order['id'] }}</h3>
 
                     <div class="row mt-3">
-                        <div class="col-md-3"><strong>Date</strong><p>{{ $order['date'] }}</p></div>
-                        <div class="col-md-3"><strong>Status</strong><p>{{ $order['status'] }}</p></div>
-                        <div class="col-md-3"><strong>Payment</strong><p>{{ $order['payment'] }}</p></div>
-                        <div class="col-md-3"><strong>Total</strong><p>Rs {{ number_format($order['total']) }}</p></div>
+                        <div class="col-md-3"><strong>Date</strong>
+                            <p>{{ $order['date'] }}</p>
+                        </div>
+                        <div class="col-md-3"><strong>Status</strong>
+                            <p>{{ $order['status'] }}</p>
+                        </div>
+                        <div class="col-md-3"><strong>Payment</strong>
+                            <p>{{ $order['payment'] }}</p>
+                        </div>
+                        <div class="col-md-3"><strong>Total</strong>
+                            <p>Rs {{ number_format($order['total']) }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,9 +93,14 @@ class extends Component {
                                         <td>Rs {{ number_format($item['subtotal']) }}</td>
                                         <td style="min-width: 220px;">
                                             <form wire:submit.prevent="requestReturn({{ $item['id'] }})">
-                                                <input type="text" wire:model="returnReason" class="form-control form-control-sm rounded-pill mb-2" placeholder="Return reason">
-                                                @error('returnReason') <small class="text-danger d-block mb-2">{{ $message }}</small> @enderror
-                                                <button class="btn btn-sm btn-outline-danger rounded-pill">Request Return</button>
+                                                <input type="text" wire:model="returnReason"
+                                                    class="form-control form-control-sm rounded-pill mb-2"
+                                                    placeholder="Return reason">
+                                                @error('returnReason')
+                                                    <small class="text-danger d-block mb-2">{{ $message }}</small>
+                                                @enderror
+                                                <button class="btn btn-sm btn-outline-danger rounded-pill">Request
+                                                    Return</button>
                                             </form>
                                         </td>
                                     </tr>

@@ -2,15 +2,10 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public int $balance = 12000;
 
-    public array $transactions = [
-        ['type' => 'Credit', 'amount' => 5000, 'date' => '2026-06-18', 'note' => 'Wallet top-up'],
-        ['type' => 'Refund', 'amount' => 7000, 'date' => '2026-06-17', 'note' => 'Order refund'],
-        ['type' => 'Debit', 'amount' => 2500, 'date' => '2026-06-16', 'note' => 'Used on order'],
-    ];
+    public array $transactions = [['type' => 'Credit', 'amount' => 5000, 'date' => '2026-06-18', 'note' => 'Wallet top-up'], ['type' => 'Refund', 'amount' => 7000, 'date' => '2026-06-17', 'note' => 'Order refund'], ['type' => 'Debit', 'amount' => 2500, 'date' => '2026-06-16', 'note' => 'Used on order']];
 };
 ?>
 
@@ -46,7 +41,8 @@ class extends Component {
                                 @foreach ($transactions as $transaction)
                                     <tr>
                                         <td>
-                                            <span class="badge {{ $transaction['type'] === 'Debit' ? 'bg-danger' : 'bg-success' }}">
+                                            <span
+                                                class="badge {{ $transaction['type'] === 'Debit' ? 'bg-danger' : 'bg-success' }}">
                                                 {{ $transaction['type'] }}
                                             </span>
                                         </td>

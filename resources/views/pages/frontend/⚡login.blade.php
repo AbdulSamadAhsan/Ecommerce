@@ -12,7 +12,7 @@ new class extends Component {
             'email' => 'required|email',
             'password' => 'required|min:6',
         ]);
-
+        $this->redirectRoute('customer.dashboard', navigate: true);
         session()->flash('success', 'Login successful.');
     }
 

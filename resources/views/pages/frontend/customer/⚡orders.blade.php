@@ -2,13 +2,8 @@
 
 use Livewire\Component;
 
-new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')]
-class extends Component {
-    public array $orders = [
-        ['id' => 1001, 'date' => '2026-06-18', 'total' => 185000, 'status' => 'Delivered', 'payment' => 'Paid'],
-        ['id' => 1002, 'date' => '2026-06-17', 'total' => 45000, 'status' => 'Processing', 'payment' => 'Pending'],
-        ['id' => 1003, 'date' => '2026-06-15', 'total' => 78000, 'status' => 'Shipped', 'payment' => 'Paid'],
-    ];
+new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
+    public array $orders = [['id' => 1001, 'date' => '2026-06-18', 'total' => 185000, 'status' => 'Delivered', 'payment' => 'Paid'], ['id' => 1002, 'date' => '2026-06-17', 'total' => 45000, 'status' => 'Processing', 'payment' => 'Pending'], ['id' => 1003, 'date' => '2026-06-15', 'total' => 78000, 'status' => 'Shipped', 'payment' => 'Paid']];
 };
 ?>
 
@@ -49,7 +44,8 @@ class extends Component {
                                         <td><span class="badge bg-success">{{ $order['status'] }}</span></td>
                                         <td>{{ $order['payment'] }}</td>
                                         <td>
-                                            <a wire:navigate href="{{ route('customer.order.detail', $order['id']) }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                            <a wire:navigate href="{{ route('customer.order.detail', $order['id']) }}"
+                                                class="btn btn-sm btn-outline-primary rounded-pill">
                                                 View Detail
                                             </a>
                                         </td>

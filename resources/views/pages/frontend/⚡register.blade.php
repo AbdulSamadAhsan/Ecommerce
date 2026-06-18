@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\User;
+use App\Models\Customer;
 use Illuminate\Support\Facades\Hash;
 
 new class extends Component {
@@ -22,16 +23,22 @@ new class extends Component {
             'password' => 'required|min:6|confirmed',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $this->first_name . ' ' . $this->last_name,
             'email' => $this->email,
-            'phone' => $this->phone,
-            'password' => Hash::make($this->password),
-        ]);
 
+            'password' => Hash::make($this->password),
+            'role_id' => 6,
+        ]);
+        $user_id = $user->id;
+        Customer::create([
+            'phone' => $this->phone,
+            'status' => 1,
+            'user_id' => $user_id,
+        ]);
         session()->flash('success', 'Account created successfully.');
 
-        $this->redirectRoute('login', navigate: true);
+        $this->redirectRoute('customer.login', navigate: true);
     }
 
     public function rendering($view): void

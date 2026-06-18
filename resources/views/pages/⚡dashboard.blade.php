@@ -1,8 +1,18 @@
 <?php
 
 use Livewire\Component;
-
-new class extends Component {};
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\Order;
+new class extends Component {
+    public $number_of_customer = '';
+    public $products_count = 0;
+    public function mount()
+    {
+        $this->number_of_customer = Customer::count();
+        $this->products_count = Product::count();
+    }
+};
 ?>
 
 <div class="content-wrapper">
@@ -15,7 +25,7 @@ new class extends Component {};
                 <div class="d-flex justify-content-between">
                     <div>
                         <h6 class="text-muted">Total Products</h6>
-                        <h2 class="fw-bold">1,250</h2>
+                        <h2 class="fw-bold">{{ $products_count }}</h2>
                     </div>
                     <div class="dashboard-icon bg-blue">
                         <i class="bi bi-box"></i>
@@ -57,7 +67,7 @@ new class extends Component {};
                 <div class="d-flex justify-content-between">
                     <div>
                         <h6 class="text-muted">Customers</h6>
-                        <h2 class="fw-bold">1,820</h2>
+                        <h2 class="fw-bold">{{ $number_of_customer }}</h2>
                     </div>
                     <div class="dashboard-icon bg-red">
                         <i class="bi bi-people-fill"></i>
