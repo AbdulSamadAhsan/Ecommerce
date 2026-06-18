@@ -11,25 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
+        Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->id();
-                  $table->foreignId('sale_id')
+                $table->foreignId('wallet_id')
         ->constrained()
         ->cascadeOnDelete();
-             $table->text('address');
-            
-        
-                   $table->enum('order_status', [
-        'pending',
-        'confirmed',
-        'processing',
-        'shipped',
-        'delivered',
-        'cancelled',
-        'returned'
-    ])->default('pending');
-       $table->date("order_date");
-     
+
+    $table->decimal('amount', 12, 2);
+
+    $table->enum('type', [
+        'credit',
+        'debit'
+    ]);
+
+    $table->string('reference_type')->nullable();
+    $table->unsignedBigInteger('reference_id')->nullable();
+
+    $table->text('description')->nullable();
             $table->timestamps();
         });
     }
@@ -39,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        Schema::dropIfExists('wallet_transactions');
     }
 };

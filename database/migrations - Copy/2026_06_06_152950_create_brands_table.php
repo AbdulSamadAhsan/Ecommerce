@@ -19,12 +19,6 @@ return new class extends Migration
      $table->string('status')->nullable();
             $table->timestamps();
         });
-        
-           Schema::table('products', function (Blueprint $table) {
-                  $table->foreignId('brand_id')
-        ->constrained()
-        ->cascadeOnDelete();
-           });
     }
 
     /**

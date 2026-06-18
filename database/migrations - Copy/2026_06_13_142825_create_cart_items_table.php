@@ -11,15 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::table('products', function (Blueprint $table) {
-    
-            $table->foreignId('warehouse_id')
-            ->nullable()
-             ->after('image')
-            ->constrained('warehouses')
-            ->nullOnDelete();  
-    });
-   
+        Schema::create('cart_items', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -27,9 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-            //
-
-
-          
+        Schema::dropIfExists('cart_items');
     }
 };

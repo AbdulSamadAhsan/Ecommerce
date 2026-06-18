@@ -17,7 +17,7 @@ return new class extends Migration
                $table->string('name');
     $table->string('code')->unique();
 
-    $table->foreignId('manager_id')
+    $table->foreignId('employee_id')
           ->nullable()
           ->constrained('employees')
           ->nullOnDelete();

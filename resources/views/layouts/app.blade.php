@@ -400,7 +400,7 @@
             </li>
 
             {{-- Products --}}
-            <li class="nav-item sidebar-dropdown ">
+            <li class="nav-item sidebar-dropdown  {{ request()->routeIs('products.*') ? 'open' : '' }}">
 
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
 
@@ -413,7 +413,7 @@
 
                 </a>
 
-                <div class="sidebar-dropdown-menu {{ request()->routeIs('products.*') ? 'show' : '' }}">
+                <div class="sidebar-dropdown-menu ">
 
                     <a href="{{ route('products.index') }}" @class(['nav-link', 'active' => request()->routeIs('products.index')])>
 
@@ -436,9 +436,9 @@
 
             </li>
             {{-- Categories --}}
-            <li class="nav-item sidebar-dropdown">
+            <li class="nav-item sidebar-dropdown {{ request()->routeIs('categories.*') ? 'open' : '' }}">
 
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn ">
 
                     <span>
                         <i class="bi bi-tags-fill"></i>
@@ -449,14 +449,17 @@
 
                 </a>
 
-                <div class="sidebar-dropdown-menu">
+                <div class="sidebar-dropdown-menu ">
 
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('categories.index') }}" class="nav-link">
                         <i class="bi bi-list-ul"></i>
                         All Categories
                     </a>
 
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('categories.create') }}" @class([
+                        'nav-link',
+                        'active' => request()->routeIs('categories.create'),
+                    ])>
                         <i class="bi bi-folder-plus"></i>
                         Add Category
                     </a>

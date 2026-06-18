@@ -16,6 +16,11 @@ Route::prefix('products')->name("products.")->group(function () {
     Route::livewire('/edit/{id}', 'pages::products.edit')->name('edit');
     Route::livewire('/', 'pages::products.all')->name('index');
 });
+Route::prefix('category')->name("categories.")->group(function () {
+    Route::livewire('/create', 'pages::categories.add')->name('create');
+   
+    Route::livewire('/', 'pages::categories.categories')->name('index');
+});
 Route::prefix('report')->name('reports.')->group(function () {
     Route::livewire('sales', 'pages::reports.sales')->name('sales');
     Route::livewire('stock', 'pages::reports.stock')->name('stock');

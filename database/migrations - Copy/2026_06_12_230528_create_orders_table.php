@@ -17,8 +17,8 @@ return new class extends Migration
         ->constrained()
         ->cascadeOnDelete();
              $table->text('address');
-            
-        
+               $table->string('payment_method');
+                $table->string('payment_status');
                    $table->enum('order_status', [
         'pending',
         'confirmed',
@@ -29,7 +29,7 @@ return new class extends Migration
         'returned'
     ])->default('pending');
        $table->date("order_date");
-     
+       $table->date("payment_date");
             $table->timestamps();
         });
     }

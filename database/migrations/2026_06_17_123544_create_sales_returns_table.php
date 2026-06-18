@@ -11,16 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
+        Schema::create('sales_returns', function (Blueprint $table) {
             $table->id();
-          
-            $table->string('phone')->nullable();
-         
-            $table->boolean('status')->default(true);
-            
+                $table->foreignId('order_id')
+        ->constrained()
+        ->cascadeOnDelete();
 
+    $table->string('return_no')->unique();
+
+    $table->decimal('total_amount', 12, 2);
+
+    $table->text('reason')->nullable();
             $table->timestamps();
         });
+        
     }
 
     /**
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::dropIfExists('sales_returns');
     }
 };
