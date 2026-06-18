@@ -46,3 +46,12 @@ Route::livewire("customer/register","pages::frontend.register")->name("customer.
 Route::livewire("customer/login","pages::frontend.login")->name("customer.login");
 Route::livewire("customer/forget_password","pages::frontend.forget_password")->name("customer.forget_password");
 Route::livewire("customer/reset_password/{token}","pages::frontend.reset_password")->name("customer.password_reset");
+
+Route::prefix('customer')->name('customer.')->group(function () {
+    Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
+    Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
+    Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
+    Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
+    Route::livewire('/wallet', 'pages::frontend.customer.wallet')->name('wallet');
+    Route::livewire('/profile', 'pages::frontend.customer.profile')->name('profile');
+});
