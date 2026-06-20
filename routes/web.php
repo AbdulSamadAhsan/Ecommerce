@@ -1,13 +1,18 @@
 <?php
 
+use App\Livewire\Chat\AdminChat;
+use App\Livewire\Chat\UserChat;
 use Illuminate\Support\Facades\Route;
 
 
 
 Auth::routes();
-  Route::middleware(["auth"])->group(function(){
 
-  });
+Route::middleware(['auth'])->group(function () {
+    Route::get('/chat', UserChat::class)->name('chat');
+    Route::get('/admin/chats', AdminChat::class)->name('admin.chats');
+});
+
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::livewire("dashboard", "pages::dashboard")->name('dashboard')->middleware("auth");
 Route::livewire('/admin/ai-assistant', 'pages::admin.mcp-inventory-assistant')->name('admin.ai.assistant')->middleware('auth');
@@ -46,7 +51,7 @@ Route::prefix("brands")->name("brands.")->group(function(){
 Route::prefix("suppliers")->name("suppliers.")->group(function(){
    Route::livewire("/","pages::suppliers.all")->name("index");
    Route::livewire("/create","pages::suppliers.create")->name("create");
-  
+   
 Route::livewire('/{id}', 'pages::suppliers.show')->name('suppliers.show');  
 });
 Route::prefix("warehouses")->name("warehouses.")->group(function(){
@@ -58,13 +63,13 @@ Route::prefix("warehouses")->name("warehouses.")->group(function(){
 Route::prefix("departments")->name("departments.")->group(function(){
    Route::livewire("/","pages::departments.all")->name("index");
    Route::livewire("/create","pages::departments.create")->name("create");
-   
+    
 
 });
 Route::prefix("employees")->name("employees.")->group(function(){
    Route::livewire("/","pages::employees.all")->name("index");
    Route::livewire("/create","pages::employees.create")->name("create");
-   
+    
 
 });
 Route::prefix("taxes")->name("taxes.")->middleware('auth')->group(function(){
