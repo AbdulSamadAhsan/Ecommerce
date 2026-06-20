@@ -77,7 +77,7 @@ Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
-    Route::get('/ai-assistant', \App\Livewire\Customer\McpInventoryAssistant::class)->name('ai.assistant');
+    Route::livewire('/ai-assistant', 'pages::frontend.customer.mcp-inventory-assistant')->name('ai.assistant');
     Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
     Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
     Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
