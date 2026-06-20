@@ -23,8 +23,8 @@ return new class extends Migration
 
     $table->integer('quantity');
 
-    $table->decimal('cost_price', 12, 2);
-
+ 
+   $table->decimal("purchase_price",12,2);
     $table->decimal('subtotal', 12, 2);
             $table->timestamps();
         });

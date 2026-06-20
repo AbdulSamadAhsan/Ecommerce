@@ -19,16 +19,18 @@ return new class extends Migration
 
     $table->string('purchase_no')->unique();
 
-    $table->decimal('subtotal', 12, 2);
+    $table->decimal('subtotal', 12, 2)->nullable();
     $table->decimal('discount', 12, 2)->default(0);
     $table->decimal('tax', 12, 2)->default(0);
-    $table->decimal('total', 12, 2);
-
+    $table->decimal('total_amount', 12, 2);
+    $table->decimal('paid_amount',12,2);
+    $table->decimal("due_amount",12,2);
+     $table->text("notes");
     $table->date('purchase_date');
 
-    $table->enum('status', [
+    $table->enum('payment_status', [
         'pending',
-        'received',
+        'completed',
         'cancelled'
     ])->default('pending');
             $table->timestamps();

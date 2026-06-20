@@ -2,17 +2,20 @@
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Institution;
+use App\Models\Education;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Hash;
 
 new class extends Component {
     use WithFileUploads;
 
-    public $user_id = '';
+    public $institution_id = '';
     public $department_id = '';
-
+    public $education_id = '';
     public $phone = '';
     public $designation = '';
     public $joining_date = '';
@@ -20,18 +23,26 @@ new class extends Component {
     public $cnic = '';
     public $photo;
     public $status = 1;
-
-    public $users = [];
-    public $departments = [];
-
+    public $salary;
+    public $educations;
+    public $departments;
+    public $institutions;
+    public $father_name;
+    public $date_of_birth;
+    public $name;
+    public $email;
+    public $user_id;
+    public $password;
     public function mount()
     {
-        $this->users = User::select('id', 'name', 'email')->get();
+        $this->educations = Education::get();
         $this->departments = Department::where('status', 1)->get();
+        $this->institutions = Institution::get();
     }
 
     protected $rules = [
-        'user_id' => 'required|exists:users,id',
+        'institution_id' => 'required',
+        'education_id' => 'required|exists:educations,id',
         'department_id' => 'required|exists:departments,id',
         'phone' => 'required|min:11|max:20',
         'designation' => 'required|min:2|max:255',
@@ -40,6 +51,14 @@ new class extends Component {
         'cnic' => 'required|min:13|max:20|unique:employees,cnic',
         'photo' => 'nullable|image|max:2048',
         'status' => 'required|boolean',
+        'father_name' => 'required',
+
+        'name' => 'required|string|max:255|unique:users,name',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:8',
+        'salary' => 'required|numeric',
+        'date_of_birth' => 'required|date',
+        'institution_id' => 'required|exists:institutions,id',
     ];
 
     protected $messages = [
@@ -51,6 +70,7 @@ new class extends Component {
         'address.required' => 'Address is required.',
         'cnic.required' => 'CNIC is required.',
         'cnic.unique' => 'CNIC already exists.',
+        'father_name.required' => 'Father Name is Required',
         'photo.image' => 'Please upload a valid image.',
         'photo.max' => 'Photo size must not exceed 2MB.',
     ];
@@ -62,7 +82,7 @@ new class extends Component {
 
     public function save()
     {
-        $this->validate();
+        $validated = $this->validate();
 
         $photoPath = null;
 
@@ -73,11 +93,21 @@ new class extends Component {
 
             $photoPath = $this->photo->storeAs('employees', $fileName, 'public');
         }
-
+        $user = User::create([
+            'name' => $this->name,
+            'password' => Hash::make($this->password),
+            'email' => $this->email,
+            'role_id' => 5,
+        ]);
         Employee::create([
-            'user_id' => $this->user_id,
+            'user_id' => $user->id,
             'department_id' => $this->department_id,
             'phone' => $this->phone,
+            'institution_id' => $this->institution_id,
+            'education_id' => $this->education_id,
+            'father_name' => $this->father_name,
+            'salary' => $this->salary,
+            'date_of_birth' => $this->date_of_birth,
             'designation' => $this->designation,
             'joining_date' => $this->joining_date,
             'address' => $this->address,
@@ -86,11 +116,11 @@ new class extends Component {
             'status' => $this->status,
         ]);
 
-        $this->reset(['user_id', 'department_id', 'phone', 'designation', 'joining_date', 'address', 'cnic', 'photo']);
-
         $this->status = 1;
+        $this->reset();
 
         session()->flash('success', 'Employee added successfully.');
+        return $this->redirectRoute('employees.index');
     }
 };
 
@@ -141,13 +171,14 @@ new class extends Component {
                             </label>
 
                             <select class="form-select @error('education') is-invalid @enderror"
-                                wire:model.live="education">
+                                wire:model.live="education_id">
                                 <option value="">Select Education</option>
-                                <option value="BSSE">BSSE</option>
-                                <option value="BSCS">BSCS</option>
+                                @foreach ($educations as $education)
+                                    <option value="{{ $education->id }}">{{ ucfirst($education->name) }}</option>
+                                @endforeach
                             </select>
 
-                            @error('department_id')
+                            @error('education_id')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -174,10 +205,10 @@ new class extends Component {
                                 Salary
                             </label>
 
-                            <input type="text" class="form-control @error('email') is-invalid @enderror"
-                                placeholder="Enter Email" wire:model.live="email">
+                            <input type="text" class="form-control @error('salary') is-invalid @enderror"
+                                placeholder="Enter Salary" wire:model.live="salary">
 
-                            @error('email')
+                            @error('salary')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -189,10 +220,10 @@ new class extends Component {
                                 Password
                             </label>
 
-                            <input type="text" class="form-control @error('email') is-invalid @enderror"
-                                placeholder="Enter Email" wire:model.live="email">
+                            <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                placeholder="Enter Password" wire:model.live="password">
 
-                            @error('email')
+                            @error('password')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -204,18 +235,19 @@ new class extends Component {
                                 Eductional Institute
                             </label>
 
-                            <select class="form-select @error('user_id') is-invalid @enderror"
-                                wire:model.live="user_id">
+                            <select class="form-select @error('institution_id') is-invalid @enderror"
+                                wire:model.live="institution_id">
                                 <option value="">Select Institute</option>
 
-
-                                <option value="M.B.A">
-                                    M.B.A
-                                </option>
+                                @foreach ($institutions as $institution)
+                                    <option value="{{ $institution->id }}">
+                                        {{ $institution->name }}
+                                    </option>
+                                @endforeach
 
                             </select>
 
-                            @error('user_id')
+                            @error('institution_id')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -274,7 +306,32 @@ new class extends Component {
                                 </div>
                             @enderror
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Father Name
+                            </label>
 
+                            <input type="text" class="form-control @error('father_name') is-invalid @enderror"
+                                placeholder="Enter Father Name" wire:model.live="father_name">
+
+                            @error('father_name')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date of Birth</label>
+
+                            <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror"
+                                wire:model.live="date_of_birth">
+
+                            @error('date_of_birth')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
                                 Joining Date
@@ -365,15 +422,7 @@ new class extends Component {
 
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary" wire:loading.attr="disabled"
-                            wire:target="save,photo" @disabled(
-                                $errors->any() ||
-                                    empty($user_id) ||
-                                    empty($department_id) ||
-                                    empty($phone) ||
-                                    empty($designation) ||
-                                    empty($joining_date) ||
-                                    empty($address) ||
-                                    empty($cnic))>
+                            wire:target="save,photo" @disabled($errors->any())>
 
                             <span wire:loading.remove wire:target="save">
                                 Save Employee

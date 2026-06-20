@@ -2,7 +2,8 @@
 
 use App\Models\Supplier;
 use Livewire\Component;
-
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 new class extends Component {
     public $company_name = '';
     public $email = '';
@@ -12,6 +13,7 @@ new class extends Component {
     public $opening_balance = 0;
     public $status = 1;
     public $name = '';
+    public $password = '';
 
     protected $rules = [
         'company_name' => 'required|min:2|max:255|unique:suppliers,company_name',
@@ -21,6 +23,7 @@ new class extends Component {
         'address' => 'nullable|max:1000',
         'opening_balance' => 'required|numeric|min:0',
         'status' => 'required|boolean',
+        'password' => 'required',
     ];
 
     protected $messages = [
@@ -40,9 +43,14 @@ new class extends Component {
     public function save()
     {
         $this->validate();
-
+        $user = User::create([
+            'name' => $this->name,
+            'password' => Hash::make($this->password),
+            'email' => $this->email,
+            'role_id' => 6,
+        ]);
         Supplier::create([
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'company_name' => $this->company_name,
             'email' => $this->email,
             'phone' => $this->phone,
@@ -103,7 +111,7 @@ new class extends Component {
                             @enderror
 
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-3 mb-3">
 
                             <label class="form-label">
                                 Company Name
@@ -120,7 +128,7 @@ new class extends Component {
 
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-3 mb-3">
 
                             <label class="form-label">
                                 Email
@@ -153,7 +161,22 @@ new class extends Component {
                             @enderror
 
                         </div>
+                        <div class="col-md-6 mb-3">
 
+                            <label class="form-label">
+                                Password
+                            </label>
+
+                            <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                placeholder="Enter phone" wire:model.live="password">
+
+                            @error('password')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
 
 
                         <div class="col-md-12 mb-3">

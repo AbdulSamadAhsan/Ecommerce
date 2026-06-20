@@ -3,6 +3,8 @@
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
+use App\Models\Brand;
+use App\Models\Warehouse;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -12,6 +14,8 @@ new class extends Component {
 
     public $supplier_id = '';
     public $category_id = '';
+    public $brand_id = '';
+    public $warehouse_id = '';
 
     public $name = '';
     public $sku = '';
@@ -61,7 +65,9 @@ new class extends Component {
             'minimum_stock' => $this->minimum_stock,
             'description' => $this->description,
             'image' => $imagePath,
+            'brand_id' => $this->brand_id,
             'status' => $this->status,
+            'warehouse_id' => $this->warehouse_id,
         ]);
 
         session()->flash('success', 'Product created successfully.');
@@ -81,6 +87,14 @@ new class extends Component {
     public function categories()
     {
         return Category::orderBy('name')->get();
+    }
+    public function brands()
+    {
+        return Brand::orderBy('title')->get();
+    }
+    public function warehouses()
+    {
+        return Warehouse::orderBy('name')->get();
     }
 };
 
@@ -112,7 +126,7 @@ new class extends Component {
 
                     <div class="row">
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-3 mb-3">
 
                             <label class="form-label">
                                 Supplier
@@ -127,7 +141,7 @@ new class extends Component {
 
                                 @foreach ($this->suppliers() as $supplier)
                                     <option value="{{ $supplier->id }}">
-                                        {{ $supplier->name }}
+                                        {{ $supplier->user->name }}
                                     </option>
                                 @endforeach
 
@@ -141,7 +155,7 @@ new class extends Component {
 
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-3 mb-3">
 
                             <label class="form-label">
                                 Category
@@ -163,6 +177,61 @@ new class extends Component {
                             </select>
 
                             @error('category_id')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
+                        <div class="col-md-3 mb-3">
+
+                            <label class="form-label">
+                                Brand
+                            </label>
+
+                            <select class="form-select @error('brand_id') is-invalid @enderror" wire:model="brand_id">
+
+                                <option value="">
+                                    Select Brand
+                                </option>
+
+                                @foreach ($this->brands() as $brand)
+                                    <option value="{{ $brand->id }}">
+                                        {{ $brand->title }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                            @error('category_id')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
+                        <div class="col-md-3 mb-3">
+
+                            <label class="form-label">
+                                Warehouse
+                            </label>
+
+                            <select class="form-select @error('warehouse_id') is-invalid @enderror"
+                                wire:model="warehouse_id">
+
+                                <option value="">
+                                    Select Warehouse
+                                </option>
+
+                                @foreach ($this->warehouses() as $warehouse)
+                                    <option value="{{ $warehouse->id }}">
+                                        {{ $warehouse->name }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                            @error('warehouse_id')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>

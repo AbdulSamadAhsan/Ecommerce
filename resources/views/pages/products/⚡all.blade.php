@@ -1,9 +1,13 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Product;
 new class extends Component {
-    //
+    public $products;
+    public function mount()
+    {
+        $this->products = Product::with(['category', 'brand', 'supplier', 'warehouse'])->get();
+    }
 };
 ?>
 
@@ -73,104 +77,60 @@ new class extends Component {
                 <tbody>
 
                     <!-- Product 1 -->
+                    @foreach ($products as $product)
+                        <tr>
 
-                    <tr>
+                            <td>#1001</td>
 
-                        <td>#1001</td>
+                            <td>
 
-                        <td>
+                                <img src="{{ asset('storage/' . $product->image) }}" width="50" class="rounded-3">
 
-                            <img src="{{ asset('asset/laptop.jpg') }}" width="50" class="rounded-3">
+                            </td>
 
-                        </td>
+                            <td>
 
-                        <td>
+                                <div class="fw-semibold">
+                                    {{ ucfirst($product->name) }}
+                                </div>
 
-                            <div class="fw-semibold">
-                                Laptop
-                            </div>
+                            </td>
 
-                        </td>
+                            <td>{{ $product->category->name }}</td>
 
-                        <td>Electronics</td>
+                            <td>{{ $product->selling_price }}</td>
 
-                        <td>$850</td>
+                            <td>{{ $product->quantity }}</td>
 
-                        <td>120</td>
+                            <td>
 
-                        <td>
+                                <span class="badge bg-success rounded-pill">
+                                    In Stock
+                                </span>
 
-                            <span class="badge bg-success rounded-pill">
-                                In Stock
-                            </span>
+                            </td>
 
-                        </td>
+                            <td>
 
-                        <td>
+                                <button class="btn btn-sm btn-primary rounded-pill">
+                                    Edit
+                                </button>
+                                <a href="{{ route('products.show', $product->id) }}"
+                                    class="btn btn-sm btn-info rounded-pill">
+                                    View
+                                </a>
+                                <button class="btn btn-sm btn-danger rounded-pill">
+                                    Delete
+                                </button>
 
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
-                                View
-                            </a>
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
+                            </td>
 
-                        </td>
-
-                    </tr>
+                        </tr>
+                    @endforeach
 
                     <!-- Product 2 -->
 
-                    <tr>
 
-                        <td>#1002</td>
-
-                        <td>
-
-                            <img src="{{ asset('asset/keyboard.jpg') }}" width="50" class="rounded-3">
-
-                        </td>
-
-                        <td>
-
-                            <div class="fw-semibold">
-                                Keyboard
-                            </div>
-
-                        </td>
-
-                        <td>Accessories</td>
-
-                        <td>$120</td>
-
-                        <td>80</td>
-
-                        <td>
-
-                            <span class="badge bg-primary rounded-pill">
-                                Available
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
-                                View
-                            </a>
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
-
-                        </td>
-
-                    </tr>
 
                     <!-- Product 3 -->
 
@@ -178,103 +138,11 @@ new class extends Component {
 
                     <!-- Product 4 -->
 
-                    <tr>
 
-                        <td>#1004</td>
-
-                        <td>
-
-                            <img src="{{ asset('asset/mouse.jpg') }}" width="50" class="rounded-3">
-
-                        </td>
-
-                        <td>
-
-                            <div class="fw-semibold">
-                                Mouse
-                            </div>
-
-                        </td>
-
-                        <td>Accessories</td>
-
-                        <td>$50</td>
-
-                        <td>200</td>
-
-                        <td>
-
-                            <span class="badge bg-success rounded-pill">
-                                In Stock
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
-                                View
-                            </a>
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
-
-                        </td>
-
-                    </tr>
 
                     <!-- Product 5 -->
 
-                    <tr>
 
-                        <td>#1005</td>
-
-                        <td>
-
-                            <img src="{{ asset('asset/headphone.jpg') }}" width="50" class="rounded-3">
-
-                        </td>
-
-                        <td>
-
-                            <div class="fw-semibold">
-                                Headphones
-                            </div>
-
-                        </td>
-
-                        <td>Audio</td>
-
-                        <td>$180</td>
-
-                        <td>65</td>
-
-                        <td>
-
-                            <span class="badge bg-success rounded-pill">
-                                In Stock
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button class="btn btn-sm btn-primary rounded-pill">
-                                Edit
-                            </button>
-                            <a href="{{ route('products.show', 1001) }}" class="btn btn-sm btn-info rounded-pill">
-                                View
-                            </a>
-                            <button class="btn btn-sm btn-danger rounded-pill">
-                                Delete
-                            </button>
-
-                        </td>
-
-                    </tr>
 
                 </tbody>
 

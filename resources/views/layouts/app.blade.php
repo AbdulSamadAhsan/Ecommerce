@@ -762,7 +762,7 @@
                         All Purchases
                     </a>
 
-                    <a href="" class="nav-link ">
+                    <a href="{{ route('purchases.create') }}" class="nav-link ">
                         <i class="bi bi-plus-circle-fill"></i>
                         Add Purchase
                     </a>
