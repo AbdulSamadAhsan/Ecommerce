@@ -10,6 +10,7 @@ Auth::routes();
   });
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::livewire("dashboard", "pages::dashboard")->name('dashboard')->middleware("auth");
+Route::livewire('/admin/ai-assistant', 'pages::admin.mcp-inventory-assistant')->name('admin.ai.assistant')->middleware('auth');
 Route::livewire('/categories', 'pages::categories.categories')->name('categories');
 Route::prefix('products')->name("products.")->group(function () {
     Route::livewire('/create', 'pages::products.create')->name('create');
@@ -50,8 +51,13 @@ Route::prefix("brands")->name("brands.")->group(function(){
 Route::prefix("suppliers")->name("suppliers.")->group(function(){
    Route::livewire("/","pages::suppliers.all")->name("index");
    Route::livewire("/create","pages::suppliers.create")->name("create");
+<<<<<<< HEAD
  
 Route::livewire('/{id}', 'pages::suppliers.show')->name('show');  
+=======
+  
+Route::livewire('/{id}', 'pages::suppliers.show')->name('suppliers.show');  
+>>>>>>> 0b72e358f839a80f23363ff78885afa9a8397359
 });
 Route::prefix("warehouses")->name("warehouses.")->group(function(){
    Route::livewire("/","pages::warehouses.all")->name("index");
@@ -62,7 +68,11 @@ Route::prefix("warehouses")->name("warehouses.")->group(function(){
 Route::prefix("departments")->name("departments.")->group(function(){
    Route::livewire("/","pages::departments.all")->name("index");
    Route::livewire("/create","pages::departments.create")->name("create");
+<<<<<<< HEAD
      Route::livewire("/{id}","pages::departments.show")->name("show");
+=======
+   
+>>>>>>> 0b72e358f839a80f23363ff78885afa9a8397359
 
 });
 
@@ -95,10 +105,26 @@ Route::livewire('/educations/{id}/edit', 'pages::educations.edit')
 Route::prefix("employees")->name("employees.")->group(function(){
    Route::livewire("/","pages::employees.all")->name("index");
    Route::livewire("/create","pages::employees.create")->name("create");
+<<<<<<< HEAD
   
   
  Route::livewire('/{id}', 'pages::employees.show')->name('show');
+=======
+   
+>>>>>>> 0b72e358f839a80f23363ff78885afa9a8397359
 
+});
+Route::prefix("taxes")->name("taxes.")->middleware('auth')->group(function(){
+   Route::livewire("/","pages::taxes.all")->name("index");
+   Route::livewire("/create","pages::taxes.create")->name("create");
+   Route::livewire("/edit/{id}","pages::taxes.edit")->name("edit");
+   Route::livewire('/{id}', 'pages::taxes.show')->name('show');
+});
+Route::prefix("coupons")->name("coupons.")->middleware('auth')->group(function(){
+   Route::livewire("/","pages::coupons.all")->name("index");
+   Route::livewire("/create","pages::coupons.create")->name("create");
+   Route::livewire("/edit/{id}","pages::coupons.edit")->name("edit");
+   Route::livewire('/{id}', 'pages::coupons.show')->name('show');
 });
 Route::livewire("/","pages::frontend.home")->name("front");
 Route::livewire("/cart","pages::frontend.cart")->name("cart");
@@ -111,6 +137,7 @@ Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
+    Route::livewire('/ai-assistant', 'pages::frontend.customer.mcp-inventory-assistant')->name('ai.assistant');
     Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
     Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
     Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
