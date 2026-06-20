@@ -41,6 +41,46 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    public function chatThreads()
+    {
+        return $this->hasMany(ChatThread::class, 'user_id');
+    }
+
+    public function assignedChatThreads()
+    {
+        return $this->hasMany(ChatThread::class, 'admin_id');
+    }
+
+    public function sentChatMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
+
+    public function isAdmin(): bool
+    {
+        if ((int) $this->role_id === 1) {
+            return true;
+        }
+
+        try {
+            if ($this->role_id && \Illuminate\Support\Facades\Schema::hasTable('roles')) {
+                $roleName = \Illuminate\Support\Facades\DB::table('roles')
+                    ->where('id', $this->role_id)
+                    ->value('name');
+
+                return in_array(strtolower((string) $roleName), [
+                    'admin',
+                    'administrator',
+                    'super admin',
+                ], true);
+            }
+        } catch (\Throwable $exception) {
+            return false;
+        }
+
+        return false;
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $url = route('customer.password_reset', [
