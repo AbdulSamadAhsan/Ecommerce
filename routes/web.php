@@ -45,7 +45,7 @@ Route::prefix("brands")->name("brands.")->group(function(){
 Route::prefix("suppliers")->name("suppliers.")->group(function(){
    Route::livewire("/","pages::suppliers.all")->name("index");
    Route::livewire("/create","pages::suppliers.create")->name("create");
- 
+  
 Route::livewire('/{id}', 'pages::suppliers.show')->name('suppliers.show');  
 });
 Route::prefix("warehouses")->name("warehouses.")->group(function(){
@@ -57,13 +57,13 @@ Route::prefix("warehouses")->name("warehouses.")->group(function(){
 Route::prefix("departments")->name("departments.")->group(function(){
    Route::livewire("/","pages::departments.all")->name("index");
    Route::livewire("/create","pages::departments.create")->name("create");
-  
+   
 
 });
 Route::prefix("employees")->name("employees.")->group(function(){
    Route::livewire("/","pages::employees.all")->name("index");
    Route::livewire("/create","pages::employees.create")->name("create");
-  
+   
 
 });
 Route::livewire("/","pages::frontend.home")->name("front");
@@ -77,6 +77,7 @@ Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
+    Route::get('/ai-assistant', \App\Livewire\Customer\McpInventoryAssistant::class)->name('ai.assistant');
     Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
     Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
     Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
