@@ -10,6 +10,7 @@ Auth::routes();
   });
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::livewire("dashboard", "pages::dashboard")->name('dashboard')->middleware("auth");
+Route::livewire('/admin/ai-assistant', 'pages::admin.mcp-inventory-assistant')->name('admin.ai.assistant')->middleware('auth');
 Route::livewire('/categories', 'pages::categories.categories')->name('categories');
 Route::prefix('products')->name("products.")->group(function () {
     Route::livewire('/create', 'pages::products.create')->name('create');
