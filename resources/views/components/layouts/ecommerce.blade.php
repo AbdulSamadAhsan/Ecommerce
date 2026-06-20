@@ -82,6 +82,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('chat') }}" class="nav-link fw-semibold">
+                            <i class="bi bi-headset me-1"></i>
+                            Support Chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('customer.contact-us') }}" class="nav-link fw-semibold">
                             Contact Us
                         </a>
@@ -143,6 +149,7 @@
                 <div class="col-md-3">
                     <h6 class="text-white fw-bold">Support</h6>
                     <a href="{{ route('customer.ai.assistant') }}" class="d-block mb-2">AI Assistant</a>
+                    <a href="{{ route('chat') }}" class="d-block mb-2">Support Chat</a>
                     <a href="{{ route('customer.contact-us') }}" class="d-block mb-2">Contact</a>
                     <a href="#" class="d-block mb-2">Returns</a>
                     <a href="#" class="d-block mb-2">Shipping</a>
@@ -159,7 +166,6 @@
                         </button>
                     </div>
                 </div>
-
             </div>
 
             <hr class="border-secondary my-4">
