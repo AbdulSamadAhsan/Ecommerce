@@ -13,6 +13,27 @@ return new class extends Migration
     {
         Schema::create('delivery_boys', function (Blueprint $table) {
             $table->id();
+                $table->foreignId('user_id')
+        ->nullable()
+        ->constrained()
+        ->nullOnDelete();
+
+  
+
+    $table->string('cnic')->nullable()->unique();
+
+    $table->string('vehicle_type')->nullable();
+
+    $table->string('vehicle_number')->nullable();
+
+    $table->boolean('is_available')->default(true);
+
+    $table->enum('status', [
+        'active',
+        'inactive',
+        'suspended'
+    ])->default('active');
+
             $table->timestamps();
         });
     }

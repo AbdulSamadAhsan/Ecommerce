@@ -34,6 +34,7 @@ new class extends Component {
             'name' => $this->name,
             'description' => $this->description,
             'status' => $this->status,
+            'created_at' => date('Y-m-d H:i:s'),
         ]);
 
         $this->reset(['name', 'description']);

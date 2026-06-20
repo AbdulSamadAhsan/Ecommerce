@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('shipment_trackings', function (Blueprint $table) {
+        Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-               $table->foreignId('shipment_id')
-        ->constrained()
-        ->cascadeOnDelete();
 
-    $table->string('location')->nullable();
+    $table->string('name')->unique();
 
-    $table->string('status');
+    $table->text('description')->nullable();
 
-    $table->text('remarks')->nullable();
-
+    $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }
@@ -32,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('shipment_trackings');
+        Schema::dropIfExists('expenses');
     }
 };

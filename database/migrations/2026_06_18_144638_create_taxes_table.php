@@ -13,6 +13,17 @@ return new class extends Migration
     {
         Schema::create('taxes', function (Blueprint $table) {
             $table->id();
+               $table->string('name');
+
+    $table->decimal('rate', 5, 2);
+
+    $table->enum('type', [
+        'percentage',
+        'fixed'
+    ])->default('percentage');
+
+    $table->boolean('is_active')
+        ->default(true);
             $table->timestamps();
         });
     }

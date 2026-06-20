@@ -140,10 +140,11 @@ new class extends Component {
                                 Education
                             </label>
 
-                            <select class="form-select @error('department_id') is-invalid @enderror"
-                                wire:model.live="department_id">
+                            <select class="form-select @error('education') is-invalid @enderror"
+                                wire:model.live="education">
                                 <option value="">Select Education</option>
-                                <option value="M.B.A">M.B.A</option>
+                                <option value="BSSE">BSSE</option>
+                                <option value="BSCS">BSCS</option>
                             </select>
 
                             @error('department_id')
@@ -152,7 +153,7 @@ new class extends Component {
                                 </div>
                             @enderror
                         </div>
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">
                                 Email
                             </label>
@@ -167,14 +168,45 @@ new class extends Component {
                             @enderror
                         </div>
 
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                Salary
+                            </label>
+
+                            <input type="text" class="form-control @error('email') is-invalid @enderror"
+                                placeholder="Enter Email" wire:model.live="email">
+
+                            @error('email')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                Password
+                            </label>
+
+                            <input type="text" class="form-control @error('email') is-invalid @enderror"
+                                placeholder="Enter Email" wire:model.live="email">
+
+                            @error('email')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
-                                Organization
+                                Eductional Institute
                             </label>
 
                             <select class="form-select @error('user_id') is-invalid @enderror"
                                 wire:model.live="user_id">
-                                <option value="">Select Organization</option>
+                                <option value="">Select Institute</option>
 
 
                                 <option value="M.B.A">

@@ -11,20 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_barcodes', function (Blueprint $table) {
+        Schema::create('expense_categories', function (Blueprint $table) {
             $table->id();
-                $table->foreignId('product_id')
-        ->constrained()
-        ->cascadeOnDelete();
-
-    $table->string('barcode')->unique();
-
-    $table->enum('barcode_type', [
-        'CODE128',
-        'EAN13',
-        'EAN8',
-        'UPC'
-    ])->default('CODE128');
             $table->timestamps();
         });
     }
@@ -34,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_barcodes');
+        Schema::dropIfExists('expense_categories');
     }
 };

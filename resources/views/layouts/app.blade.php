@@ -560,7 +560,7 @@
 
                 <div class="sidebar-dropdown-menu">
 
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('warehouses.index') }}" class="nav-link">
 
                         <i class="bi bi-list-ul"></i>
                         All Warehouses
@@ -592,7 +592,7 @@
 
                 <div class="sidebar-dropdown-menu">
 
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('suppliers.index') }}" class="nav-link">
 
                         <i class="bi bi-list-ul"></i>
                         All Suppliers
@@ -674,7 +674,47 @@
                 </div>
             </li>
 
+            <li
+                class="nav-item sidebar-dropdown {{ request()->routeIs('educations.*') || request()->routeIs('institutions.*') ? 'open' : '' }}">
 
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span>
+                        <i class="bi bi-mortarboard-fill"></i>
+                        Education
+                    </span>
+
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+
+                <div
+                    class="sidebar-dropdown-menu {{ request()->routeIs('educations.*') || request()->routeIs('institutions.*') ? 'show' : '' }}">
+
+                    <a href="{{ route('institutions.index') }}"
+                        class="nav-link {{ request()->routeIs('institutions.index') ? 'active' : '' }}">
+                        <i class="bi bi-building-fill"></i>
+                        All Institutions
+                    </a>
+
+                    <a href="{{ route('institutions.create') }}"
+                        class="nav-link {{ request()->routeIs('institutions.create') ? 'active' : '' }}">
+                        <i class="bi bi-building-add"></i>
+                        Add Institution
+                    </a>
+
+                    <a href="{{ route('educations.index') }}"
+                        class="nav-link {{ request()->routeIs('educations.index') ? 'active' : '' }}">
+                        <i class="bi bi-list-ul"></i>
+                        All Educations
+                    </a>
+
+                    <a href="{{ route('educations.create') }}"
+                        class="nav-link {{ request()->routeIs('educations.create') ? 'active' : '' }}">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        Add Education
+                    </a>
+
+                </div>
+            </li>
             {{-- Shipments --}}
             <li class="nav-item sidebar-dropdown ">
 
@@ -848,8 +888,8 @@
 
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span>
-                        <i class="bi bi-truck"></i>
-                        Shipments
+                        <i class="bi bi-cash-stack"></i>
+                        Expenses
                     </span>
 
                     <i class="bi bi-chevron-down dropdown-arrow"></i>
@@ -859,12 +899,22 @@
 
                     <a href="" class="nav-link">
                         <i class="bi bi-list-ul"></i>
-                        All Shipments
+                        All Expenses
                     </a>
 
                     <a href="" class="nav-link">
                         <i class="bi bi-plus-circle-fill"></i>
-                        Add Shipment
+                        Add Expense
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-tags-fill"></i>
+                        Expense Categories
+                    </a>
+
+                    <a href="" class="nav-link">
+                        <i class="bi bi-folder-plus"></i>
+                        Add Category
                     </a>
 
                 </div>
@@ -1048,13 +1098,13 @@
                 </a>
             </li>
 
-            {{-- Sales --}}
+            {{-- Sales -
             <li class="nav-item">
                 <a href="#" class="nav-link">
                     <i class="bi bi-cash-stack"></i>
                     Sales
                 </a>
-            </li>
+            </li> --}}
 
             {{-- Reports --}}
             <li class="nav-item">

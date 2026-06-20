@@ -35,6 +35,11 @@ Route::prefix('sales')->name('sales.')->group(function () {
 
 });
 
+
+
+
+
+
 Route::prefix("brands")->name("brands.")->group(function(){
    Route::livewire("/","pages::brands.all")->name("index");
    Route::livewire("/create","pages::brands.create")->name("create");
@@ -46,7 +51,7 @@ Route::prefix("suppliers")->name("suppliers.")->group(function(){
    Route::livewire("/","pages::suppliers.all")->name("index");
    Route::livewire("/create","pages::suppliers.create")->name("create");
  
-Route::livewire('/{id}', 'pages::suppliers.show')->name('suppliers.show');  
+Route::livewire('/{id}', 'pages::suppliers.show')->name('show');  
 });
 Route::prefix("warehouses")->name("warehouses.")->group(function(){
    Route::livewire("/","pages::warehouses.all")->name("index");
@@ -57,13 +62,42 @@ Route::prefix("warehouses")->name("warehouses.")->group(function(){
 Route::prefix("departments")->name("departments.")->group(function(){
    Route::livewire("/","pages::departments.all")->name("index");
    Route::livewire("/create","pages::departments.create")->name("create");
-  
+     Route::livewire("/{id}","pages::departments.show")->name("show");
 
 });
+
+
+Route::livewire('/institutions', 'pages::institutions.all')
+    ->name('institutions.index');
+
+Route::livewire('/institutions/create', 'pages::institutions.create')
+    ->name('institutions.create');
+
+Route::livewire('/institutions/{id}', 'pages::institutions.show')
+    ->name('institutions.show');
+
+Route::livewire('/institutions/{id}/edit', 'pages::institutions.edit')
+    ->name('institutions.edit');
+
+Route::livewire('/educations', 'pages::educations.all')
+    ->name('educations.index');
+
+Route::livewire('/educations/create', 'pages::educations.create')
+    ->name('educations.create');
+
+Route::livewire('/educations/{id}', 'pages::educations.show')
+    ->name('educations.show');
+
+Route::livewire('/educations/{id}/edit', 'pages::educations.edit')
+    ->name('educations.edit');
+
+
 Route::prefix("employees")->name("employees.")->group(function(){
    Route::livewire("/","pages::employees.all")->name("index");
    Route::livewire("/create","pages::employees.create")->name("create");
   
+  
+ Route::livewire('/{id}', 'pages::employees.show')->name('show');
 
 });
 Route::livewire("/","pages::frontend.home")->name("front");

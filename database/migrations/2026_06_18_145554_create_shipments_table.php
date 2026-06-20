@@ -17,7 +17,10 @@ return new class extends Migration
         ->constrained()
         ->cascadeOnDelete();
 
-   
+    $table->foreignId('shipping_method_id')
+        ->nullable()
+        ->constrained()
+        ->nullOnDelete();
 
     $table->string('tracking_number')->unique();
 

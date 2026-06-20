@@ -37,7 +37,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'brands' => Brand::query()->when($this->search, fn($query) => $query->where('title', 'like', '%' . $this->search . '%'))->latest()->paginate(10),
+            'brands' => Brand::query()->withCount('products')->when($this->search, fn($query) => $query->where('title', 'like', '%' . $this->search . '%'))->latest()->paginate(10),
         ];
     }
 };
@@ -96,6 +96,7 @@ new class extends Component {
                         <th>ID</th>
                         <th>Logo</th>
                         <th>Brand Name</th>
+                        <th>No Of Products</th>
                         <th>Status</th>
                         <th width="180">Action</th>
 
@@ -131,6 +132,13 @@ new class extends Component {
                                     {{ $brand->title }}
                                 </div>
                             </td>
+                            <td>
+                                <div class="fw-semibold">
+                                    {{ $brand->products_count }}
+                                </div>
+                            </td>
+
+
 
                             <td>
 
@@ -154,6 +162,13 @@ new class extends Component {
                                         class="btn btn-sm btn-primary rounded-pill">
 
                                         Edit
+
+                                    </a>
+
+                                    <a href="{{ route('brands.show', $brand->id) }}" wire:navigate
+                                        class="btn btn-sm btn-secondary rounded-pill">
+
+                                        View
 
                                     </a>
 

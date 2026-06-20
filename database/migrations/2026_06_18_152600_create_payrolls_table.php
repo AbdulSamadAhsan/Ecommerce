@@ -13,7 +13,42 @@ return new class extends Migration
     {
         Schema::create('payrolls', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+
+    $table->foreignId('employee_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->string('month'); // 2026-06
+
+    $table->decimal('basic_salary', 12, 2);
+
+    $table->decimal('allowances', 12, 2)
+        ->default(0);
+
+    $table->decimal('bonus', 12, 2)
+        ->default(0);
+
+    $table->decimal('overtime', 12, 2)
+        ->default(0);
+
+    $table->decimal('deductions', 12, 2)
+        ->default(0);
+
+    $table->decimal('tax', 12, 2)
+        ->default(0);
+
+    $table->decimal('net_salary', 12, 2);
+
+    $table->enum('status', [
+        'pending',
+        'paid'
+    ])->default('pending');
+
+    $table->date('paid_date')
+        ->nullable();
+
+    $table->timestamps();
+           
         });
     }
 
