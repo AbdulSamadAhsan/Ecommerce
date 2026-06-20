@@ -67,6 +67,18 @@ Route::prefix("employees")->name("employees.")->group(function(){
    
 
 });
+Route::prefix("taxes")->name("taxes.")->middleware('auth')->group(function(){
+   Route::livewire("/","pages::taxes.all")->name("index");
+   Route::livewire("/create","pages::taxes.create")->name("create");
+   Route::livewire("/edit/{id}","pages::taxes.edit")->name("edit");
+   Route::livewire('/{id}', 'pages::taxes.show')->name('show');
+});
+Route::prefix("coupons")->name("coupons.")->middleware('auth')->group(function(){
+   Route::livewire("/","pages::coupons.all")->name("index");
+   Route::livewire("/create","pages::coupons.create")->name("create");
+   Route::livewire("/edit/{id}","pages::coupons.edit")->name("edit");
+   Route::livewire('/{id}', 'pages::coupons.show')->name('show');
+});
 Route::livewire("/","pages::frontend.home")->name("front");
 Route::livewire("/cart","pages::frontend.cart")->name("cart");
 Route::livewire("/checkout","pages::frontend.checkout")->name("checkout");
