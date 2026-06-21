@@ -40,12 +40,13 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/create', 'pages::products.create')->name('create');
         Route::livewire('/edit/{id}', 'pages::products.edit')->name('edit');
         Route::livewire('/{id}', 'pages::products.show')->name('show');
-      
-
     });
-Route::prefix("purchases")->name("purchases.")->group(function () {
-    Route::livewire("/", "pages::products.purchase")->name("create");
-});
+
+    Route::prefix("purchases")->name("purchases.")->group(function () {
+        Route::livewire("/", "pages.purchases.all")->name("index");
+        Route::livewire("/{id}/items", "pages.purchases.detail")->name("items");
+    });
+
     Route::prefix('category')->name("categories.")->group(function () {
         Route::livewire('/', 'pages::categories.categories')->name('index');
         Route::livewire('/create', 'pages::categories.add')->name('create');
@@ -74,7 +75,7 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
     Route::prefix("suppliers")->name("suppliers.")->group(function () {
         Route::livewire("/", "pages::suppliers.all")->name("index");
         Route::livewire("/create", "pages::suppliers.create")->name("create");
-          Route::livewire("/{id}", "pages::suppliers.show")->name("show");
+        Route::livewire("/{id}", "pages::suppliers.show")->name("show");
     });
 
     Route::prefix("warehouses")->name("warehouses.")->group(function () {
@@ -106,7 +107,7 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
     Route::prefix("employees")->name("employees.")->group(function () {
         Route::livewire("/", "pages::employees.all")->name("index");
         Route::livewire("/create", "pages::employees.create")->name("create");
-          Route::livewire("/id", "pages::employees.show")->name("show");
+        Route::livewire("/id", "pages::employees.show")->name("show");
     });
 
     Route::prefix("taxes")->name("taxes.")->group(function () {
@@ -134,7 +135,7 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
 | Customer Routes
 |--------------------------------------------------------------------------
 */
- Route::livewire('/ai-assistant', "pages::customer.mcp")->name('customer.ai.assistant');
+Route::livewire('/ai-assistant', "pages::customer.mcp")->name('customer.ai.assistant');
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire("/login", "pages::frontend.login")->name("login");
     Route::livewire("/register", "pages::frontend.register")->name("register");
@@ -143,7 +144,6 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
-       
         Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
         Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
         Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
