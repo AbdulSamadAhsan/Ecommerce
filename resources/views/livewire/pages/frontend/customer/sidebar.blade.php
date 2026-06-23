@@ -3,8 +3,8 @@
         <div class="mb-3">
             <i class="bi bi-person-circle display-4 text-primary"></i>
         </div>
-        <h5 class="fw-bold mb-1">{{ auth()->user()->name ?? 'Customer' }}</h5>
-        <small class="text-muted">{{ auth()->user()->email ?? 'customer@example.com' }}</small>
+        <h5 class="fw-bold mb-1">{{ auth('customer')->user()?->name ?? 'Customer' }}</h5>
+        <small class="text-muted">{{ auth('customer')->user()?->email ?? 'customer@gmail.com' }}</small>
     </div>
 </div>
 

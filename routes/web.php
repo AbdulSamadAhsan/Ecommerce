@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
-
+use App\Http\Middleware\customer;
 Auth::routes();
 
 Route::get('/home', [HomeController::class, 'index'])
@@ -44,7 +44,12 @@ Route::middleware('auth')->group(function () {
 
     });
 Route::prefix("purchases")->name("purchases.")->group(function () {
-    Route::livewire("/", "pages::products.purchase")->name("create");
+    Route::livewire("/create", "pages::purchases.create")->name("create");
+    Route::livewire("/history", "pages::purchases.all")->name("history");
+    Route::livewire(
+    '/purchases/{id}',
+    'pages::purchases.show'
+)->name('show');
 });
     Route::prefix('category')->name("categories.")->group(function () {
         Route::livewire('/', 'pages::categories.categories')->name('index');
@@ -106,7 +111,14 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
     Route::prefix("employees")->name("employees.")->group(function () {
         Route::livewire("/", "pages::employees.all")->name("index");
         Route::livewire("/create", "pages::employees.create")->name("create");
-          Route::livewire("/id", "pages::employees.show")->name("show");
+        Route::livewire("/{id}", "pages::employees.show")->name("show");
+         Route::livewire("/salary_payment", "pages::employees.salary")->name("salary");
+
+    });
+        Route::prefix("salaries")->name("salaries.")->group(function () {
+        Route::livewire("/", "pages::employees.salary")->name("all");
+      
+
     });
 
     Route::prefix("taxes")->name("taxes.")->group(function () {
@@ -141,7 +153,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire("/forget_password", "pages::frontend.forget_password")->name("forget_password");
     Route::livewire("/reset_password/{token}", "pages::frontend.reset_password")->name("password_reset");
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware('customer')->group(function () {
         Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
        
         Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');

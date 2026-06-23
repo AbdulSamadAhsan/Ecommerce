@@ -11,4 +11,8 @@ class Sale extends Model
 {
     return $this->belongsTo(Customer::class);
 }
+
+    public function orderNumber(){
+         return $this->belongsTo(Order::class);
+    }
 }

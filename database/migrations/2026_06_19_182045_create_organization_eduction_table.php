@@ -29,6 +29,8 @@ return new class extends Migration
             ->cascadeOnDelete();
 
         $table->string('name');
+        
+        $table->string('status');
         $table->string('short_code')->unique();
         $table->timestamps();
     });

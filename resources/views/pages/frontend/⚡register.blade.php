@@ -4,7 +4,7 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Hash;
-
+use App\Models\Role;
 new class extends Component {
     public string $first_name = '';
     public string $last_name = '';
@@ -22,13 +22,13 @@ new class extends Component {
             'phone' => 'required|min:10|max:20',
             'password' => 'required|min:6|confirmed',
         ]);
-
+        $role = Role::where('name', 'Customer')->first();
         $user = User::create([
             'name' => $this->first_name . ' ' . $this->last_name,
             'email' => $this->email,
 
             'password' => Hash::make($this->password),
-            'role_id' => 6,
+            'role_id' => $role->id,
         ]);
         $user_id = $user->id;
         Customer::create([

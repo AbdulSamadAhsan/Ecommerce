@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('sales_returns', function (Blueprint $table) {
             $table->id();
-                $table->foreignId('order_id')
+                $table->foreignId('sale_id')
         ->constrained()
         ->cascadeOnDelete();
 

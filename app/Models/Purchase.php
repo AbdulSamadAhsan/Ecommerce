@@ -16,4 +16,16 @@ public function items()
 {
     return $this->hasMany(\App\Models\PurchaseItem::class);
 }
+
+public function product()
+{
+    return $this->hasManyThrough(
+        Product::class,
+        PurchaseItem::class,
+        'purchase_id', // Foreign key on purchase_items
+        'id',          // Foreign key on products
+        'id',          // Local key on purchases
+        'product_id'   // Local key on purchase_items
+    );
+}
 }

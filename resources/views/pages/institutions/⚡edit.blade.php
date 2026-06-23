@@ -10,7 +10,7 @@ new class extends Component {
     public string $name = '';
     public string $type = '';
     public string $city = '';
-    public string $country = '';
+    
     public string $address = '';
     public int $status = 1;
 
@@ -22,7 +22,7 @@ new class extends Component {
         $this->name = $institution->name;
         $this->type = $institution->type ?? '';
         $this->city = $institution->city ?? '';
-        $this->country = $institution->country ?? 'Pakistan';
+    
         $this->address = $institution->address ?? '';
         $this->status = $institution->status;
     }
@@ -31,7 +31,7 @@ new class extends Component {
     {
         $this->validate([
             'name' => ['required', 'min:2', 'max:255', Rule::unique('institutions', 'name')->ignore($this->id)],
-            'country' => 'required|max:255',
+            
             'status' => 'required|boolean',
         ]);
 
@@ -39,7 +39,7 @@ new class extends Component {
             'name' => $this->name,
             'type' => $this->type,
             'city' => $this->city,
-            'country' => $this->country,
+            
             'address' => $this->address,
             'status' => $this->status,
         ]);
@@ -82,11 +82,7 @@ new class extends Component {
                 <input type="text" wire:model="city" class="form-control">
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Country</label>
-                <input type="text" wire:model="country" class="form-control">
-            </div>
-
+           
             <div class="mb-3">
                 <label class="form-label">Address</label>
                 <textarea wire:model="address" class="form-control" rows="3"></textarea>

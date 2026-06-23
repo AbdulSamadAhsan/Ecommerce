@@ -24,7 +24,24 @@ protected $fillable = [
     'salary',
     'father_name',
     'date_of_birth',
+    "account_title",	
+		"account_number",
+		"iban",
+		"branch_name",	
+		"branch_code",	
+		"swift_code",
+		"is_primary",
 ];
+protected $appends = [
+    "annual_salary",
+    'age'
+];
+
+public function getAgeAttribute()
+{
+    return \Carbon\Carbon::parse($this->date_of_birth)->age;
+}
+
     public function user()
 {
     return $this->belongsTo(User::class);
@@ -32,10 +49,19 @@ protected $fillable = [
      public function department(){
         return $this->belongsTo(Department::class);
      }
-     public function education(){
-           return $this->belongsTo(Education::class);
-     }
-     public function institute(){
-          return $this->belongsTo(Institution::class);
-     }
+  public function education()
+{
+    return $this->belongsTo(Education::class, 'education_id');
+}
+    public function institute()
+{
+    return $this->belongsTo(Institution::class, 'institution_id');
+}
+   public function salaryData(){
+     return $this->hasOne(Salary::class, 'employee_id');   
+   }
+   public function getAnnualSalaryAttribute(){
+     return $this->salaryData->net_salary*12;
+   }
+   
 }

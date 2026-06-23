@@ -15,10 +15,19 @@ return new class extends Migration
             $table->id();
 
     $table->string('name')->unique();
+   $table->foreignId('expense_category_id')
+                ->constrained('expense_categories')
+                ->cascadeOnDelete();
 
+
+ $table->decimal('amount', 12, 2);
+
+            $table->date('expense_date');
+            $table->string("payment_method");
+     $table->string("status");
     $table->text('description')->nullable();
 
-    $table->boolean('status')->default(true);
+ 
             $table->timestamps();
         });
     }

@@ -16,14 +16,15 @@ return new class extends Migration
               $table->foreignId('product_id')
         ->constrained()
         ->cascadeOnDelete();
-
-    $table->foreignId('warehouse_id')
+            $table->foreignId('warehouse_id')
         ->constrained()
         ->cascadeOnDelete();
 
+
+  
     $table->integer('quantity')->default(0);
 
-    $table->integer('reserved_quantity')->default(0);
+
 
     $table->integer('minimum_stock')->default(5);
             $table->timestamps();

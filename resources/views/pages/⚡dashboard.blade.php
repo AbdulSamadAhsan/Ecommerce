@@ -14,6 +14,9 @@ new class extends Component {
 
     public function mount()
     {
+
+
+    
         $this->number_of_customer = Customer::count();
 
         $this->products_count = Product::count();

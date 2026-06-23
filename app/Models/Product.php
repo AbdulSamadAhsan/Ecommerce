@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+
+
+
+ protected $appends=[
+    "profit"
+ ];
  protected $fillable = [
     'warehouse_id',
     'supplier_id',
@@ -20,7 +26,11 @@ class Product extends Model
     'image',
     'status',
     'brand_id'
-];   
+];
+
+public function getProfitAttribute(){
+    return date("d-F-Y",strtotime("+1 month"));
+}
 public function category()
 {
     return $this->belongsTo(Category::class);
@@ -40,4 +50,25 @@ public function warehouse()
 {
     return $this->belongsTo(Warehouse::class);
 }
+public function reviews()
+{
+    return $this->hasMany(Review::class);
+}
+
+public function salesitem()
+{
+    return $this->hasMany(SaleItem::class);
+}
+
+
+
+public function purchasesitem()
+{
+    return $this->hasMany(PurchaseItem::class);
+}
+public function stockmovement()
+{
+    return $this->hasMany(StockMovement::class);
+}
+
 }

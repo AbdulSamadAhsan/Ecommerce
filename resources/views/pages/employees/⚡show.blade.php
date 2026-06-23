@@ -1,7 +1,8 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Employee;
+use App\Models\Education;
 new class extends Component {
     public int $id;
     public array $salaryPayments = [];
@@ -16,19 +17,33 @@ new class extends Component {
     public function mount($id): void
     {
         $this->id = (int) $id;
+        $employeedata = Employee::with(['education', 'department', 'institute', 'user', 'salaryData'])->findOrFail($this->id);
 
         $this->employee = [
             'id' => $this->id,
-            'name' => 'Ahmed Raza',
-            'email' => 'ahmed@example.com',
-            'phone' => '03001234567',
-            'department' => 'Inventory',
-            'designation' => 'Inventory Manager',
-            'salary' => 120000,
-            'joining_date' => '2026-01-01',
-            'address' => 'Karachi',
-            'status' => 1,
-            'photo' => asset('asset/default-user.png'),
+            'name' => $employeedata->user->name,
+            'email' => $employeedata->user->email,
+            'phone' => $employeedata->phone,
+            'department' => $employeedata->department->name,
+            'designation' => $employeedata->designation,
+            'salary' => $employeedata->salary,
+            'joining_date' => $employeedata->joining_date,
+            'address' => $employeedata->address,
+            'status' => $employeedata->status,
+            'education' => $employeedata->education?->name,
+            'institution' => $employeedata?->institute?->name,
+            'photo' => asset('storage/' . $employeedata->photo),
+            'education' => $employeedata->education?->name,
+            'allowance' => $employeedata->salaryData->allowance,
+            'tax_deduction' => $employeedata->salaryData->tax_deduction,
+            'net_salary' => $employeedata->salaryData->net_salary,
+            'annual_salary' => $employeedata->annual_salary,
+            'age' => $employeedata->age,
+            'father_name' => $employeedata->father_name,
+            'account_number' => $employeedata->account_number,
+            'account_title' => $employeedata->account_title,
+            'bank_name' => $employeedata->bank_name,
+            'iban' => $employeedata->iban,
         ];
 
         $this->attendance = [
@@ -167,8 +182,8 @@ new class extends Component {
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <strong>Salary</strong><br>
-                            Rs {{ number_format($employee['salary']) }}
+                            <strong>Age</strong><br>
+                            Rs {{ $employee['age'] }}
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -176,10 +191,15 @@ new class extends Component {
                             {{ $employee['joining_date'] }}
                         </div>
 
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-6 mb-3">
                             <strong>Address</strong><br>
                             {{ $employee['address'] }}
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Father Name</strong><br>
+                            {{ $employee['father_name'] }}
+                        </div>
+
 
                         <div class="col-md-6">
 
@@ -207,7 +227,41 @@ new class extends Component {
 
     </div>
 
+    <div class="card border-0 shadow mb-4">
 
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                Education Information
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <strong>Education</strong>
+                    <p class="mb-0">
+                        Rs {{ number_format(100000) }}
+                    </p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <strong>Institute</strong>
+                    <p class="mb-0 ">
+                        Rs {{ number_format(15000) }}
+                    </p>
+                </div>
+
+
+
+
+
+            </div>
+
+        </div>
+
+    </div>
 
 
     <div class="card border-0 shadow mb-4">
@@ -225,56 +279,56 @@ new class extends Component {
                 <div class="col-md-3 mb-3">
                     <strong>Basic Salary</strong>
                     <p class="mb-0">
-                        Rs {{ number_format(100000) }}
+                        Rs {{ $employee['salary'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>Allowance</strong>
                     <p class="mb-0 text-success">
-                        Rs {{ number_format(15000) }}
+                        Rs {{ $employee['allowance'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
-                    <strong>Deduction</strong>
+                    <strong>Tax Deduction</strong>
                     <p class="mb-0 text-danger">
-                        Rs {{ number_format(5000) }}
+                        Rs {{ $employee['tax_deduction'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>Net Salary</strong>
                     <p class="mb-0 fw-bold text-primary">
-                        Rs {{ number_format(110000) }}
+                        Rs {{ $employee['net_salary'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>Bank Name</strong>
                     <p class="mb-0">
-                        Meezan Bank
+                        {{ $employee['bank_name'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>Account Title</strong>
                     <p class="mb-0">
-                        Ahmed Raza
+                        {{ $employee['account_title'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>Account Number</strong>
                     <p class="mb-0">
-                        12345678901234
+                        {{ $employee['account_number'] }}
                     </p>
                 </div>
 
                 <div class="col-md-3 mb-3">
                     <strong>IBAN</strong>
                     <p class="mb-0">
-                        PK36MEZN0001234567890123
+                        {{ $employee['iban'] }}
                     </p>
                 </div>
 

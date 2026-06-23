@@ -71,7 +71,7 @@ new class extends Component {
             <p class="text-muted mb-0">Category information, brands and products</p>
         </div>
 
-        <a href="{{ route('categories') }}" class="btn btn-secondary rounded-pill">
+        <a href="{{ route('categories.index') }}" class="btn btn-secondary rounded-pill">
             Back
         </a>
     </div>

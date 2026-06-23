@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use Illuminate\Support\Facades\Auth;
 new class extends Component {
     public string $email = '';
     public string $password = '';
@@ -12,6 +12,17 @@ new class extends Component {
             'email' => 'required|email',
             'password' => 'required|min:6',
         ]);
+
+        if (
+            !Auth::guard('customer')->attempt([
+                'email' => $this->email,
+                'password' => $this->password,
+            ])
+        ) {
+            $this->addError('email', 'Invalid email or password.');
+            return;
+        }
+
         $this->redirectRoute('customer.dashboard', navigate: true);
         session()->flash('success', 'Login successful.');
     }

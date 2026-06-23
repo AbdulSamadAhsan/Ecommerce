@@ -36,17 +36,30 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('guest')->except('logout');
-        $this->middleware('auth')->only('logout');
+          $this->middleware('guest:web')->except('logout');
+        $this->middleware('auth:web')->only('logout');
     }
-    // public function logout(Request $request)
-    // {
-    //     Auth::logout();
+    protected function guard()
+    {
+        return Auth::guard('web');
+    }
+protected function authenticated(Request $request, $user)
+{
+    if ($user->role->name === 'Customer') {
+        Auth::logout();
 
-    //     $request->session()->invalidate();
+        return redirect('/login')
+            ->withErrors(['email' => 'Unauthorized access.']);
+    }
+}
 
-    //     $request->session()->regenerateToken();
+    public function logout(Request $request)
+    {
+      Auth::guard('web')->logout();
+     
 
-    //     return redirect('/login');
-    // }
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
+    }
 }

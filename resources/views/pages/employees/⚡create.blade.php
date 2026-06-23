@@ -1,21 +1,31 @@
 <?php
 
-use App\Models\Department;
-use App\Models\Employee;
-use App\Models\Institution;
-use App\Models\Education;
+use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Role;
+use App\Models\Salary;
+use App\Models\Employee;
+use App\Models\Education;
+use App\Models\Department;
+use App\Models\Institution;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 new class extends Component {
     use WithFileUploads;
 
     public $institution_id = '';
-    public $department_id = '';
     public $education_id = '';
+    public $department_id = '';
+
+    public $name = '';
+    public $email = '';
+    public $password = '';
+
     public $phone = '';
     public $designation = '';
     public $joining_date = '';
@@ -23,107 +33,173 @@ new class extends Component {
     public $cnic = '';
     public $photo;
     public $status = 1;
-    public $salary;
-    public $educations;
-    public $departments;
-    public $institutions;
-    public $father_name;
-    public $date_of_birth;
-    public $name;
-    public $email;
-    public $user_id;
-    public $password;
+    public $salary = 0;
+    public $father_name = '';
+    public $date_of_birth = '';
+
+    public $bank_name = '';
+    public $account_title = '';
+    public $account_number = '';
+    public $iban = '';
+    public $branch_name = '';
+    public $branch_code = '';
+    public $swift_code = '';
+    public $is_primary = 1;
+    public $bank_notes = '';
+
+    public $allowance = 0;
+    public $tax_deduction = 0;
+    public $net_salary = 0;
+
+    public $educations = [];
+    public $departments = [];
+    public $institutions = [];
+
     public function mount()
     {
-        $this->educations = Education::get();
         $this->departments = Department::where('status', 1)->get();
         $this->institutions = Institution::get();
+        $this->educations = [];
     }
 
-    protected $rules = [
-        'institution_id' => 'required',
-        'education_id' => 'required|exists:educations,id',
-        'department_id' => 'required|exists:departments,id',
-        'phone' => 'required|min:11|max:20',
-        'designation' => 'required|min:2|max:255',
-        'joining_date' => 'required|date',
-        'address' => 'required|min:3|max:1000',
-        'cnic' => 'required|min:13|max:20|unique:employees,cnic',
-        'photo' => 'nullable|image|max:2048',
-        'status' => 'required|boolean',
-        'father_name' => 'required',
+    protected function rules()
+    {
+        $employeeRoleId = Role::where('name', 'Employee')->value('id');
 
-        'name' => 'required|string|max:255|unique:users,name',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:8',
-        'salary' => 'required|numeric',
-        'date_of_birth' => 'required|date',
-        'institution_id' => 'required|exists:institutions,id',
-    ];
+        return [
+            'institution_id' => 'required|exists:institutions,id',
+            'education_id' => 'required|exists:educations,id',
+            'department_id' => 'required|exists:departments,id',
 
-    protected $messages = [
-        'user_id.required' => 'Please select a user.',
-        'department_id.required' => 'Please select a department.',
-        'phone.required' => 'Phone number is required.',
-        'designation.required' => 'Designation is required.',
-        'joining_date.required' => 'Joining date is required.',
-        'address.required' => 'Address is required.',
-        'cnic.required' => 'CNIC is required.',
-        'cnic.unique' => 'CNIC already exists.',
-        'father_name.required' => 'Father Name is Required',
-        'photo.image' => 'Please upload a valid image.',
-        'photo.max' => 'Photo size must not exceed 2MB.',
-    ];
+            'name' => ['required', 'string', 'max:255', Rule::unique('users', 'name')->where('role_id', $employeeRoleId)],
+
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8',
+
+            'phone' => 'required|min:11|max:20',
+            'designation' => 'required|min:2|max:255',
+            'joining_date' => 'required|date',
+            'address' => 'required|min:3|max:1000',
+            'cnic' => 'required|min:13|max:20|unique:employees,cnic',
+            'photo' => 'nullable|image|max:2048',
+            'status' => 'required|boolean',
+            'father_name' => 'required|string|max:255',
+            'date_of_birth' => 'required|date',
+
+            'salary' => 'required|numeric|min:0',
+            'allowance' => 'nullable|numeric|min:0',
+
+            'bank_name' => 'nullable|string|max:255',
+            'account_title' => 'nullable|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'iban' => 'nullable|string|max:255',
+            'branch_name' => 'nullable|string|max:255',
+            'branch_code' => 'nullable|string|max:255',
+            'swift_code' => 'nullable|string|max:255',
+            'is_primary' => 'nullable|boolean',
+            'bank_notes' => 'nullable|string',
+        ];
+    }
+
+    public function updatedInstitutionId($value)
+    {
+        $this->education_id = '';
+
+        $this->educations = Education::where('institution_id', $value)->get();
+    }
 
     public function updated($property)
     {
+        if (in_array($property, ['salary', 'allowance'])) {
+            $this->calculateSalary();
+        }
+
         $this->validateOnly($property);
+    }
+
+    private function calculateSalary()
+    {
+        $salary = (float) $this->salary;
+        $allowance = (float) $this->allowance;
+        $taxPer = 10;
+
+        $this->tax_deduction = ($taxPer / 100) * $salary;
+        $this->net_salary = $salary + $allowance - $this->tax_deduction;
     }
 
     public function save()
     {
         $validated = $this->validate();
 
-        $photoPath = null;
+        $ageAtJoining = Carbon::parse($this->date_of_birth)->diffInYears(Carbon::parse($this->joining_date));
 
-        if ($this->photo) {
-            $extension = $this->photo->getClientOriginalExtension();
+        if ($ageAtJoining < 23) {
+            $this->addError('joining_date', 'Employee must be at least 23 years old on the joining date.');
 
-            $fileName = 'employee-' . time() . '-' . Str::random(8) . '.' . $extension;
-
-            $photoPath = $this->photo->storeAs('employees', $fileName, 'public');
+            return;
         }
-        $user = User::create([
-            'name' => $this->name,
-            'password' => Hash::make($this->password),
-            'email' => $this->email,
-            'role_id' => 5,
-        ]);
-        Employee::create([
-            'user_id' => $user->id,
-            'department_id' => $this->department_id,
-            'phone' => $this->phone,
-            'institution_id' => $this->institution_id,
-            'education_id' => $this->education_id,
-            'father_name' => $this->father_name,
-            'salary' => $this->salary,
-            'date_of_birth' => $this->date_of_birth,
-            'designation' => $this->designation,
-            'joining_date' => $this->joining_date,
-            'address' => $this->address,
-            'cnic' => $this->cnic,
-            'photo' => $photoPath,
-            'status' => $this->status,
-        ]);
 
-        $this->status = 1;
-        $this->reset();
+        $this->calculateSalary();
+
+        DB::transaction(function () {
+            $photoPath = null;
+
+            if ($this->photo) {
+                $fileName = 'employee-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
+                $photoPath = $this->photo->storeAs('employees', $fileName, 'public');
+            }
+
+            $role = Role::where('name', 'Employee')->firstOrFail();
+
+            $user = User::create([
+                'name' => $this->name,
+                'email' => $this->email,
+                'password' => Hash::make($this->password),
+                'role_id' => $role->id,
+            ]);
+
+            $employee = Employee::create([
+                'user_id' => $user->id,
+                'institution_id' => $this->institution_id,
+                'education_id' => $this->education_id,
+                'department_id' => $this->department_id,
+                'phone' => $this->phone,
+                'designation' => $this->designation,
+                'joining_date' => $this->joining_date,
+                'address' => $this->address,
+                'cnic' => $this->cnic,
+                'photo' => $photoPath,
+                'status' => $this->status,
+                'salary' => $this->salary,
+                'father_name' => $this->father_name,
+                'date_of_birth' => $this->date_of_birth,
+
+                'bank_name' => $this->bank_name ?: null,
+                'account_title' => $this->account_title ?: null,
+                'account_number' => $this->account_number,
+                'iban' => $this->iban ?: null,
+                'branch_name' => $this->branch_name ?: null,
+                'branch_code' => $this->branch_code ?: null,
+                'swift_code' => $this->swift_code ?: null,
+                'is_primary' => $this->is_primary,
+                'notes' => $this->bank_notes ?: null,
+            ]);
+
+            Salary::create([
+                'employee_id' => $employee->id,
+                'basic_salary' => $this->salary,
+                'effective_from' => $this->joining_date,
+                'allowance' => $this->allowance,
+                'tax_deduction' => $this->tax_deduction,
+                'net_salary' => $this->net_salary,
+            ]);
+        });
 
         session()->flash('success', 'Employee added successfully.');
+
         return $this->redirectRoute('employees.index');
     }
 };
-
 ?>
 
 <div class="row">
@@ -184,7 +260,7 @@ new class extends Component {
                                 </div>
                             @enderror
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">
                                 Email
                             </label>
@@ -200,22 +276,9 @@ new class extends Component {
                         </div>
 
 
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">
-                                Salary
-                            </label>
 
-                            <input type="text" class="form-control @error('salary') is-invalid @enderror"
-                                placeholder="Enter Salary" wire:model.live="salary">
 
-                            @error('salary')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">
                                 Password
                             </label>
@@ -377,6 +440,7 @@ new class extends Component {
                             @enderror
                         </div>
 
+
                         <div class="col-md-12 mb-3">
                             <label class="form-label">
                                 Photo
@@ -418,11 +482,168 @@ new class extends Component {
                             </select>
                         </div>
 
+
+
+                        <div class="col-md-12 mt-4 mb-3">
+                            <h5 class="fw-bold">Salary Details</h5>
+                        </div>
+
+                        <div class="col-md-6 mb-6">
+                            <label class="form-label">
+                                Salary
+                            </label>
+
+                            <input type="text" class="form-control @error('salary') is-invalid @enderror"
+                                placeholder="Enter Salary" wire:model.live="salary">
+
+                            @error('salary')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-3 mb-6">
+                            <label class="form-label">
+                                Allowance
+                            </label>
+
+                            <input type="text" class="form-control @error('allowance') is-invalid @enderror"
+                                placeholder="Enter Allowance" wire:model.live="allowance">
+
+                            @error('allowance')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+
+                        <div class="col-md-3 mb-6">
+                            <label class="form-label">
+                                Tax Deduction
+                            </label>
+
+                            <input type="text" class="form-control @error('tax_deduction') is-invalid @enderror"
+                                placeholder="Tax Deduction" wire:model.live="tax_deduction" readonly>
+
+                            @error('allowance')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+
+                        <div class="col-md-3 mb-6">
+                            <label class="form-label">
+                                Net Salary
+                            </label>
+
+                            <input type="text" class="form-control @error('net_salary') is-invalid @enderror"
+                                placeholder="Net Salary" wire:model.live="net_salary" readonly>
+
+                            @error('net_salary')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+
+                        <div class="col-md-12 mt-4 mb-3">
+                            <h5 class="fw-bold">Bank Account Details</h5>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bank Name</label>
+                            <input type="text" class="form-control @error('bank_name') is-invalid @enderror"
+                                wire:model.live="bank_name" placeholder="Enter bank name">
+                            @error('bank_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Account Title</label>
+                            <input type="text" class="form-control @error('account_title') is-invalid @enderror"
+                                wire:model.live="account_title" placeholder="Enter account title">
+                            @error('account_title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control @error('account_number') is-invalid @enderror"
+                                wire:model.live="account_number" placeholder="Enter account number">
+                            @error('account_number')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">IBAN</label>
+                            <input type="text" class="form-control @error('iban') is-invalid @enderror"
+                                wire:model.live="iban" placeholder="Enter IBAN">
+                            @error('iban')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Branch Name</label>
+                            <input type="text" class="form-control @error('branch_name') is-invalid @enderror"
+                                wire:model.live="branch_name" placeholder="Enter branch name">
+                            @error('branch_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Branch Code</label>
+                            <input type="text" class="form-control @error('branch_code') is-invalid @enderror"
+                                wire:model.live="branch_code" placeholder="Enter branch code">
+                            @error('branch_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Swift Code</label>
+                            <input type="text" class="form-control @error('swift_code') is-invalid @enderror"
+                                wire:model.live="swift_code" placeholder="Enter swift code">
+                            @error('swift_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Primary Account</label>
+                            <select class="form-select" wire:model="is_primary">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Bank Notes</label>
+                            <textarea class="form-control @error('bank_notes') is-invalid @enderror" wire:model.live="bank_notes" rows="2"
+                                placeholder="Enter bank notes"></textarea>
+                            @error('bank_notes')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+
+
+
+
                     </div>
 
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary" wire:loading.attr="disabled"
-                            wire:target="save,photo" @disabled($errors->any())>
+                            wire:target="save,photo">
 
                             <span wire:loading.remove wire:target="save">
                                 Save Employee

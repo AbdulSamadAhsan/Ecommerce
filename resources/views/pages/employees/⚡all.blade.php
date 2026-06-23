@@ -1,11 +1,15 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Employee;
 new class extends Component {
     public string $search = '';
 
-    public array $employees = [['id' => 1, 'name' => 'Ahmed Raza', 'department' => 'Inventory', 'phone' => '03001234567', 'designation' => 'Manager', 'status' => 1], ['id' => 2, 'name' => 'Ali Khan', 'department' => 'Sales', 'phone' => '03017654321', 'designation' => 'Sales Officer', 'status' => 1]];
+    public $employees;
+    public function mount()
+    {
+        $this->employees = Employee::with('institute')->get();
+    }
 };
 ?>
 
@@ -41,11 +45,11 @@ new class extends Component {
                 <tbody>
                     @foreach ($employees as $employee)
                         <tr>
-                            <td>#{{ $employee['id'] }}</td>
-                            <td>{{ $employee['name'] }}</td>
-                            <td>{{ $employee['department'] }}</td>
-                            <td>{{ $employee['phone'] }}</td>
-                            <td>{{ $employee['designation'] }}</td>
+                            <td>#{{ $employee->id }}</td>
+                            <td>{{ $employee->user->name }}</td>
+                            <td>{{ $employee->department->name }}</td>
+                            <td>{{ $employee->phone }}</td>
+                            <td>{{ $employee->designation }}</td>
                             <td>
                                 <span class="badge {{ $employee['status'] ? 'bg-success' : 'bg-danger' }}">
                                     {{ $employee['status'] ? 'Active' : 'Inactive' }}

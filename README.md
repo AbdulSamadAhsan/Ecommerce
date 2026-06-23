@@ -118,7 +118,12 @@ git clone https://github.com/AbdulSamadAhsan/Ecommerce.git
 
 cd Ecommerce
 ```
-
+ if i need i add these 
+ reward_points
+reward_transactions
+referrals
+referral_rewards
+referral_tiers
 ### Install Dependencies
 
 ```bash

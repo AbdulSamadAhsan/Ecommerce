@@ -4,6 +4,7 @@ use App\Models\Supplier;
 use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Role;
 new class extends Component {
     public $company_name = '';
     public $email = '';
@@ -43,11 +44,12 @@ new class extends Component {
     public function save()
     {
         $this->validate();
+        $role = Role::where('name', 'Supplier')->first();
         $user = User::create([
             'name' => $this->name,
             'password' => Hash::make($this->password),
             'email' => $this->email,
-            'role_id' => 6,
+            'role_id' => $role->id,
         ]);
         Supplier::create([
             'user_id' => $user->id,

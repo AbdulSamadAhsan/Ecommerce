@@ -8,11 +8,11 @@ use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
 
-new #[Layout('components.layouts.app')] class extends Component {
+new class extends Component {
     public $purchase_id = null;
     public $supplier_id = '';
     public $purchase_date = '';
-    public $invoice_no = '';
+    public $purchase_no = '';
     public $paid_amount = 0;
     public $payment_status = 'unpaid';
     public $status = 'pending';
@@ -31,7 +31,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public function mount()
     {
         $this->purchase_date = now()->format('Y-m-d');
-        $this->invoice_no = $this->generateInvoiceNo();
+        $this->purchase_no = $this->generateInvoiceNo();
     }
 
     public function generateInvoiceNo()
@@ -44,8 +44,6 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function addItem()
     {
-        $this->removeDuplicateRows();
-
         $this->items[] = [
             'product_id' => '',
             'quantity' => 1,
@@ -67,57 +65,14 @@ new #[Layout('components.layouts.app')] class extends Component {
     public function updated($property)
     {
         if (str_contains($property, 'items.') && str_contains($property, '.product_id')) {
-            $index = (int) explode('.', $property)[1];
-            $productId = $this->items[$index]['product_id'] ?? null;
+            $index = explode('.', $property)[1];
 
-            if ($productId && $this->isDuplicateProduct($productId, $index)) {
-                unset($this->items[$index]);
-                $this->items = array_values($this->items);
-
-                session()->flash('error', 'Duplicate product row removed.');
-                $this->calculateTotals();
-                return;
-            }
-
-            $product = Product::find($productId);
+            $product = Product::find($this->items[$index]['product_id'] ?? null);
 
             $this->items[$index]['purchase_price'] = $product ? $product->purchase_price ?? ($product->selling_price ?? 0) : 0;
         }
 
-        $this->removeDuplicateRows();
         $this->calculateTotals();
-    }
-
-    public function isDuplicateProduct($productId, $currentIndex)
-    {
-        foreach ($this->items as $index => $item) {
-            if ($index !== $currentIndex && !empty($item['product_id']) && (int) $item['product_id'] === (int) $productId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public function removeDuplicateRows()
-    {
-        $seen = [];
-
-        foreach ($this->items as $index => $item) {
-            $productId = $item['product_id'] ?? null;
-
-            if (!$productId) {
-                continue;
-            }
-
-            if (in_array($productId, $seen)) {
-                unset($this->items[$index]);
-            } else {
-                $seen[] = $productId;
-            }
-        }
-
-        $this->items = array_values($this->items);
     }
 
     public function calculateTotals()
@@ -145,14 +100,14 @@ new #[Layout('components.layouts.app')] class extends Component {
         return [
             'supplier_id' => 'required|exists:suppliers,id',
             'purchase_date' => 'required|date',
-            'invoice_no' => 'required|string|max:255',
+            'purchase_no' => 'required|string|max:255',
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_status' => 'required|in:unpaid,partial,paid',
             'status' => 'required|in:pending,completed,cancelled',
             'notes' => 'nullable|string',
 
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id|distinct',
+            'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.purchase_price' => 'required|numeric|min:0',
         ];
@@ -160,7 +115,6 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function save()
     {
-        $this->removeDuplicateRows();
         $this->calculateTotals();
         $this->validate();
 
@@ -168,7 +122,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             $purchase = Purchase::create([
                 'supplier_id' => $this->supplier_id,
                 'purchase_date' => $this->purchase_date,
-                'invoice_no' => $this->invoice_no,
+                'purchase_no' => $this->purchase_no,
                 'total_amount' => $this->total_amount,
                 'paid_amount' => $this->paid_amount ?? 0,
                 'due_amount' => $this->due_amount,
@@ -186,14 +140,11 @@ new #[Layout('components.layouts.app')] class extends Component {
                     'subtotal' => $item['subtotal'],
                 ]);
 
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
-
-                $product->quantity = $product->quantity + $item['quantity'];
-                $product->save();
+                Product::where('id', $item['product_id'])->increment('quantity', $item['quantity']);
             }
         });
 
-        session()->flash('success', 'Purchase created and product quantity increased successfully.');
+        session()->flash('success', 'Purchase created successfully.');
         $this->resetForm();
     }
 
@@ -204,7 +155,7 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->purchase_id = $purchase->id;
         $this->supplier_id = $purchase->supplier_id;
         $this->purchase_date = $purchase->purchase_date;
-        $this->invoice_no = $purchase->invoice_no;
+        $this->purchase_no = $purchase->purchase_no;
         $this->paid_amount = $purchase->paid_amount;
         $this->payment_status = $purchase->payment_status;
         $this->status = $purchase->status;
@@ -221,13 +172,11 @@ new #[Layout('components.layouts.app')] class extends Component {
             )
             ->toArray();
 
-        $this->removeDuplicateRows();
         $this->calculateTotals();
     }
 
     public function update()
     {
-        $this->removeDuplicateRows();
         $this->calculateTotals();
         $this->validate();
 
@@ -235,10 +184,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             $purchase = Purchase::with('items')->findOrFail($this->purchase_id);
 
             foreach ($purchase->items as $oldItem) {
-                $product = Product::where('id', $oldItem->product_id)->lockForUpdate()->firstOrFail();
-
-                $product->quantity = max($product->quantity - $oldItem->quantity, 0);
-                $product->save();
+                Product::where('id', $oldItem->product_id)->decrement('quantity', $oldItem->quantity);
             }
 
             $purchase->items()->delete();
@@ -246,7 +192,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             $purchase->update([
                 'supplier_id' => $this->supplier_id,
                 'purchase_date' => $this->purchase_date,
-                'invoice_no' => $this->invoice_no,
+                'purchase_no' => $this->purchase_no,
                 'total_amount' => $this->total_amount,
                 'paid_amount' => $this->paid_amount ?? 0,
                 'due_amount' => $this->due_amount,
@@ -264,14 +210,11 @@ new #[Layout('components.layouts.app')] class extends Component {
                     'subtotal' => $item['subtotal'],
                 ]);
 
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
-
-                $product->quantity = $product->quantity + $item['quantity'];
-                $product->save();
+                Product::where('id', $item['product_id'])->increment('quantity', $item['quantity']);
             }
         });
 
-        session()->flash('success', 'Purchase updated and product quantity recalculated successfully.');
+        session()->flash('success', 'Purchase updated successfully.');
         $this->resetForm();
     }
 
@@ -281,17 +224,14 @@ new #[Layout('components.layouts.app')] class extends Component {
             $purchase = Purchase::with('items')->findOrFail($id);
 
             foreach ($purchase->items as $item) {
-                $product = Product::where('id', $item->product_id)->lockForUpdate()->firstOrFail();
-
-                $product->quantity = max($product->quantity - $item->quantity, 0);
-                $product->save();
+                Product::where('id', $item->product_id)->decrement('quantity', $item->quantity);
             }
 
             $purchase->items()->delete();
             $purchase->delete();
         });
 
-        session()->flash('success', 'Purchase deleted and product quantity reduced successfully.');
+        session()->flash('success', 'Purchase deleted successfully.');
     }
 
     public function resetForm()
@@ -299,7 +239,7 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->purchase_id = null;
         $this->supplier_id = '';
         $this->purchase_date = now()->format('Y-m-d');
-        $this->invoice_no = $this->generateInvoiceNo();
+        $this->purchase_no = $this->generateInvoiceNo();
         $this->paid_amount = 0;
         $this->payment_status = 'unpaid';
         $this->status = 'pending';
@@ -320,10 +260,10 @@ new #[Layout('components.layouts.app')] class extends Component {
     public function with()
     {
         return [
-            'suppliers' => Supplier::with('user')->get()->sortBy('user.name'),
+            'suppliers' => Supplier::get()->sortBy('user.name'),
             'products' => Product::orderBy('name')->get(),
-            'purchases' => Purchase::with(['supplier.user'])
-                ->where('invoice_no', 'like', '%' . $this->search . '%')
+            'purchases' => Purchase::with('supplier')
+                ->where('purchase_no', 'like', '%' . $this->search . '%')
                 ->latest()
                 ->get(),
         ];
@@ -336,10 +276,6 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
     <form wire:submit.prevent="{{ $purchase_id ? 'update' : 'save' }}">
@@ -355,9 +291,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                         <select wire:model="supplier_id" class="form-control">
                             <option value="">Select Supplier</option>
                             @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}">
-                                    {{ $supplier->user->name ?? ($supplier->name ?? 'Supplier') }}
-                                </option>
+                                <option value="{{ $supplier->id }}">{{ $supplier->user->name }}</option>
                             @endforeach
                         </select>
                         @error('supplier_id')
@@ -375,8 +309,8 @@ new #[Layout('components.layouts.app')] class extends Component {
 
                     <div class="col-md-4 mb-3">
                         <label>Invoice No</label>
-                        <input type="text" wire:model="invoice_no" class="form-control">
-                        @error('invoice_no')
+                        <input type="text" wire:model="purchase_no" class="form-control">
+                        @error('purchase_no')
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
@@ -385,21 +319,13 @@ new #[Layout('components.layouts.app')] class extends Component {
                 <h5 class="mt-3">Purchase Items</h5>
 
                 @foreach ($items as $index => $item)
-                    @php
-                        $selectedProductIds = collect($items)->pluck('product_id')->filter()->values()->toArray();
-                    @endphp
-
-                    <div class="row mb-3 align-items-end"
-                        wire:key="purchase-item-{{ $index }}-{{ $item['product_id'] ?? 'empty' }}">
+                    <div class="row mb-3 align-items-end">
                         <div class="col-md-4">
                             <label>Product</label>
                             <select wire:model.live="items.{{ $index }}.product_id" class="form-control">
                                 <option value="">Select Product</option>
-
                                 @foreach ($products as $product)
-                                    <option value="{{ $product->id }}" @disabled(in_array($product->id, $selectedProductIds) && $product->id != ($items[$index]['product_id'] ?? null))>
-                                        {{ $product->name }}
-                                    </option>
+                                    <option value="{{ $product->id }}">{{ $product->name }}</option>
                                 @endforeach
                             </select>
                             @error('items.' . $index . '.product_id')
@@ -528,8 +454,8 @@ new #[Layout('components.layouts.app')] class extends Component {
                     @forelse ($purchases as $purchase)
                         <tr>
                             <td>{{ $purchase->id }}</td>
-                            <td>{{ $purchase->supplier->user->name ?? ($purchase->supplier->name ?? 'N/A') }}</td>
-                            <td>{{ $purchase->invoice_no }}</td>
+                            <td>{{ $purchase->supplier->name ?? 'N/A' }}</td>
+                            <td>{{ $purchase->purchase_no }}</td>
                             <td>{{ $purchase->total_amount }}</td>
                             <td>{{ $purchase->paid_amount }}</td>
                             <td>{{ $purchase->due_amount }}</td>

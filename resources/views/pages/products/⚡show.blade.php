@@ -1,39 +1,41 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Product;
 new class extends Component {
     public int $id;
 
     public array $product = [];
 
-    public array $reviews = [];
+    public $reviews;
 
-    public array $salesHistory = [];
+    public $salesHistory;
 
-    public array $purchaseHistory = [];
+    public $purchaseHistory;
 
-    public array $stockMovements = [];
+    public $stockMovements;
 
     public function mount($id): void
     {
         $this->id = (int) $id;
+        $productData = Product::with(['reviews'])->find($this->id);
 
         $this->product = [
             'id' => $this->id,
-            'name' => 'MacBook Pro M3',
-            'sku' => 'MBP-M3-001',
-            'category' => 'Laptops',
-            'brand' => 'Apple',
-            'supplier' => 'Apple Store',
-            'warehouse' => 'Main Warehouse',
-            'purchase_price' => 1100,
-            'selling_price' => 1299,
-            'stock' => 25,
-            'minimum_stock' => 5,
-            'status' => 1,
-            'description' => 'Latest Apple MacBook Pro with M3 chip.',
-            'image' => asset('asset/laptop.jpg'),
+            'name' => $productData->name,
+            'sku' => $productData->sku,
+            'category' => $productData->category->name,
+            'brand' => $productData->brand->title,
+            'supplier' => $productData->supplier->user->name,
+            'warehouse' => $productData->warehouse->name,
+            'purchase_price' => $productData->purchase_price,
+            'selling_price' => $productData->selling_price,
+            'stock' => $productData->quantity,
+            'minimum_stock' => $productData->minimum_stock,
+            'status' => $productData->status,
+            'description' => $productData->description,
+            'profitperunit' => $productData->selling_price - $productData->purchase_price,
+            'image' => asset('storage/' . $productData->image),
         ];
 
         $this->reviews = [
@@ -50,6 +52,7 @@ new class extends Component {
                 'date' => '2026-06-17',
             ],
         ];
+        $this->reviews = $productData->reviews;
 
         $this->salesHistory = [
             [
@@ -369,7 +372,10 @@ new class extends Component {
                     <strong>Warehouse</strong>
                     <p>{{ $product['warehouse'] }}</p>
                 </div>
-
+                <div class="col-md-4">
+                    <strong>Profit Per Unit</strong>
+                    <p>{{ $product['profitperunit'] }}</p>
+                </div>
             </div>
 
         </div>
@@ -394,17 +400,17 @@ new class extends Component {
 
                         <div>
                             <h6 class="fw-bold mb-1">
-                                {{ $review['customer'] }}
+                                {{ $review->customer->user->name }}
                             </h6>
 
                             <small class="text-muted">
-                                {{ $review['date'] }}
+                                {{ $review->created_at?->format('d M Y') }}
                             </small>
                         </div>
 
                         <div class="text-warning">
                             @for ($i = 1; $i <= 5; $i++)
-                                @if ($i <= $review['rating'])
+                                @if ($i <= $review->rating)
                                     <i class="bi bi-star-fill"></i>
                                 @else
                                     <i class="bi bi-star"></i>
@@ -415,7 +421,7 @@ new class extends Component {
                     </div>
 
                     <p class="text-muted mt-2 mb-0">
-                        {{ $review['review'] }}
+                        {{ $review->review }}
                     </p>
 
                 </div>
@@ -630,7 +636,7 @@ new class extends Component {
                     Add Stock
                 </a>
 
-                <a href="#" class="btn btn-info rounded-pill text-white">
+                <a href="{{ route('purchases.create') }}" class="btn btn-info rounded-pill text-white">
                     Create Purchase
                 </a>
 

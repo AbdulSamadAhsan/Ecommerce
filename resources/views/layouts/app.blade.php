@@ -744,7 +744,7 @@
 
 
             {{-- Purchases --}}
-            <li class="nav-item sidebar-dropdown ">
+            <li class="nav-item sidebar-dropdown  {{ request()->routeIs('purchases.*') ? 'open' : '' }}  ">
 
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span>
@@ -757,7 +757,7 @@
 
                 <div class="sidebar-dropdown-menu ">
 
-                    <a href="" class="nav-link ">
+                    <a href="{{ route('purchases.history') }}" class="nav-link ">
                         <i class="bi bi-list-ul"></i>
                         All Purchases
                     </a>
@@ -924,7 +924,7 @@
 
             <li class="nav-item sidebar-dropdown">
 
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                <a href="{{ route('salaries.all') }}" class="nav-link">
                     <span>
                         <i class="bi bi-cash-stack"></i>
                         Salaries
@@ -933,19 +933,7 @@
                     <i class="bi bi-chevron-down dropdown-arrow"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu">
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Salaries
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Salary
-                    </a>
-
-                </div>
 
             </li>
 
@@ -1098,13 +1086,13 @@
                 </a>
             </li>
 
-            {{-- Sales -
+
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('sales.history') }}" class="nav-link">
                     <i class="bi bi-cash-stack"></i>
                     Sales
                 </a>
-            </li> --}}
+            </li>
 
             {{-- Reports --}}
             <li class="nav-item">

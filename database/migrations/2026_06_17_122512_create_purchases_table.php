@@ -27,12 +27,9 @@ return new class extends Migration
     $table->decimal("due_amount",12,2);
      $table->text("notes");
     $table->date('purchase_date');
+    $table->string("status");
 
-    $table->enum('payment_status', [
-        'pending',
-        'completed',
-        'cancelled'
-    ])->default('pending');
+    $table->string('payment_status')->default('pending');
             $table->timestamps();
         });
 
