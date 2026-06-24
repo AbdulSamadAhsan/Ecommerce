@@ -170,7 +170,7 @@ new class extends Component {
                 'cnic' => $this->cnic,
                 'photo' => $photoPath,
                 'status' => $this->status,
-                'salary' => $this->salary,
+
                 'father_name' => $this->father_name,
                 'date_of_birth' => $this->date_of_birth,
 

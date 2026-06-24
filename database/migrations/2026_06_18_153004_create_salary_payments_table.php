@@ -21,14 +21,17 @@ return new class extends Migration
         ->nullable()
         ->constrained()
         ->nullOnDelete();
-
-    $table->string('month'); // example: 2026-06
+  $table->foreignId('payroll_id')
+        ->constrained('payrolls')
+        ->cascadeOnDelete();
+ // example: 2026-06
 
     $table->decimal('amount', 12, 2);
+   
 
     $table->enum('payment_method', [
         'cash',
-        'bank_transfer',
+        'bank',
         'cheque',
         'easypaisa',
         'jazzcash'

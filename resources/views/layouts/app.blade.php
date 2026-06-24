@@ -930,7 +930,7 @@
                         Salaries
                     </span>
 
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
                 </a>
 
 
@@ -991,80 +991,44 @@
             </li>
             <li class="nav-item sidebar-dropdown">
 
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                <a href="{{ route('attendances.index') }}"
+                    class="nav-link  {{ request()->routeIs('attendances.index') ? 'active' : '' }}">
                     <span>
                         <i class="bi bi-calendar-check-fill"></i>
                         Attendance
                     </span>
 
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
                 </a>
 
-                <div class="sidebar-dropdown-menu">
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Attendance
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Mark Attendance
-                    </a>
-
-                </div>
 
             </li>
             <li class="nav-item sidebar-dropdown">
 
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                <a href="{{ route('leaves.index') }}" class="nav-link">
                     <span>
                         <i class="bi bi-calendar-x-fill"></i>
                         Leaves
                     </span>
 
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+
                 </a>
 
-                <div class="sidebar-dropdown-menu">
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Leaves
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Leave
-                    </a>
-
-                </div>
 
             </li>
             <li class="nav-item sidebar-dropdown">
 
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                <a href="{{ route('payrolls.index') }}" class="nav-link ">
                     <span>
                         <i class="bi bi-wallet2"></i>
                         Payroll
                     </span>
 
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu">
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Payrolls
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Generate Payroll
-                    </a>
-
-                </div>
 
             </li>
             {{-- Customers --}}

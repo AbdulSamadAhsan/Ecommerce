@@ -22,7 +22,7 @@ return new class extends Migration
     $table->time('check_in')->nullable();
 
     $table->time('check_out')->nullable();
-
+    $table->text("remarks")->nullable();
     $table->enum('status', [
         'present',
         'absent',

@@ -63,5 +63,13 @@ public function getAgeAttribute()
    public function getAnnualSalaryAttribute(){
      return $this->salaryData->net_salary*12;
    }
-   
+  public function salaryPayments()
+{
+    return $this->hasMany(SalaryPayment::class);
+} 
+
+public function payroll()
+{
+    return $this->hasMany(Payroll::class);
+}
 }

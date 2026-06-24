@@ -120,7 +120,20 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
       
 
     });
+Route::prefix('payrolls')->name('payrolls.')->group(function () {
+    Route::livewire('/', 'pages::payrolls.all')->name('index');
+    Route::livewire('/{id}', 'pages::payrolls.show')->name('show');
+});
 
+
+       Route::prefix("attendance")->name("attendances.")->group(function(){
+          
+              Route::livewire("/","pages::attendance.all")->name("index");
+       });
+        Route::prefix("leave")->name("leaves.")->group(function(){
+          
+              Route::livewire("/","pages::leaves.all")->name("index");
+       });
     Route::prefix("taxes")->name("taxes.")->group(function () {
         Route::livewire("/", "pages::taxes.all")->name("index");
         Route::livewire("/create", "pages::taxes.create")->name("create");

@@ -20,7 +20,7 @@ $table->string('designation')->nullable();
 
 $table->date('joining_date')->nullable();
 
-$table->decimal('salary', 15, 2)->nullable();
+
 
 $table->text('address')->nullable();
 
