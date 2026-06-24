@@ -78,6 +78,9 @@ new class extends Component {
 
     public function updated($property)
     {
+    
+    
+    
         if (str_contains($property, 'items.') && str_contains($property, '.product_id')) {
             $index = explode('.', $property)[1];
 

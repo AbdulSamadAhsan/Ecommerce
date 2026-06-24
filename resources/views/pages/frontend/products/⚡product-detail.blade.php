@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Product;
 new class extends Component {
     public int $id;
 
@@ -9,9 +9,9 @@ new class extends Component {
 
     public int $quantity = 1;
 
-    public array $product = [];
+    public $product;
 
-    public array $relatedProducts = [];
+    public $relatedProducts;
 
     public array $customerReviews = [];
 
@@ -115,11 +115,11 @@ new class extends Component {
             ],
         ];
 
-        $this->product = $products[$this->id] ?? $products[1];
+        $this->product = Product::find($this->id);
 
         $this->customerReviews = $reviews[$this->product['id']] ?? [];
 
-        $this->relatedProducts = collect($products)->reject(fn($item) => $item['id'] === $this->product['id'])->take(3)->values()->toArray();
+        $this->relatedProducts = Product::where('category_id', $this->product->category_id)->where('id', '!=', $this->product->id)->get();
     }
 
     public function getAverageRatingProperty(): float
@@ -184,7 +184,7 @@ new class extends Component {
                     {{ $product['badge'] }}
                 </span>
 
-                <img src="{{ $product['img'] }}" class="img-fluid rounded-4"
+                <img src="{{ asset('storage/' . $product['image']) }}" class="img-fluid rounded-4"
                     style="height: 480px; object-fit: cover; width: 100%;" alt="{{ $product['name'] }}">
             </div>
         </div>
@@ -222,11 +222,11 @@ new class extends Component {
 
             <div class="d-flex align-items-center gap-3 mb-3">
                 <h2 class="text-primary fw-bold mb-0">
-                    ${{ number_format($product['price'], 2) }}
+                    {{ number_format($product['selling_price'], 2) }}
                 </h2>
 
                 <h5 class="text-muted text-decoration-line-through mb-0">
-                    ${{ number_format($product['old'], 2) }}
+                    {{ number_format($product['purchase_price'], 2) }}
                 </h5>
             </div>
 
@@ -255,12 +255,12 @@ new class extends Component {
 
                 <div class="col-6 mt-2">
                     <strong>Category:</strong>
-                    <span class="text-muted">{{ $product['category'] }}</span>
+                    <span class="text-muted">{{ $product->category->name }}</span>
                 </div>
 
                 <div class="col-6 mt-2">
                     <strong>Brand:</strong>
-                    <span class="text-muted">{{ $product['brand'] }}</span>
+                    <span class="text-muted">{{ $product->brand->title }}</span>
                 </div>
             </div>
 
@@ -406,7 +406,7 @@ new class extends Component {
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
                         <a wire:navigate href="{{ route('product.detail', $related['id']) }}">
-                            <img src="{{ $related['img'] }}" class="w-100 rounded-4"
+                            <img src="{{ asset('storage/' . $related['image']) }}" class="w-100 rounded-4"
                                 style="height: 220px; object-fit: cover;" alt="{{ $related['name'] }}">
                         </a>
 
@@ -417,11 +417,11 @@ new class extends Component {
 
                             <div class="d-flex align-items-center gap-2">
                                 <span class="fw-bold text-primary">
-                                    ${{ $related['price'] }}
+                                    {{ $related['selling_price'] }}
                                 </span>
 
                                 <span class="text-muted text-decoration-line-through">
-                                    ${{ $related['old'] }}
+                                    {{ $related['purchase_price'] }}
                                 </span>
                             </div>
 

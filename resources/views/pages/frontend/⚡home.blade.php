@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Product;
 new class extends Component {
     public int $cartCount = 0;
 
@@ -9,7 +9,7 @@ new class extends Component {
 
     public array $brands = [['name' => 'Apple'], ['name' => 'Samsung'], ['name' => 'Dell'], ['name' => 'HP'], ['name' => 'Sony'], ['name' => 'Canon']];
 
-    public array $products = [
+    public $products = [
         [
             'id' => 1,
             'name' => 'MacBook Pro M3',
@@ -44,7 +44,10 @@ new class extends Component {
             'badge' => 'Best',
         ],
     ];
-
+    public function mount()
+    {
+        $this->products = Product::get();
+    }
     public function addToCart(): void
     {
         $this->cartCount++;
@@ -275,7 +278,8 @@ new class extends Component {
                                 {{ $product['badge'] }}
                             </span>
 
-                            <img src="{{ $product['img'] }}" class="product-img w-100" alt="{{ $product['name'] }}">
+                            <img src="{{ 'storage/' . $product['image'] }}" class="product-img w-100"
+                                alt="{{ $product['name'] }}">
 
                             <div class="card-body px-1 pb-1">
 
@@ -292,8 +296,8 @@ new class extends Component {
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 mb-3">
-                                    <span class="price">${{ $product['price'] }}</span>
-                                    <span class="old-price">${{ $product['old'] }}</span>
+                                    <span class="price">{{ $product['purchase_price'] }}</span>
+                                    <span class="old-price">{{ $product['selling_price'] }}</span>
                                 </div>
                                 <a wire:navigate href="{{ route('product.detail', $product['id']) }}"
                                     class="text-decoration-none text-dark">

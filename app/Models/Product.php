@@ -10,7 +10,8 @@ class Product extends Model
 
 
  protected $appends=[
-    "profit"
+    "profit",
+    "Badge"
  ];
  protected $fillable = [
     'warehouse_id',
@@ -27,9 +28,14 @@ class Product extends Model
     'status',
     'brand_id'
 ];
-
+public function getBadgeAttribute(){
+ $quantity= $this->salesitem->sum("quantity");
+ if($quantity==0){
+    
+ }
+}
 public function getProfitAttribute(){
-    return date("d-F-Y",strtotime("+1 month"));
+   return $this->selling_price - $this->purchase_price;
 }
 public function category()
 {

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\customer;
+use App\Http\Controllers\ProductReportController;
 Auth::routes();
 
 Route::get('/home', [HomeController::class, 'index'])
@@ -40,8 +41,11 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/create', 'pages::products.create')->name('create');
         Route::livewire('/edit/{id}', 'pages::products.edit')->name('edit');
         Route::livewire('/{id}', 'pages::products.show')->name('show');
-      
-
+    
+         Route::get(
+    '/reports/products',
+    ProductReportController::class
+)->name('report');
     });
 Route::prefix("purchases")->name("purchases.")->group(function () {
     Route::livewire("/create", "pages::purchases.create")->name("create");
