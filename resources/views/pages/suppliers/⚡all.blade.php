@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Supplier;
 new class extends Component {
     public string $search = '';
 

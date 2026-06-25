@@ -156,6 +156,29 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
         Route::livewire('/', 'pages::customers.all')->name('index');
         Route::livewire('/{id}', 'pages::customers.show')->name('show');
     });
+ Route::prefix('expenses')->group(function () {
+
+    Route::livewire('/', 'pages::expenses.all')
+        ->name('expenses.index');
+
+    Route::livewire('/create', 'pages::expenses.create')
+        ->name('expenses.create');
+
+
+
+    Route::livewire('/show/{id}', 'pages::expenses.show')
+        ->name('expenses.show');
+      
+
+});
+  Route::livewire('expensecategories', 'pages::expenses.expensecategories.all')
+    ->name('expense-categories.index');
+     Route::livewire('expensecategoriescreate', 'pages::expenses.expensecategories.all')
+    ->name('expense-categories.create');
+     Route::livewire('expensecategoriesshow/{id}', 'pages::expenses.expensecategories.show')
+    ->name('expense-categories.show');
+    Route::livewire('expensecategories/{id}/edit', 'pages::expenses.expensecategories.edit')
+    ->name('expense-categories.edit');
 });
 
 /*

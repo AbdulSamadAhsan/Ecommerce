@@ -13,6 +13,11 @@ class Sale extends Model
 }
 
     public function orderNumber(){
-         return $this->belongsTo(Order::class);
+         return $this->hasOne(Order::class);
     }
+    
+public function items()
+{
+    return $this->hasMany(SaleItem::class);
+}
 }

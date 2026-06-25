@@ -387,684 +387,458 @@
             Inventory
         </div>
 
+        @php
+            use Illuminate\Support\Facades\Route;
+
+            function adminRoute($name)
+            {
+                return Route::has($name) ? route($name) : '#';
+            }
+
+            function activeRoute($pattern)
+            {
+                return request()->routeIs($pattern) ? 'active' : '';
+            }
+
+            function openRoute($pattern)
+            {
+                return request()->routeIs($pattern) ? 'open' : '';
+            }
+
+            function showRoute($pattern)
+            {
+                return request()->routeIs($pattern) ? 'show' : '';
+            }
+
+            function rotateRoute($pattern)
+            {
+                return request()->routeIs($pattern) ? 'rotate' : '';
+            }
+        @endphp
         <ul class="nav flex-column">
-
-            {{-- Dashboard --}}
             <li class="nav-item">
-                <a href="{{ route('dashboard') }}" @class(['nav-link', 'active' => request()->routeIs('dashboard')])>
-
+                <a href="{{ adminRoute('dashboard') }}" class="nav-link {{ activeRoute('dashboard') }}">
                     <i class="bi bi-grid-1x2-fill"></i>
                     Dashboard
-
                 </a>
             </li>
 
-            {{-- Products --}}
-            <li class="nav-item sidebar-dropdown  {{ request()->routeIs('products.*') ? 'open' : '' }}">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('products.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-box-seam-fill"></i>
-                        Products
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
+                    <span><i class="bi bi-box-seam-fill"></i> Products</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('products.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="{{ route('products.index') }}" @class(['nav-link', 'active' => request()->routeIs('products.index')])>
-
-                        <i class="bi bi-grid"></i>
-                        All Products
-
+                <div class="sidebar-dropdown-menu {{ showRoute('products.*') }}">
+                    <a href="{{ adminRoute('products.index') }}" class="nav-link {{ activeRoute('products.index') }}">
+                        <i class="bi bi-grid"></i> All Products
                     </a>
 
-                    <a href="{{ route('products.create') }}" @class([
-                        'nav-link',
-                        'active' => request()->routeIs('products.create'),
-                    ])>
-
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Product
-
+                    <a href="{{ adminRoute('products.create') }}"
+                        class="nav-link {{ activeRoute('products.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Product
                     </a>
 
-                    <a href="" @class(['nav-link'])>
-                        <i class="bi bi-star-fill"></i>
-
-                        Reviews
-
+                    <a href="{{ adminRoute('reviews.index') }}" class="nav-link {{ activeRoute('reviews.*') }}">
+                        <i class="bi bi-star-fill"></i> Reviews
                     </a>
-                </div>
-
-            </li>
-            {{-- Categories --}}
-            <li class="nav-item sidebar-dropdown {{ request()->routeIs('categories.*') ? 'open' : '' }}">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn ">
-
-                    <span>
-                        <i class="bi bi-tags-fill"></i>
-                        Categories
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="{{ route('categories.index') }}" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Categories
-                    </a>
-
-                    <a href="{{ route('categories.create') }}" @class([
-                        'nav-link',
-                        'active' => request()->routeIs('categories.create'),
-                    ])>
-                        <i class="bi bi-folder-plus"></i>
-                        Add Category
-                    </a>
-
-                </div>
-
-            </li>
-
-
-
-            <li class="nav-item sidebar-dropdown {{ request()->routeIs('brands.*') ? 'open' : '' }}">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-award-fill"></i>
-                        Brands
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ request()->routeIs('brands.*') ? 'show' : '' }}">
-
-                    <a href="{{ route('brands.index') }}" @class(['nav-link', 'active' => request()->routeIs('brands.index')])>
-
-                        <i class="bi bi-list-ul"></i>
-                        All Brands
-
-                    </a>
-
-                    <a href="{{ route('brands.create') }}" @class(['nav-link', 'active' => request()->routeIs('brands.create')])>
-
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Brand
-
-                    </a>
-
-                </div>
-
-            </li>
-
-
-
-            {{-- Orders --}}
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-cart-check-fill"></i>
-                        Orders
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-list-check"></i>
-                        All Orders
-                    </a>
-
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-clock-history"></i>
-                        Pending Orders
-                    </a>
-
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-check-circle-fill"></i>
-                        Completed Orders
-                    </a>
-
-                </div>
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-building-fill"></i>
-                        Warehouses
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="{{ route('warehouses.index') }}" class="nav-link">
-
-                        <i class="bi bi-list-ul"></i>
-                        All Warehouses
-
-                    </a>
-
-                    <a href="{{ route('warehouses.create') }}" class="nav-link">
-
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Warehouse
-
-                    </a>
-
-                </div>
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-
-                    <span>
-                        <i class="bi bi-truck"></i>
-                        Suppliers
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="{{ route('suppliers.index') }}" class="nav-link">
-
-                        <i class="bi bi-list-ul"></i>
-                        All Suppliers
-
-                    </a>
-
-                    <a href="{{ route('suppliers.create') }}" class="nav-link">
-
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Supplier
-
-                    </a>
-
-                </div>
-
-            </li>
-
-
-
-
-
-            {{-- Departments --}}
-            <li class="nav-item sidebar-dropdown {{ request()->routeIs('departments.*') ? 'open' : '' }}">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-diagram-3"></i>
-                        Departments
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ request()->routeIs('departments.*') ? 'show' : '' }}">
-
-                    <a href="{{ route('departments.index') }}"
-                        class="nav-link {{ request()->routeIs('departments.index') ? 'active' : '' }}">
-                        <i class="bi bi-list-ul"></i>
-                        All Departments
-                    </a>
-
-                    <a href="{{ route('departments.create') }}"
-                        class="nav-link {{ request()->routeIs('departments.create') ? 'active' : '' }}">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Department
-                    </a>
-
-
                 </div>
             </li>
 
-
-            {{-- Employees --}}
-            <li class="nav-item sidebar-dropdown {{ request()->routeIs('employees.*') ? 'open' : '' }}">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('categories.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-people-fill"></i>
-                        Employees
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-tags-fill"></i> Categories</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('categories.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu {{ request()->routeIs('employees.*') ? 'show' : '' }}">
-
-                    <a href="{{ route('employees.index') }}"
-                        class="nav-link {{ request()->routeIs('employees.index') ? 'active' : '' }}">
-                        <i class="bi bi-list-ul"></i>
-                        All Employees
+                <div class="sidebar-dropdown-menu {{ showRoute('categories.*') }}">
+                    <a href="{{ adminRoute('categories.index') }}"
+                        class="nav-link {{ activeRoute('categories.index') }}">
+                        <i class="bi bi-list-ul"></i> All Categories
                     </a>
 
-                    <a href="{{ route('employees.create') }}"
-                        class="nav-link {{ request()->routeIs('employees.create') ? 'active' : '' }}">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Employee
+                    <a href="{{ adminRoute('categories.create') }}"
+                        class="nav-link {{ activeRoute('categories.create') }}">
+                        <i class="bi bi-folder-plus"></i> Add Category
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('brands.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-award-fill"></i> Brands</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('brands.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('brands.*') }}">
+                    <a href="{{ adminRoute('brands.index') }}" class="nav-link {{ activeRoute('brands.index') }}">
+                        <i class="bi bi-list-ul"></i> All Brands
                     </a>
 
+                    <a href="{{ adminRoute('brands.create') }}" class="nav-link {{ activeRoute('brands.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Brand
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('orders.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-cart-check-fill"></i> Orders</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('orders.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('orders.*') }}">
+                    <a href="{{ adminRoute('orders.index') }}" class="nav-link {{ activeRoute('orders.index') }}">
+                        <i class="bi bi-list-check"></i> All Orders
+                    </a>
+
+                    <a href="{{ adminRoute('orders.pending') }}" class="nav-link {{ activeRoute('orders.pending') }}">
+                        <i class="bi bi-clock-history"></i> Pending Orders
+                    </a>
+
+                    <a href="{{ adminRoute('orders.completed') }}"
+                        class="nav-link {{ activeRoute('orders.completed') }}">
+                        <i class="bi bi-check-circle-fill"></i> Completed Orders
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('warehouses.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-building-fill"></i> Warehouses</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('warehouses.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('warehouses.*') }}">
+                    <a href="{{ adminRoute('warehouses.index') }}"
+                        class="nav-link {{ activeRoute('warehouses.index') }}">
+                        <i class="bi bi-list-ul"></i> All Warehouses
+                    </a>
+
+                    <a href="{{ adminRoute('warehouses.create') }}"
+                        class="nav-link {{ activeRoute('warehouses.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Warehouse
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('suppliers.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-truck"></i> Suppliers</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('suppliers.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('suppliers.*') }}">
+                    <a href="{{ adminRoute('suppliers.index') }}"
+                        class="nav-link {{ activeRoute('suppliers.index') }}">
+                        <i class="bi bi-list-ul"></i> All Suppliers
+                    </a>
+
+                    <a href="{{ adminRoute('suppliers.create') }}"
+                        class="nav-link {{ activeRoute('suppliers.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Supplier
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('departments.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-diagram-3"></i> Departments</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('departments.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('departments.*') }}">
+                    <a href="{{ adminRoute('departments.index') }}"
+                        class="nav-link {{ activeRoute('departments.index') }}">
+                        <i class="bi bi-list-ul"></i> All Departments
+                    </a>
+
+                    <a href="{{ adminRoute('departments.create') }}"
+                        class="nav-link {{ activeRoute('departments.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Department
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('employees.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-people-fill"></i> Employees</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('employees.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('employees.*') }}">
+                    <a href="{{ adminRoute('employees.index') }}"
+                        class="nav-link {{ activeRoute('employees.index') }}">
+                        <i class="bi bi-list-ul"></i> All Employees
+                    </a>
+
+                    <a href="{{ adminRoute('employees.create') }}"
+                        class="nav-link {{ activeRoute('employees.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Employee
+                    </a>
                 </div>
             </li>
 
             <li
                 class="nav-item sidebar-dropdown {{ request()->routeIs('educations.*') || request()->routeIs('institutions.*') ? 'open' : '' }}">
-
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-mortarboard-fill"></i>
-                        Education
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-mortarboard-fill"></i> Education</span>
+                    <i
+                        class="bi bi-chevron-down dropdown-arrow {{ request()->routeIs('educations.*') || request()->routeIs('institutions.*') ? 'rotate' : '' }}"></i>
                 </a>
 
                 <div
                     class="sidebar-dropdown-menu {{ request()->routeIs('educations.*') || request()->routeIs('institutions.*') ? 'show' : '' }}">
-
-                    <a href="{{ route('institutions.index') }}"
-                        class="nav-link {{ request()->routeIs('institutions.index') ? 'active' : '' }}">
-                        <i class="bi bi-building-fill"></i>
-                        All Institutions
+                    <a href="{{ adminRoute('institutions.index') }}"
+                        class="nav-link {{ activeRoute('institutions.index') }}">
+                        <i class="bi bi-building-fill"></i> All Institutions
                     </a>
 
-                    <a href="{{ route('institutions.create') }}"
-                        class="nav-link {{ request()->routeIs('institutions.create') ? 'active' : '' }}">
-                        <i class="bi bi-building-add"></i>
-                        Add Institution
+                    <a href="{{ adminRoute('institutions.create') }}"
+                        class="nav-link {{ activeRoute('institutions.create') }}">
+                        <i class="bi bi-building-add"></i> Add Institution
                     </a>
 
-                    <a href="{{ route('educations.index') }}"
-                        class="nav-link {{ request()->routeIs('educations.index') ? 'active' : '' }}">
-                        <i class="bi bi-list-ul"></i>
-                        All Educations
+                    <a href="{{ adminRoute('educations.index') }}"
+                        class="nav-link {{ activeRoute('educations.index') }}">
+                        <i class="bi bi-list-ul"></i> All Educations
                     </a>
 
-                    <a href="{{ route('educations.create') }}"
-                        class="nav-link {{ request()->routeIs('educations.create') ? 'active' : '' }}">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Education
+                    <a href="{{ adminRoute('educations.create') }}"
+                        class="nav-link {{ activeRoute('educations.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Education
                     </a>
-
                 </div>
             </li>
-            {{-- Shipments --}}
-            <li class="nav-item sidebar-dropdown ">
 
+            <li class="nav-item sidebar-dropdown {{ openRoute('shipments.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-truck"></i>
-                        Shipments
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-truck"></i> Shipments</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('shipments.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="#" class="nav-link ">
-                        <i class="bi bi-list-ul"></i>
-                        All Shipments
+                <div class="sidebar-dropdown-menu {{ showRoute('shipments.*') }}">
+                    <a href="{{ adminRoute('shipments.index') }}"
+                        class="nav-link {{ activeRoute('shipments.index') }}">
+                        <i class="bi bi-list-ul"></i> All Shipments
                     </a>
 
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Shipment
+                    <a href="{{ adminRoute('shipments.create') }}"
+                        class="nav-link {{ activeRoute('shipments.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Shipment
                     </a>
-
                 </div>
             </li>
 
-
-            {{-- Purchases --}}
-            <li class="nav-item sidebar-dropdown  {{ request()->routeIs('purchases.*') ? 'open' : '' }}  ">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('purchases.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-bag-plus-fill"></i>
-                        Purchases
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-bag-plus-fill"></i> Purchases</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('purchases.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="{{ route('purchases.history') }}" class="nav-link ">
-                        <i class="bi bi-list-ul"></i>
-                        All Purchases
+                <div class="sidebar-dropdown-menu {{ showRoute('purchases.*') }}">
+                    <a href="{{ adminRoute('purchases.history') }}"
+                        class="nav-link {{ activeRoute('purchases.history') }}">
+                        <i class="bi bi-list-ul"></i> All Purchases
                     </a>
 
-                    <a href="{{ route('purchases.create') }}" class="nav-link ">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Purchase
+                    <a href="{{ adminRoute('purchases.create') }}"
+                        class="nav-link {{ activeRoute('purchases.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Purchase
                     </a>
-
                 </div>
             </li>
 
-
-            {{-- Wallet Topup Requests --}}
-            <li class="nav-item sidebar-dropdown ">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('wallet-topups.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-wallet2"></i>
-                        Wallet Topups
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-wallet2"></i> Wallet Topups</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('wallet-topups.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-list-ul"></i>
-                        All Topup Requests
+                <div class="sidebar-dropdown-menu {{ showRoute('wallet-topups.*') }}">
+                    <a href="{{ adminRoute('wallet-topups.index') }}"
+                        class="nav-link {{ activeRoute('wallet-topups.index') }}">
+                        <i class="bi bi-list-ul"></i> All Topup Requests
                     </a>
 
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Topup Request
+                    <a href="{{ adminRoute('wallet-topups.create') }}"
+                        class="nav-link {{ activeRoute('wallet-topups.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Topup Request
                     </a>
-
                 </div>
             </li>
 
-
-            {{-- Customer Support Tickets --}}
-            <li class="nav-item sidebar-dropdown ">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('tickets.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-headset"></i>
-                        Tickets
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-headset"></i> Tickets</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('tickets.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-list-ul"></i>
-                        All Tickets
+                <div class="sidebar-dropdown-menu {{ showRoute('tickets.*') }}">
+                    <a href="{{ adminRoute('tickets.index') }}"
+                        class="nav-link {{ activeRoute('tickets.index') }}">
+                        <i class="bi bi-list-ul"></i> All Tickets
                     </a>
 
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Ticket
+                    <a href="{{ adminRoute('tickets.create') }}"
+                        class="nav-link {{ activeRoute('tickets.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Ticket
                     </a>
-
                 </div>
             </li>
 
-
-            {{-- Delivery Boys --}}
-            <li class="nav-item sidebar-dropdown">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('delivery-boys.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-person-badge-fill"></i>
-                        Delivery Boys
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-person-badge-fill"></i> Delivery Boys</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('delivery-boys.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu ">
-
-                    <a href="" class="nav-link ">
-                        <i class="bi bi-list-ul"></i>
-                        All Delivery Boys
+                <div class="sidebar-dropdown-menu {{ showRoute('delivery-boys.*') }}">
+                    <a href="{{ adminRoute('delivery-boys.index') }}"
+                        class="nav-link {{ activeRoute('delivery-boys.index') }}">
+                        <i class="bi bi-list-ul"></i> All Delivery Boys
                     </a>
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Delivery Boy
+                    <a href="{{ adminRoute('delivery-boys.create') }}"
+                        class="nav-link {{ activeRoute('delivery-boys.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Delivery Boy
                     </a>
-
                 </div>
             </li>
 
-
-            {{-- Product Reviews --}}
-
-
-            <li class="nav-item sidebar-dropdown">
-
+            <li class="nav-item sidebar-dropdown {{ openRoute('coupons.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-ticket-perforated-fill"></i>
-                        Coupons
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-ticket-perforated-fill"></i> Coupons</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('coupons.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Coupons
+                <div class="sidebar-dropdown-menu {{ showRoute('coupons.*') }}">
+                    <a href="{{ adminRoute('coupons.index') }}"
+                        class="nav-link {{ activeRoute('coupons.index') }}">
+                        <i class="bi bi-list-ul"></i> All Coupons
                     </a>
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Coupon
+                    <a href="{{ adminRoute('coupons.create') }}"
+                        class="nav-link {{ activeRoute('coupons.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Coupon
                     </a>
-
                 </div>
-
             </li>
-            <li class="nav-item sidebar-dropdown">
 
+            <li class="nav-item sidebar-dropdown {{ openRoute('expenses.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-cash-stack"></i>
-                        Expenses
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    <span><i class="bi bi-cash-stack"></i> Expenses</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('expenses.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Expenses
+                <div class="sidebar-dropdown-menu {{ showRoute('expenses.*') }}">
+                    <a href="{{ adminRoute('expenses.index') }}"
+                        class="nav-link {{ activeRoute('expenses.index') }}">
+                        <i class="bi bi-list-ul"></i> All Expenses
                     </a>
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Expense
+                    <a href="{{ adminRoute('expenses.create') }}"
+                        class="nav-link {{ activeRoute('expenses.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Expense
                     </a>
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-tags-fill"></i>
-                        Expense Categories
+                    <a href="{{ adminRoute('expense-categories.index') }}"
+                        class="nav-link {{ activeRoute('expense-categories.index') }}">
+                        <i class="bi bi-tags-fill"></i> Expense Categories
                     </a>
 
-                    <a href="" class="nav-link">
-                        <i class="bi bi-folder-plus"></i>
-                        Add Category
+                    <a href="{{ adminRoute('expense-categories.create') }}"
+                        class="nav-link {{ activeRoute('expense-categories.create') }}">
+                        <i class="bi bi-folder-plus"></i> Add Category
                     </a>
-
                 </div>
-
             </li>
-
-
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="{{ route('salaries.all') }}" class="nav-link">
-                    <span>
-                        <i class="bi bi-cash-stack"></i>
-                        Salaries
-                    </span>
-
-
-                </a>
-
-
-
-            </li>
-
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-arrow-left-right"></i>
-                        Transactions
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Transactions
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Transaction
-                    </a>
-
-                </div>
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span>
-                        <i class="bi bi-percent"></i>
-                        Taxes
-                    </span>
-
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu">
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-list-ul"></i>
-                        All Taxes
-                    </a>
-
-                    <a href="" class="nav-link">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        Add Tax
-                    </a>
-
-                </div>
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="{{ route('attendances.index') }}"
-                    class="nav-link  {{ request()->routeIs('attendances.index') ? 'active' : '' }}">
-                    <span>
-                        <i class="bi bi-calendar-check-fill"></i>
-                        Attendance
-                    </span>
-
-
-                </a>
-
-
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="{{ route('leaves.index') }}" class="nav-link">
-                    <span>
-                        <i class="bi bi-calendar-x-fill"></i>
-                        Leaves
-                    </span>
-
-
-                </a>
-
-
-
-            </li>
-            <li class="nav-item sidebar-dropdown">
-
-                <a href="{{ route('payrolls.index') }}" class="nav-link ">
-                    <span>
-                        <i class="bi bi-wallet2"></i>
-                        Payroll
-                    </span>
-
-                </a>
-
-
-
-            </li>
-            {{-- Customers --}}
-            <li class="nav-item">
-                <a href="{{ route('customers.index') }}" class="nav-link">
-                    <i class="bi bi-people-fill"></i>
-                    Customers
-                </a>
-            </li>
-
-
-
-
-            {{-- Stock --}}
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-arrow-left-right"></i>
-                    Stock
-                </a>
-            </li>
-
 
             <li class="nav-item">
-                <a href="{{ route('sales.history') }}" class="nav-link">
-                    <i class="bi bi-cash-stack"></i>
-                    Sales
+                <a href="{{ adminRoute('salaries.all') }}" class="nav-link {{ activeRoute('salaries.*') }}">
+                    <i class="bi bi-cash-stack"></i> Salaries
                 </a>
             </li>
 
-            {{-- Reports --}}
+            <li class="nav-item sidebar-dropdown {{ openRoute('transactions.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-arrow-left-right"></i> Transactions</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('transactions.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('transactions.*') }}">
+                    <a href="{{ adminRoute('transactions.index') }}"
+                        class="nav-link {{ activeRoute('transactions.index') }}">
+                        <i class="bi bi-list-ul"></i> All Transactions
+                    </a>
+
+                    <a href="{{ adminRoute('transactions.create') }}"
+                        class="nav-link {{ activeRoute('transactions.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Transaction
+                    </a>
+                </div>
+            </li>
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('taxes.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-percent"></i> Taxes</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('taxes.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('taxes.*') }}">
+                    <a href="{{ adminRoute('taxes.index') }}" class="nav-link {{ activeRoute('taxes.index') }}">
+                        <i class="bi bi-list-ul"></i> All Taxes
+                    </a>
+
+                    <a href="{{ adminRoute('taxes.create') }}" class="nav-link {{ activeRoute('taxes.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Tax
+                    </a>
+                </div>
+            </li>
+
             <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="bi bi-bar-chart-line-fill"></i>
-                    Reports
+                <a href="{{ adminRoute('attendances.index') }}"
+                    class="nav-link {{ activeRoute('attendances.*') }}">
+                    <i class="bi bi-calendar-check-fill"></i> Attendance
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('leaves.index') }}" class="nav-link {{ activeRoute('leaves.*') }}">
+                    <i class="bi bi-calendar-x-fill"></i> Leaves
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('payrolls.index') }}" class="nav-link {{ activeRoute('payrolls.*') }}">
+                    <i class="bi bi-wallet2"></i> Payroll
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('customers.index') }}" class="nav-link {{ activeRoute('customers.*') }}">
+                    <i class="bi bi-people-fill"></i> Customers
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('stocks.index') }}" class="nav-link {{ activeRoute('stocks.*') }}">
+                    <i class="bi bi-arrow-left-right"></i> Stock
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('sales.history') }}" class="nav-link {{ activeRoute('sales.*') }}">
+                    <i class="bi bi-cash-stack"></i> Sales
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ adminRoute('reports.index') }}" class="nav-link {{ activeRoute('reports.*') }}">
+                    <i class="bi bi-bar-chart-line-fill"></i> Reports
+                </a>
+            </li>
+
 
         </ul>
 

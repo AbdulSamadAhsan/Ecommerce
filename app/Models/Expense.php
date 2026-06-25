@@ -17,4 +17,8 @@ class Expense extends Model
         'payment_method',
         'status',
     ];
+    public function expenseCategory()
+{
+    return $this->belongsTo(ExpenseCategory::class);
+}
 }

@@ -11,7 +11,8 @@ class Product extends Model
 
  protected $appends=[
     "profit",
-    "Badge"
+    "Badge",
+    "Stock"
  ];
  protected $fillable = [
     'warehouse_id',
@@ -65,7 +66,9 @@ public function salesitem()
 {
     return $this->hasMany(SaleItem::class);
 }
-
+public function getStockAttribute(){
+    return $this->purchasesitem()->sum("quantity") - $this->salesitem()->sum("quantity");
+}
 
 
 public function purchasesitem()
@@ -76,5 +79,10 @@ public function stockmovement()
 {
     return $this->hasMany(StockMovement::class);
 }
+public function salesstatus(){
+$quantity_sold= $this->salesitem()->sum("quantity");   
+if($quantity_sold > 5){
 
+}
+}
 }

@@ -4,27 +4,46 @@ use Livewire\Component;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\Category;
+use App\Models\Sale;
+use App\Models\Supplier;
+use App\Models\DeliveryBoy;
+use App\Models\Warehouse;
+use App\Models\Brand;
 
+use App\Models\Expense;
+use App\Models\Employee;
 new class extends Component {
     public $number_of_customer = 0;
     public $products_count = 0;
     public $orders_count = 0;
     public $revenue = 0;
     public $low_stock_products = [];
+    public $brandsCount = 0;
+    public $categoriesCount = 0;
+    public $warehousesCount = 0;
+    public $suppliersCount = 0;
+    public $number_of_employee = 0;
+    public $number_of_delivery_boy = 0;
+    public $expenses = 0;
+    public $earning = 0;
 
     public function mount()
     {
-
-
-    
         $this->number_of_customer = Customer::count();
 
         $this->products_count = Product::count();
-
+        $this->categoriesCount = Category::count();
+        $this->warehousesCount = Warehouse::count();
+        $this->brandsCount = Brand::count();
         $this->orders_count = Order::count();
 
-        $this->revenue = 0;
-
+        $this->revenue = Sale::sum('subtotal');
+        $this->suppliersCount = Supplier::count();
+        $this->number_of_employee = Employee::count();
+        $this->number_of_delivery_boy = DeliveryBoy::count();
+        $this->expenses = Expense::sum('amount');
+        $this->earning = $this->revenue - $this->expenses;
         $this->low_stock_products = Product::whereColumn('quantity', '<=', 'minimum_stock')->latest()->take(10)->get();
     }
 };
@@ -80,8 +99,121 @@ new class extends Component {
             <div class="dashboard-card">
                 <div class="d-flex justify-content-between">
                     <div>
+                        <h6 class="text-muted">Expenses</h6>
+                        <h2 class="fw-bold">Rs {{ number_format($expenses) }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-orange">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Earnings</h6>
+                        <h2 class="fw-bold">Rs {{ number_format($earning) }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-orange">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">Brands</h6>
+                        <h2 class="fw-bold">{{ number_format($brandsCount) }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-primary">
+                        <i class="bi bi-award"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">Categories</h6>
+                        <h2 class="fw-bold">{{ number_format($categoriesCount) }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-success">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warehouses -->
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">Warehouses</h6>
+                        <h2 class="fw-bold">{{ number_format($warehousesCount) }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-warning">
+                        <i class="bi bi-building"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between">
+                    <div>
                         <h6 class="text-muted">Customers</h6>
                         <h2 class="fw-bold">{{ $number_of_customer }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-red">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Suppliers</h6>
+                        <h2 class="fw-bold">{{ $suppliersCount }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-red">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Employees</h6>
+                        <h2 class="fw-bold">{{ $number_of_employee }}</h2>
+                    </div>
+                    <div class="dashboard-icon bg-red">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Delivery Boys</h6>
+                        <h2 class="fw-bold">{{ $number_of_delivery_boy }}</h2>
                     </div>
                     <div class="dashboard-icon bg-red">
                         <i class="bi bi-people-fill"></i>

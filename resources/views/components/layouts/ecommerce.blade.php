@@ -33,6 +33,29 @@
             text-decoration: none;
         }
 
+        .stock-alert {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-radius: 50px;
+            background: #fff3cd;
+            color: #8a5a00;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid #ffe08a;
+            box-shadow: 0 8px 20px rgba(255, 193, 7, 0.15);
+        }
+
+        .stock-alert i {
+            color: #f59f00;
+            font-size: 16px;
+        }
+
+        .stock-alert strong {
+            color: #dc3545;
+            font-weight: 800;
+        }
+
         .footer a:hover {
             color: white;
         }

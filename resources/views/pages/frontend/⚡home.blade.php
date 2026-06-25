@@ -2,51 +2,19 @@
 
 use Livewire\Component;
 use App\Models\Product;
+use App\Models\Brand;
 new class extends Component {
     public int $cartCount = 0;
 
     public array $categories = [['name' => 'Laptops'], ['name' => 'Mobiles'], ['name' => 'Headphones'], ['name' => 'Cameras'], ['name' => 'Smart Watches'], ['name' => 'Gaming']];
 
-    public array $brands = [['name' => 'Apple'], ['name' => 'Samsung'], ['name' => 'Dell'], ['name' => 'HP'], ['name' => 'Sony'], ['name' => 'Canon']];
+    public $brands;
 
-    public $products = [
-        [
-            'id' => 1,
-            'name' => 'MacBook Pro M3',
-            'price' => 1299,
-            'old' => 1499,
-            'img' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=900',
-            'badge' => 'Hot',
-        ],
-        [
-            'id' => 2,
-            'name' => 'Wireless Headphones',
-            'price' => 149,
-            'old' => 199,
-            'img' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900',
-            'badge' => 'Sale',
-        ],
-        [
-            'id' => 3,
-            'name' => 'Smart Watch Ultra',
-            'img' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900',
-            'price' => 99,
-            'old' => 140,
-
-            'badge' => 'New',
-        ],
-        [
-            'id' => 4,
-            'name' => 'Gaming Controller',
-            'price' => 79,
-            'old' => 110,
-            'img' => 'https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=900',
-            'badge' => 'Best',
-        ],
-    ];
+    public $products;
     public function mount()
     {
         $this->products = Product::get();
+        $this->brands = Brand::get();
     }
     public function addToCart(): void
     {
@@ -257,7 +225,7 @@ new class extends Component {
                     <div class="col-6 col-md-4 col-lg-2">
                         <div class="card brand-card shadow-sm p-4 text-center h-100">
                             <h6 class="fw-bold mb-0">
-                                {{ $brand['name'] }}
+                                {{ $brand['title'] }}
                             </h6>
                         </div>
                     </div>

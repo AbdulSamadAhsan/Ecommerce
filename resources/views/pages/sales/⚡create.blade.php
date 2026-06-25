@@ -7,6 +7,8 @@ use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Order;
+use App\Models\Stock;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
 new class extends Component {
@@ -160,50 +162,66 @@ new class extends Component {
         $this->removeDuplicateRows();
         $this->calculateTotals();
         $this->validate();
+        try {
+            DB::transaction(function () {
+                foreach ($this->items as $item) {
+                    $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
 
-        DB::transaction(function () {
-            foreach ($this->items as $item) {
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
-
-                if ($product->quantity < $item['quantity']) {
-                    throw new Exception($product->name . ' stock is not enough.');
+                    if ($product->quantity < $item['quantity']) {
+                        throw new Exception($product->name . ' stock is not enough.');
+                    }
                 }
-            }
 
-            $sale = Sale::create([
-                'customer_id' => $this->customer_id,
-                'invoice_no' => $this->invoice_no,
-                'subtotal' => $this->subtotal,
-                'discount' => $this->discount ?? 0,
-                'tax' => $this->tax ?? 0,
-                'total_amount' => $this->total_amount,
-            ]);
-
-            foreach ($this->items as $item) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price'],
+                $sale = Sale::create([
+                    'customer_id' => $this->customer_id,
+                    'invoice_no' => $this->invoice_no,
+                    'subtotal' => $this->subtotal,
+                    'discount' => $this->discount ?? 0,
+                    'tax' => $this->tax ?? 0,
+                    'total_amount' => $this->total_amount,
                 ]);
 
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+                foreach ($this->items as $item) {
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_price' => $item['total_price'],
+                    ]);
 
-                $product->quantity = $product->quantity - $item['quantity'];
-                $product->save();
-            }
+                    $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+                    StockMovement::create([
+                        'quantity' => $item['quantity'],
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $product->warehouse_id,
+                        'supplier_id' => $product->supplier_id,
+                        'type' => 'sale',
+                        'stock_before' => $product->quantity,
+                        'stock_after' => $product->quantity - $item['quantity'],
+                    ]);
+                    Stock::create([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $product->warehouse_id,
+                        'quantity' => $product->quantity - $item['quantity'],
+                        'minimum_stock' => $product->minimum_stock,
+                    ]);
+                    $product->quantity = $product->quantity - $item['quantity'];
+                    $product->save();
+                }
 
-            Order::create([
-                'sale_id' => $sale->id,
-                'address' => $this->address,
-                'order_status' => $this->order_status,
-                'order_date' => $this->order_date,
-            ]);
-        });
-
-        session()->flash('success', 'Sale and order created successfully.');
-        $this->resetForm();
+                Order::create([
+                    'sale_id' => $sale->id,
+                    'address' => $this->address,
+                    'order_status' => $this->order_status,
+                    'order_date' => $this->order_date,
+                ]);
+            });
+            session()->flash('success', 'Sale and order created successfully.');
+            $this->resetForm();
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function resetForm()

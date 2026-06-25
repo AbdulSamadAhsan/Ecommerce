@@ -264,6 +264,16 @@ new class extends Component {
                 </div>
             </div>
 
+            @if ($product->stock > 0)
+                <div class="stock-alert mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        <span>
+                            Hurry! Only <strong>{{ $product->stock }}</strong> pieces left in stock
+                        </span>
+                    </div>
+                </div>
+            @endif
             <div class="d-flex align-items-center gap-3 mb-4">
 
                 <div class="btn-group">
@@ -280,7 +290,7 @@ new class extends Component {
                     </button>
                 </div>
 
-                <button wire:click="addToCart" class="btn btn-primary rounded-pill px-5" @disabled($product['stock'] <= 0)>
+                <button wire:click="addToCart" class="btn btn-primary rounded-pill px-5" @disabled($product['Stock'] <= 0)>
                     <i class="bi bi-cart-plus me-1"></i>
                     Add to Cart
                 </button>

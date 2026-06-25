@@ -18,7 +18,7 @@ new class extends Component {
     public function mount($id): void
     {
         $this->id = (int) $id;
-        $productData = Product::with(['reviews'])->find($this->id);
+        $productData = Product::with(['reviews', 'purchasesitem', 'salesitem'])->find($this->id);
 
         $this->product = [
             'id' => $this->id,
@@ -53,71 +53,26 @@ new class extends Component {
             ],
         ];
         $this->reviews = $productData->reviews;
+        // $productData
+        //     ->salesitem
+        //     ->first()
+        //     ->sale
+        //     ->orderNumber
+        //     ->shipment
+        //     ->deliveryassign
+        //     ->deliveryboy
+        //     ->user
+        //     ->name;
 
-        $this->salesHistory = [
-            [
-                'order_no' => 'ORD-1001',
-                'customer' => 'Ali Khan',
-                'quantity' => 1,
-                'price' => 1299,
-                'total' => 1299,
-                'date' => '2026-06-18',
-            ],
-            [
-                'order_no' => 'ORD-1002',
-                'customer' => 'Sara Ahmed',
-                'quantity' => 2,
-                'price' => 1299,
-                'total' => 2598,
-                'date' => '2026-06-17',
-            ],
-        ];
+        //
+        // Or the original line:
+        //
+        // dd($productData->salesitem->first()->sale->orderNumber->id);
 
-        $this->purchaseHistory = [
-            [
-                'purchase_no' => 'PUR-1001',
-                'supplier' => 'Apple Store',
-                'quantity' => 10,
-                'price' => 1100,
-                'total' => 11000,
-                'date' => '2026-06-10',
-            ],
-            [
-                'purchase_no' => 'PUR-1002',
-                'supplier' => 'Tech Supplier',
-                'quantity' => 15,
-                'price' => 1080,
-                'total' => 16200,
-                'date' => '2026-06-05',
-            ],
-        ];
+        $this->salesHistory = $productData->salesitem;
 
-        $this->stockMovements = [
-            [
-                'date' => '2026-06-10',
-                'type' => 'purchase',
-                'quantity' => 10,
-                'stock_before' => 0,
-                'stock_after' => 10,
-                'remarks' => 'Purchase received',
-            ],
-            [
-                'date' => '2026-06-12',
-                'type' => 'purchase',
-                'quantity' => 15,
-                'stock_before' => 10,
-                'stock_after' => 25,
-                'remarks' => 'Purchase received',
-            ],
-            [
-                'date' => '2026-06-18',
-                'type' => 'sale',
-                'quantity' => 1,
-                'stock_before' => 25,
-                'stock_after' => 24,
-                'remarks' => 'Order ORD-1001',
-            ],
-        ];
+        $this->purchaseHistory = $productData->purchasesitem;
+        $this->stockMovements = $productData->stockmovement;
     }
 
     public function getAverageRatingProperty(): float
@@ -141,7 +96,7 @@ new class extends Component {
 
     public function getTotalRevenueProperty(): float
     {
-        return collect($this->salesHistory)->sum('total');
+        return collect($this->salesHistory)->sum('total_price');
     }
 
     public function getTotalPurchaseCostProperty(): float
@@ -201,7 +156,7 @@ new class extends Component {
                 <div class="card-body text-center">
                     <h6 class="text-muted">Total Revenue</h6>
                     <h3 class="text-info fw-bold">
-                        ${{ number_format($this->totalRevenue, 2) }}
+                        {{ number_format($this->totalRevenue, 2) }} Rs
                     </h3>
                 </div>
             </div>
@@ -467,12 +422,12 @@ new class extends Component {
 
                         @forelse ($salesHistory as $sale)
                             <tr>
-                                <td>{{ $sale['order_no'] }}</td>
-                                <td>{{ $sale['customer'] }}</td>
+                                <td>{{ $sale->sale->orderNumber->id }}</td>
+                                <td>{{ $sale->sale->customer->user->name }}</td>
                                 <td>{{ $sale['quantity'] }}</td>
-                                <td>${{ number_format($sale['price'], 2) }}</td>
-                                <td>${{ number_format($sale['total'], 2) }}</td>
-                                <td>{{ $sale['date'] }}</td>
+                                <td>{{ number_format($sale['unit_price'], 2) }}</td>
+                                <td>{{ number_format($sale['total_price'], 2) }}</td>
+                                <td>{{ date('d-F-Y', strtotime($sale->sale->orderNumber->created_at)) }}</td>
                             </tr>
 
                         @empty
@@ -523,12 +478,12 @@ new class extends Component {
 
                         @forelse ($purchaseHistory as $purchase)
                             <tr>
-                                <td>{{ $purchase['purchase_no'] }}</td>
-                                <td>{{ $purchase['supplier'] }}</td>
+                                <td>{{ $purchase->purchase->purchase_no }}</td>
+                                <td>{{ $purchase->product->supplier->user->name }}</td>
                                 <td>{{ $purchase['quantity'] }}</td>
-                                <td>${{ number_format($purchase['price'], 2) }}</td>
-                                <td>${{ number_format($purchase['total'], 2) }}</td>
-                                <td>{{ $purchase['date'] }}</td>
+                                <td>{{ number_format($purchase['purchase_price'], 2) }}</td>
+                                <td>{{ number_format($purchase['subtotal'], 2) }}</td>
+                                <td>{{ $purchase->purchase->created_at }}</td>
                             </tr>
 
                         @empty
@@ -579,7 +534,7 @@ new class extends Component {
 
                         @forelse ($stockMovements as $movement)
                             <tr>
-                                <td>{{ $movement['date'] }}</td>
+                                <td>{{ $movement['created_at'] }}</td>
 
                                 <td>
                                     @if ($movement['type'] === 'purchase')

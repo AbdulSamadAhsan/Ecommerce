@@ -7,8 +7,15 @@ use App\Models\Brand;
 use App\Models\Warehouse;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use App\Models\StockMovement;
+use App\Models\Stock;
 use Livewire\WithFileUploads;
-
+use App\Models\SupplierPayment;
+use App\Models\Purchase;
+use App\Models\PurchaseItem;
+use Illuminate\Support\Facades\DB;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 new class extends Component {
     use WithFileUploads;
 
@@ -30,6 +37,23 @@ new class extends Component {
     public $image;
 
     public $status = 1;
+    public $purchase_no;
+    public $purchase_date;
+
+    public $total_amount;
+
+    public function generateInvoiceNo()
+    {
+        $lastPurchase = Purchase::latest('id')->first();
+        $nextId = $lastPurchase ? $lastPurchase->id + 1 : 1;
+
+        return 'PUR-' . now()->format('Ymd') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    }
+    public function mount()
+    {
+        $this->purchase_date = now()->format('Y-m-d');
+        $this->purchase_no = $this->generateInvoiceNo();
+    }
 
     public function save()
     {
@@ -53,23 +77,88 @@ new class extends Component {
 
             $imagePath = $this->image->storeAs('products', $fileName, 'public');
         }
+        DB::transaction(function () use ($imagePath) {
+            $product = Product::create([
+                'supplier_id' => $this->supplier_id,
+                'category_id' => $this->category_id,
+                'name' => $this->name,
+                'sku' => $this->sku,
+                'purchase_price' => $this->purchase_price,
+                'selling_price' => $this->selling_price,
+                'quantity' => $this->quantity,
+                'minimum_stock' => $this->minimum_stock,
+                'description' => $this->description,
+                'image' => $imagePath,
+                'brand_id' => $this->brand_id,
+                'status' => $this->status,
+                'warehouse_id' => $this->warehouse_id,
+            ]);
 
-        Product::create([
-            'supplier_id' => $this->supplier_id,
-            'category_id' => $this->category_id,
-            'name' => $this->name,
-            'sku' => $this->sku,
-            'purchase_price' => $this->purchase_price,
-            'selling_price' => $this->selling_price,
-            'quantity' => $this->quantity,
-            'minimum_stock' => $this->minimum_stock,
-            'description' => $this->description,
-            'image' => $imagePath,
-            'brand_id' => $this->brand_id,
-            'status' => $this->status,
-            'warehouse_id' => $this->warehouse_id,
-        ]);
+            StockMovement::create([
+                'product_id' => $product->id,
+                'warehouse_id' => $this->warehouse_id,
+                'supplier_id' => $this->supplier_id,
+                'type' => 'purchase',
+                'quantity' => $this->quantity,
+                'stock_before' => 0,
+                'stock_after' => $this->quantity,
+                'reference_no' => $this->purchase_no,
+            ]);
 
+            Stock::updateOrCreate(
+                [
+                    'product_id' => $product->id,
+                    'warehouse_id' => $this->warehouse_id,
+                ],
+                [
+                    'quantity' => $this->quantity,
+                    'minimum_stock' => $this->minimum_stock,
+                ],
+            );
+
+            $this->total_amount = (float) $this->quantity * (float) $this->purchase_price;
+
+            $purchase = Purchase::create([
+                'supplier_id' => $this->supplier_id,
+                'purchase_date' => $this->purchase_date,
+                'purchase_no' => $this->purchase_no,
+                'total_amount' => $this->total_amount,
+                'paid_amount' => $this->total_amount,
+                'due_amount' => 0,
+                'payment_status' => 'paid',
+                'status' => 'completed',
+                'notes' => 'Item Purchased',
+            ]);
+
+            PurchaseItem::create([
+                'purchase_id' => $purchase->id,
+                'product_id' => $product->id,
+                'quantity' => $this->quantity,
+                'purchase_price' => $this->purchase_price,
+                'subtotal' => $this->purchase_price * $this->quantity,
+            ]);
+
+            SupplierPayment::create([
+                'amount' => $this->total_amount,
+                'payment_method' => 'card',
+                'payment_date' => now()->format('Y-m-d'),
+                'transaction_id' => 'TXN-' . strtoupper(uniqid()),
+                'purchase_id' => $purchase->id,
+                'supplier_id' => $this->supplier_id,
+                'notes' => 'Item Purchased Quantity: ' . $this->quantity,
+            ]);
+            $category = ExpenseCategory::firstOrCreate([
+                'name' => 'purchase',
+            ]);
+
+            Expense::create([
+                'expense_category_id' => $category->id,
+                'payment_method' => 'card',
+                'amount' => $this->total_amount,
+                'expense_date' => $this->purchase_date,
+                'status' => 'completed',
+            ]);
+        });
         session()->flash('success', 'Product created successfully.');
 
         $this->reset();
