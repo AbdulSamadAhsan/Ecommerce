@@ -10,4 +10,7 @@ class Warehouse extends Model
 "name",'code','manager_id',"phone","address","status"
 
     ];
+    public function manager(){
+     return $this->belongsTo(Employee::class,"manager_id");
+    }
 }

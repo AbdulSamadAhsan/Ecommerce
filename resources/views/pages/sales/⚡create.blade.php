@@ -10,7 +10,7 @@ use App\Models\Order;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Tax;
 new class extends Component {
     public $customer_id = '';
     public $invoice_no = '';
@@ -19,7 +19,7 @@ new class extends Component {
     public $order_date = '';
     public $discount = 0;
     public $tax = 0;
-
+    public $tax_rate = 0;
     public $items = [
         [
             'product_id' => '',
@@ -33,6 +33,8 @@ new class extends Component {
     {
         $this->order_date = now()->format('Y-m-d');
         $this->invoice_no = $this->generateInvoiceNo();
+        $taxdata = Tax::where('is_active', 1)->where('category', 'sales')->first();
+        $this->tax_rate = $taxdata->rate;
     }
 
     public function generateInvoiceNo()
@@ -80,7 +82,7 @@ new class extends Component {
 
             $product = Product::find($productId);
 
-            $this->items[$index]['unit_price'] = $product ? $product->selling_price ?? 0 : 0;
+            $this->items[$index]['unit_price'] = $product ? $product->price_after_discount ?? 0 : 0;
         }
 
         $this->removeDuplicateRows();
@@ -127,11 +129,16 @@ new class extends Component {
 
             $this->items[$index]['total_price'] = $qty * $price;
         }
+        $this->tax = round(($this->subtotal * $this->tax_rate) / 100, 2);
     }
 
     public function getSubtotalProperty()
     {
         return collect($this->items)->sum('total_price');
+    }
+    public function getTaxAmountProperty()
+    {
+        return round(($this->subtotal * $this->tax) / 100, 2);
     }
 
     public function getTotalAmountProperty()
@@ -401,7 +408,7 @@ new class extends Component {
 
                     <div class="col-md-3 mb-3">
                         <label>Tax</label>
-                        <input type="number" wire:model.live="tax" class="form-control" min="0">
+                        <input type="number" wire:model.live="tax" class="form-control" min="0" readonly>
                     </div>
 
                     <div class="col-md-3 mb-3">

@@ -8,6 +8,7 @@ new class extends Component {
     public $rate = '';
     public $type = 'percentage';
     public $status = 1;
+    public $tax_category = 'sales';
 
     protected $rules = [
         'name' => 'required|min:2|max:255|unique:taxes,name',
@@ -24,6 +25,7 @@ new class extends Component {
             'name' => $this->name,
             'rate' => $this->rate,
             'type' => $this->type,
+            'category' => $this->tax_category,
             'is_active' => $this->status,
         ]);
 
@@ -73,7 +75,14 @@ new class extends Component {
                     <option value="fixed">Fixed</option>
                 </select>
             </div>
-
+            <div class="mb-3">
+                <label class="form-label">Category</label>
+                <select wire:model.live="tax_category" class="form-select">
+                    <option value="sales">Sales</option>
+                    <option value="salary">salary</option>
+                    <option value="product">Product</option>
+                </select>
+            </div>
             <div class="mb-4">
                 <label class="form-label">Status</label>
                 <select wire:model.live="status" class="form-select">

@@ -34,8 +34,10 @@ new class extends Component {
             'minimum_stock' => $productData->minimum_stock,
             'status' => $productData->status,
             'description' => $productData->description,
-            'profitperunit' => $productData->selling_price - $productData->purchase_price,
+            'profitperunit' => $productData->profit,
             'image' => asset('storage/' . $productData->image),
+            'discount_amount' => $productData->discount_amount,
+            'price_after_discount' => $productData->price_after_discount,
         ];
 
         $this->reviews = [
@@ -235,24 +237,27 @@ new class extends Component {
                             {{ $product['warehouse'] }}
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <strong>Purchase Price:</strong><br>
-                            ${{ number_format($product['purchase_price'], 2) }}
+                            {{ number_format($product['purchase_price'], 2) }}
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <strong>Selling Price:</strong><br>
-                            ${{ number_format($product['selling_price'], 2) }}
+                            {{ number_format($product['selling_price'], 2) }}
                         </div>
-
+                        <div class="col-md-4 mb-3">
+                            <strong>Selling Price After Discount:</strong><br>
+                            {{ number_format($product['price_after_discount'], 2) }}
+                        </div>
                         <div class="col-md-6 mb-3">
                             <strong>Stock:</strong><br>
                             {{ $product['stock'] }}
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <strong>Minimum Stock:</strong><br>
-                            {{ $product['minimum_stock'] }}
+                            <strong>Discount:</strong><br>
+                            {{ $product['discount_amount'] }}
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -483,7 +488,7 @@ new class extends Component {
                                 <td>{{ $purchase['quantity'] }}</td>
                                 <td>{{ number_format($purchase['purchase_price'], 2) }}</td>
                                 <td>{{ number_format($purchase['subtotal'], 2) }}</td>
-                                <td>{{ $purchase->purchase->created_at }}</td>
+                                <td>{{ date('d-F-Y', strtotime($purchase->purchase->created_at)) }}</td>
                             </tr>
 
                         @empty
@@ -534,7 +539,7 @@ new class extends Component {
 
                         @forelse ($stockMovements as $movement)
                             <tr>
-                                <td>{{ $movement['created_at'] }}</td>
+                                <td>{{ date('d-F-Y', strtotime($movement['created_at'])) }}</td>
 
                                 <td>
                                     @if ($movement['type'] === 'purchase')

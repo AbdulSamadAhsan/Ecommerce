@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use Illuminate\Support\Facades\Auth;
 new class extends Component {
     public array $cart = [
         1 => [
@@ -39,6 +39,12 @@ new class extends Component {
     public function getCartCountProperty(): int
     {
         return collect($this->cart)->sum('quantity');
+    }
+    public function mount()
+    {
+        if (!Auth::guard('customer')->check()) {
+            return redirect()->route('customer.login');
+        }
     }
 
     public function getSubtotalProperty(): float
@@ -99,7 +105,7 @@ new class extends Component {
         $this->couponError = '';
     }
 
-    public function placeOrder(): void
+    public function placeOrder()
     {
         $rules = [
             'name' => 'required|min:3',
@@ -289,7 +295,7 @@ new class extends Component {
                                 {{ $item['name'] }} × {{ $item['quantity'] }}
                             </span>
                             <strong>
-                                ${{ number_format($item['price'] * $item['quantity'], 2) }}
+                                {{ number_format($item['price'] * $item['quantity'], 2) }}
                             </strong>
                         </div>
                     @empty
@@ -337,18 +343,18 @@ new class extends Component {
 
                         <div class="d-flex justify-content-between mt-3">
                             <span>Subtotal</span>
-                            <strong>${{ number_format($this->subtotal, 2) }}</strong>
+                            <strong>{{ number_format($this->subtotal, 2) }}</strong>
                         </div>
 
                         <div class="d-flex justify-content-between mt-2">
                             <span>Shipping</span>
-                            <strong>${{ number_format($this->shipping, 2) }}</strong>
+                            <strong>{{ number_format($this->shipping, 2) }}</strong>
                         </div>
 
                         @if ($discount > 0)
                             <div class="d-flex justify-content-between mt-2 text-success">
                                 <span>Discount</span>
-                                <strong>- ${{ number_format($discount, 2) }}</strong>
+                                <strong>- {{ number_format($discount, 2) }}</strong>
                             </div>
                         @endif
 
@@ -356,7 +362,7 @@ new class extends Component {
 
                         <div class="d-flex justify-content-between fs-5">
                             <strong>Total</strong>
-                            <strong>${{ number_format($this->total, 2) }}</strong>
+                            <strong>{{ number_format($this->total, 2) }}</strong>
                         </div>
 
                     @endif

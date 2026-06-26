@@ -26,7 +26,7 @@ new class extends Component {
             'phone' => $employeedata->phone,
             'department' => $employeedata->department->name,
             'designation' => $employeedata->designation,
-            'salary' => $employeedata->salary,
+            'salary' => $employeedata->salaryData->basic_salary,
             'joining_date' => $employeedata->joining_date,
             'address' => $employeedata->address,
             'status' => $employeedata->status,
@@ -242,14 +242,14 @@ new class extends Component {
                 <div class="col-md-6 mb-3">
                     <strong>Education</strong>
                     <p class="mb-0">
-                        Rs {{ number_format(100000) }}
+                        {{ $employee['education'] }}
                     </p>
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <strong>Institute</strong>
                     <p class="mb-0 ">
-                        Rs {{ number_format(15000) }}
+                        {{ $employee['institution'] }}
                     </p>
                 </div>
 

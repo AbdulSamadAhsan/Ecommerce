@@ -1,11 +1,15 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Warehouse;
 new class extends Component {
     public string $search = '';
 
-    public array $warehouses = [['id' => 1, 'name' => 'Main Warehouse', 'location' => 'Karachi', 'manager' => 'Ahmed Raza', 'status' => 1], ['id' => 2, 'name' => 'Backup Warehouse', 'location' => 'Lahore', 'manager' => 'Ali Khan', 'status' => 1]];
+    public $warehouses;
+    public function mount()
+    {
+        $this->warehouses = Warehouse::get();
+    }
 };
 ?>
 
@@ -31,7 +35,7 @@ new class extends Component {
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Location</th>
+
                         <th>Manager</th>
                         <th>Status</th>
                         <th>Action</th>
@@ -42,9 +46,9 @@ new class extends Component {
                     @foreach ($warehouses as $warehouse)
                         <tr>
                             <td>#{{ $warehouse['id'] }}</td>
-                            <td>{{ $warehouse['name'] }}</td>
-                            <td>{{ $warehouse['location'] }}</td>
-                            <td>{{ $warehouse['manager'] }}</td>
+                            <td>{{ $warehouse->name }}</td>
+
+                            <td>{{ $warehouse->manager->user->name }}</td>
                             <td>
                                 <span class="badge {{ $warehouse['status'] ? 'bg-success' : 'bg-danger' }}">
                                     {{ $warehouse['status'] ? 'Active' : 'Inactive' }}

@@ -87,8 +87,9 @@ new class extends Component {
                                     class="btn btn-sm btn-info rounded-pill text-white">
                                     View
                                 </a>
-                            </td </tr>
-                        @empty
+                            </td>
+                        </tr>
+                    @empty
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
                                 No purchase history found.

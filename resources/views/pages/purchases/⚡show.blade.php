@@ -6,13 +6,13 @@ use App\Models\Purchase;
 new class extends Component {
     public int $purchaseId;
 
-    public array $purchase = [];
-
+    public $purchase;
+    public $purchaseItems;
     public function mount($id): void
     {
         $this->purchaseId = $id;
 
-        $this->purchase = Purchase::findOrFail($id)->toArray();
+        $this->purchase = Purchase::with(['items'])->findOrFail($id);
     }
 };
 ?>
@@ -23,7 +23,7 @@ new class extends Component {
         <div>
             <h3 class="fw-bold mb-1">Purchase Detail</h3>
             <p class="text-muted mb-0">
-                Purchase #{{ $purchase['purchase_no'] }}
+                Purchase #{{ $purchase->purchase_no }}
             </p>
         </div>
 
@@ -109,6 +109,48 @@ new class extends Component {
                     {{ $purchase['notes'] ?: 'No Notes Available' }}
                 </div>
             </div>
+            <div class="dashboard-card">
+
+                <h5 class="fw-bold mb-3">Purchase Items</h5>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Warehouse</th>
+                                <th>Qty</th>
+                                <th>Unit Cost</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse ($purchase->items as $index => $item)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $item->product->name ?? 'N/A' }}</td>
+                                    <td>{{ $item->product->warehouse->name ?? 'N/A' }}</td>
+                                    <td>{{ $item->quantity }}</td>
+                                    <td>Rs. {{ number_format($item->unit_cost, 2) }}</td>
+                                    <td>Rs. {{ number_format($item->total_cost, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No purchase items found.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+
+
 
         </div>
 

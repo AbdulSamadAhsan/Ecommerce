@@ -214,7 +214,12 @@ new class extends Component {
                                 {{ $sale->created_at?->format('d M Y') }}
                             </td>
 
+
                             <td>
+                                <a href="{{ route('sales.show', $sale->id) }}"
+                                    class="btn btn-sm btn-info rounded-pill text-white">
+                                    View
+                                </a>
                                 <button type="button" wire:click="delete({{ $sale->id }})"
                                     wire:confirm="Are you sure?" class="btn btn-sm btn-danger">
                                     Delete

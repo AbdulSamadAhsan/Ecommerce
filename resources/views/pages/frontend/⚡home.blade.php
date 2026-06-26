@@ -3,33 +3,104 @@
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Brand;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Category;
+use Illuminate\Support\Facades\Auth;
+
 new class extends Component {
-    public int $cartCount = 0;
+    public $cartCount = 0;
 
-    public array $categories = [['name' => 'Laptops'], ['name' => 'Mobiles'], ['name' => 'Headphones'], ['name' => 'Cameras'], ['name' => 'Smart Watches'], ['name' => 'Gaming']];
-
+    public $categories;
     public $brands;
-
     public $products;
+
     public function mount()
     {
         $this->products = Product::get();
         $this->brands = Brand::get();
+        $this->categories = Category::get();
+
+        $this->refreshCartCount();
     }
-    public function addToCart(): void
+
+    private function getCurrentCart()
     {
-        $this->cartCount++;
+        $session_id = session()->getId();
+
+        $user_id = Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null;
+
+        return Cart::when(
+            $user_id,
+            function ($query) use ($user_id) {
+                $query->where('user_id', $user_id);
+            },
+            function ($query) use ($session_id) {
+                $query->where('session_id', $session_id);
+            },
+        )->first();
+    }
+
+    private function refreshCartCount()
+    {
+        $cart = $this->getCurrentCart();
+
+        $this->cartCount = $cart ? CartItem::where('cart_id', $cart->id)->sum('quantity') : 0;
 
         $this->dispatch('cart-updated', count: $this->cartCount);
     }
+
+    public function addToCart($product_id)
+    {
+        $session_id = session()->getId();
+        $ip_add = request()->ip();
+
+        $user_id = Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null;
+
+        $cart = $this->getCurrentCart();
+
+        if ($cart) {
+            $exists = CartItem::where('cart_id', $cart->id)->where('product_id', $product_id)->exists();
+
+            if ($exists) {
+                $this->addError('cart', 'Product is already in your cart.');
+                return;
+            }
+        }
+
+        if (!$cart) {
+            $cart = Cart::create([
+                'session_id' => $session_id,
+                'ip_address' => $ip_add,
+                'user_id' => $user_id,
+            ]);
+        }
+
+        $product = Product::findOrFail($product_id);
+
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => $product->price_after_discount,
+        ]);
+
+        $this->resetErrorBag('cart');
+
+        session()->flash('success', 'Product added to cart successfully.');
+
+        $this->refreshCartCount();
+    }
+
     public function rendering($view): void
     {
+        $this->refreshCartCount();
+
         $view->layout('components.layouts.ecommerce', [
             'cartCount' => $this->cartCount,
         ]);
     }
 };
-
 ?>
 
 <div class="page-wrapper">
@@ -237,6 +308,22 @@ new class extends Component {
             <h2 class="section-title mb-1">Featured Products</h2>
             <p class="text-muted mb-4">Best selling products this week</p>
 
+
+
+            @error('cart')
+                <div class="alert alert-danger alert-dismissible fade show">
+
+                    {{ $message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @enderror
+            @if (session()->has('success'))
+                <div class="alert alert-success alert-dismissible fade show">
+                    {{ session('success') }}
+
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
             <div class="row g-4">
                 @foreach ($products as $product)
                     <div class="col-sm-6 col-lg-3">
@@ -264,8 +351,10 @@ new class extends Component {
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 mb-3">
-                                    <span class="price">{{ $product['purchase_price'] }}</span>
-                                    <span class="old-price">{{ $product['selling_price'] }}</span>
+                                    <span class="price">{{ $product['price_after_discount'] }} Rs</span>
+                                    @if ($product['discount'] > 0)
+                                        <span class="old-price">{{ $product['selling_price'] }} Rs</span>
+                                    @endif
                                 </div>
                                 <a wire:navigate href="{{ route('product.detail', $product['id']) }}"
                                     class="text-decoration-none text-dark">
@@ -273,9 +362,18 @@ new class extends Component {
                                         View Detail
                                     </h5>
                                 </a>
-                                <button wire:click="addToCart" class="btn btn-primary w-100 rounded-pill">
-                                    <i class="bi bi-cart-plus me-1"></i>
-                                    Add to Cart
+                                <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
+                                    wire:target="addToCart({{ $product->id }})"
+                                    class="btn btn-primary w-100 rounded-pill" @disabled($product['Stock'] <= 0)>
+
+                                    <span wire:loading.remove wire:target="addToCart({{ $product->id }})">
+                                        <i class="bi bi-cart-plus me-1"></i>
+                                        Add to Cart
+                                    </span>
+
+                                    <span wire:loading wire:target="addToCart({{ $product->id }})">
+                                        Adding...
+                                    </span>
                                 </button>
 
                             </div>

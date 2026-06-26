@@ -12,7 +12,9 @@ class Product extends Model
  protected $appends=[
     "profit",
     "Badge",
-    "Stock"
+    "Stock",
+         'discount_amount',
+        'price_after_discount',
  ];
  protected $fillable = [
     'warehouse_id',
@@ -27,7 +29,8 @@ class Product extends Model
     'description',
     'image',
     'status',
-    'brand_id'
+    'brand_id',
+    "discount",
 ];
 public function getBadgeAttribute(){
  $quantity= $this->salesitem->sum("quantity");
@@ -35,8 +38,19 @@ public function getBadgeAttribute(){
     
  }
 }
+
+  public function getDiscountAmountAttribute()
+    {
+        return ceil(($this->discount / 100) * $this->selling_price);
+    }
+
+    public function getPriceAfterDiscountAttribute()
+    {
+        return $this->selling_price - $this->discount_amount;
+    }
+
 public function getProfitAttribute(){
-   return $this->selling_price - $this->purchase_price;
+   return $this->price_after_discount - $this->purchase_price;
 }
 public function category()
 {
@@ -83,6 +97,9 @@ public function salesstatus(){
 $quantity_sold= $this->salesitem()->sum("quantity");   
 if($quantity_sold > 5){
 
+}else{
+
 }
 }
+
 }

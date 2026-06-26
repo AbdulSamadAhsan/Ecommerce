@@ -10,7 +10,7 @@ use App\Models\Supplier;
 use App\Models\DeliveryBoy;
 use App\Models\Warehouse;
 use App\Models\Brand;
-
+use Illuminate\Support\Facades\DB;
 use App\Models\Expense;
 use App\Models\Employee;
 new class extends Component {
@@ -27,7 +27,9 @@ new class extends Component {
     public $number_of_delivery_boy = 0;
     public $expenses = 0;
     public $earning = 0;
-
+    public $salesLabels;
+    public $salesData;
+    public $sales;
     public function mount()
     {
         $this->number_of_customer = Customer::count();
@@ -45,6 +47,20 @@ new class extends Component {
         $this->expenses = Expense::sum('amount');
         $this->earning = $this->revenue - $this->expenses;
         $this->low_stock_products = Product::whereColumn('quantity', '<=', 'minimum_stock')->latest()->take(10)->get();
+        $sales = Sale::selectRaw(
+            "
+        DATE_FORMAT(MIN(created_at), '%b %Y') as month,
+        YEAR(created_at) as year,
+        MONTH(created_at) as month_number,
+        SUM(subtotal) as total
+    ",
+        )
+            ->groupBy('year', 'month_number')
+            ->orderBy('year')
+            ->orderBy('month_number')
+            ->get();
+        $this->salesLabels = $sales->pluck('month')->toArray();
+        $this->salesData = $sales->pluck('total')->toArray();
     }
 };
 ?>
@@ -369,7 +385,7 @@ new class extends Component {
                 type: 'line',
 
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    labels: @json($salesLabels),
 
                     datasets: [{
                         label: 'Sales',

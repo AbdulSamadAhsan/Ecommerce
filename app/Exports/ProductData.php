@@ -24,8 +24,11 @@ class ProductData implements FromCollection,WithHeadings
                 'brand_name'     => $product->brand->title,
                 'purchase_price' => $product->purchase_price,
                 'selling_price'  => $product->selling_price,
+                'dicount'        => $product->discount_amount,
+                 "price_after_discount"=>$product->price_after_discount,
                 "per_unit"       => $product->profit,
                 'quantity'       => $product->quantity,
+               
             ];
         });
     }
@@ -41,6 +44,8 @@ class ProductData implements FromCollection,WithHeadings
             "Brand",
             'Purchase Price',
             'Selling Price',
+            "Discount",
+            "Selling Price After Discount",
             "Profit Per Unit",
             'Stock Quantity',
         ];

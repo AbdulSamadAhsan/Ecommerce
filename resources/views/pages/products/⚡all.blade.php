@@ -112,9 +112,10 @@ new class extends Component {
 
                             <td>
 
-                                <button class="btn btn-sm btn-primary rounded-pill">
+                                <a href="{{ route('products.edit', $product->id) }}"
+                                    class="btn btn-sm btn-primary rounded-pill">
                                     Edit
-                                </button>
+                                </a>
                                 <a href="{{ route('products.show', $product->id) }}"
                                     class="btn btn-sm btn-info rounded-pill">
                                     View

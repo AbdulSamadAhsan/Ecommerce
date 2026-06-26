@@ -222,12 +222,13 @@ new class extends Component {
 
             <div class="d-flex align-items-center gap-3 mb-3">
                 <h2 class="text-primary fw-bold mb-0">
-                    {{ number_format($product['selling_price'], 2) }}
+                    {{ number_format($product['price_after_discount'], 2) }}
                 </h2>
-
-                <h5 class="text-muted text-decoration-line-through mb-0">
-                    {{ number_format($product['purchase_price'], 2) }}
-                </h5>
+                @if ($product['discount'] > 0)
+                    <h5 class="text-muted text-decoration-line-through mb-0">
+                        {{ number_format($product['selling_price'], 2) }}
+                    </h5>
+                @endif
             </div>
 
             <p class="text-muted fs-5">

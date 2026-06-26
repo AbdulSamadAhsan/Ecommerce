@@ -24,7 +24,7 @@ return new class extends Migration
     $table->integer('quantity');
 
     $table->decimal('price', 12, 2);
-    $table->decimal('shipping_cost', 12, 2)->default(0);
+  
             $table->timestamps();
         });
     }

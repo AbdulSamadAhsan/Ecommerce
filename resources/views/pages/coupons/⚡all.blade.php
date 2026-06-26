@@ -21,7 +21,7 @@ new class extends Component {
     {
         $this->coupons = Coupon::query()
             ->when($this->search, function ($query) {
-                $query->where('code', 'like', '%' . $this->search . '%')->orWhere('type', 'like', '%' . $this->search . '%');
+                $query->where('code', 'like', '%' . $this->search . '%')->orWhere('discount_type', 'like', '%' . $this->search . '%');
             })
             ->latest()
             ->get()
@@ -78,13 +78,13 @@ new class extends Component {
                         <tr>
                             <td>#{{ $coupon['id'] }}</td>
                             <td>{{ $coupon['code'] }}</td>
-                            <td>{{ ucfirst($coupon['type']) }}</td>
-                            <td>{{ $coupon['value'] }}</td>
+                            <td>{{ ucfirst($coupon['discount_type']) }}</td>
+                            <td>{{ $coupon['discount_value'] }}</td>
                             <td>{{ $coupon['usage_limit'] ?? 'Unlimited' }}</td>
                             <td>{{ $coupon['expiry_date'] ?? '-' }}</td>
                             <td>
-                                <span class="badge {{ $coupon['status'] ? 'bg-success' : 'bg-danger' }}">
-                                    {{ $coupon['status'] ? 'Active' : 'Inactive' }}
+                                <span class="badge {{ $coupon['is_active'] ? 'bg-success' : 'bg-danger' }}">
+                                    {{ $coupon['is_active'] ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
                             <td>

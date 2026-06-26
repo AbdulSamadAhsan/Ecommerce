@@ -5,7 +5,12 @@ use App\Models\Supplier;
 new class extends Component {
     public string $search = '';
 
-    public array $suppliers = [['id' => 1, 'name' => 'Apple Store', 'email' => 'apple@example.com', 'phone' => '03001234567', 'status' => 1], ['id' => 2, 'name' => 'Tech Supplier', 'email' => 'tech@example.com', 'phone' => '03017654321', 'status' => 1]];
+    public $suppliers;
+
+    public function mount()
+    {
+        $this->suppliers = Supplier::get();
+    }
 };
 ?>
 
@@ -41,7 +46,7 @@ new class extends Component {
                     @foreach ($suppliers as $supplier)
                         <tr>
                             <td>#{{ $supplier['id'] }}</td>
-                            <td>{{ $supplier['name'] }}</td>
+                            <td>{{ $supplier->user->name }}</td>
                             <td>{{ $supplier['email'] }}</td>
                             <td>{{ $supplier['phone'] }}</td>
                             <td>

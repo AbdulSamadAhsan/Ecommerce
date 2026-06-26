@@ -15,6 +15,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use Illuminate\Support\Facades\DB;
 use App\Models\Expense;
+use Illuminate\Validation\ValidationException;
 use App\Models\ExpenseCategory;
 new class extends Component {
     use WithFileUploads;
@@ -41,7 +42,8 @@ new class extends Component {
     public $purchase_date;
 
     public $total_amount;
-
+    public $selling_price_after_discount;
+    public $discount = 0;
     public function generateInvoiceNo()
     {
         $lastPurchase = Purchase::latest('id')->first();
@@ -54,19 +56,38 @@ new class extends Component {
         $this->purchase_date = now()->format('Y-m-d');
         $this->purchase_no = $this->generateInvoiceNo();
     }
+    public function calculateDiscountPrice()
+    {
+        $sellingPrice = (float) $this->selling_price;
+        $discount = (float) $this->discount;
 
+        $discountAmount = ($discount / 100) * $sellingPrice;
+
+        $this->selling_price_after_discount = ceil($sellingPrice - $discountAmount);
+    }
+    public function updated($property)
+    {
+        if (str_contains($property, 'name')) {
+            $this->sku = Str::slug($this->name);
+        }
+        if (in_array($property, ['selling_price', 'discount'])) {
+            $this->calculateDiscountPrice();
+        }
+    }
     public function save()
     {
         $validated = $this->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'category_id' => 'required|exists:categories,id',
+            'warehouse_id' => 'required',
+            'brand_id' => 'required',
             'name' => 'required|min:2|max:255',
             'sku' => 'required|unique:products,sku',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
             'minimum_stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'required|image|max:2048',
             'status' => 'required|boolean',
         ]);
 
@@ -78,6 +99,12 @@ new class extends Component {
             $imagePath = $this->image->storeAs('products', $fileName, 'public');
         }
         DB::transaction(function () use ($imagePath) {
+            if ($this->quantity < $this->minimum_stock) {
+                throw ValidationException::withMessages([
+                    'quantity' => "Quantity cannot be less than minimum stock ({$this->minimum_stock}).",
+                ]);
+            }
+
             $product = Product::create([
                 'supplier_id' => $this->supplier_id,
                 'category_id' => $this->category_id,
@@ -91,6 +118,7 @@ new class extends Component {
                 'image' => $imagePath,
                 'brand_id' => $this->brand_id,
                 'status' => $this->status,
+                'discount' => $this->discount,
                 'warehouse_id' => $this->warehouse_id,
             ]);
 
@@ -352,7 +380,7 @@ new class extends Component {
                             </label>
 
                             <input type="text" class="form-control @error('sku') is-invalid @enderror"
-                                wire:model.live="sku" placeholder="Enter SKU">
+                                wire:model="sku" placeholder="Enter SKU" readonly>
 
                             @error('sku')
                                 <div class="invalid-feedback">
@@ -362,7 +390,7 @@ new class extends Component {
 
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
 
                             <label class="form-label">
                                 Purchase Price
@@ -380,7 +408,7 @@ new class extends Component {
 
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
 
                             <label class="form-label">
                                 Selling Price
@@ -391,6 +419,41 @@ new class extends Component {
                                 wire:model.live="selling_price">
 
                             @error('selling_price')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
+
+
+                        <div class="col-md-4 mb-3">
+
+                            <label class="form-label">
+                                Discount
+                            </label>
+
+                            <input type="number" step="0.01"
+                                class="form-control @error('discount') is-invalid @enderror" wire:model.live="discount">
+
+                            @error('discount')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
+                        <div class="col-md-4 mb-3">
+
+                            <label class="form-label">
+                                Selling Price After Discount
+                            </label>
+
+                            <input type="number" step="0.01"
+                                class="form-control @error('selling_price_after_discount') is-invalid @enderror"
+                                wire:model.live="selling_price_after_discount" readonly>
+
+                            @error('selling_price_after_discount')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>

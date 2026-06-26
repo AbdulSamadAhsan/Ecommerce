@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('products')->name("products.")->group(function () {
         Route::livewire('/', 'pages::products.all')->name('index');
         Route::livewire('/create', 'pages::products.create')->name('create');
-        Route::livewire('/edit/{id}', 'pages::products.edit')->name('edit');
+        Route::livewire('/{id}/edit', 'pages::products.edit')->name('edit');
         Route::livewire('/{id}', 'pages::products.show')->name('show');
     
          Route::get(
@@ -71,6 +71,7 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire('history', 'pages::sales.history')->name('history');
         Route::livewire('create', 'pages::sales.create')->name('create');
         Route::livewire('invoice', 'pages::sales.invoices')->name('invoice');
+        Route::livewire("/{id}","pages::sales.show")->name("show");
     });
 
     Route::prefix("brands")->name("brands.")->group(function () {
