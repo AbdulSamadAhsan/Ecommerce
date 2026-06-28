@@ -200,6 +200,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
        
         Route::livewire('/orders', 'pages::frontend.customer.orders')->name('orders');
         Route::livewire('/orders/{id}', 'pages::frontend.customer.order-detail')->name('order.detail');
+        Route::livewire('/addresses', 'pages::frontend.customer.addresses')->name('addresses');
         Route::livewire('/returns', 'pages::frontend.customer.returns')->name('returns');
         Route::livewire('/wallet', 'pages::frontend.customer.wallet')->name('wallet');
         Route::livewire("/wallet/add", "pages::frontend.customer.wallet.add")->name("wallet.add");
