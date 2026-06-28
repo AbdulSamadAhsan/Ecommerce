@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->string("shipping_category");
+        Schema::table('payments', function (Blueprint $table) {
+            //
+            $table->foreignId('payment_method_id')
+    ->nullable()
+    ->constrained('payment_methods')
+    ->nullOnDelete();
         });
     }
 
@@ -21,7 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
+        Schema::table('payments', function (Blueprint $table) {
             //
         });
     }

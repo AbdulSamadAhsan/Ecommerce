@@ -18,7 +18,7 @@ return new class extends Migration
           ->constrained()
           ->cascadeOnDelete();
 
-    $table->string('payment_method');
+ 
 
     $table->decimal('amount', 12, 2);
 

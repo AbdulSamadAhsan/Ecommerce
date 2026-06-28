@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->string("shipping_category");
+        Schema::table('sales', function (Blueprint $table) {
+           
+             $table->string("shipping_cost")->default("120");
+        });
+        Schema::table("orders",function(Blueprint $table){
+         $table->string("coupon_code")->nullable();
         });
     }
 
@@ -21,7 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
+        Schema::table('sales', function (Blueprint $table) {
             //
         });
     }

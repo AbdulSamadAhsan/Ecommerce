@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->string("shipping_category");
+        Schema::table('sales', function (Blueprint $table) {
+$table->enum('sale_type', ['pos', 'online'])->default('pos');
+$table->foreignId('cashier_id')->nullable()->constrained('users')->nullOnDelete();            //
         });
     }
 
@@ -21,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
+        Schema::table('=sales', function (Blueprint $table) {
             //
         });
     }

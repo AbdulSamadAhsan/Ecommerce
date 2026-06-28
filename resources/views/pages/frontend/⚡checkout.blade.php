@@ -2,6 +2,10 @@
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ShippingMethod;
+use App\Models\Coupon;
+use App\Models\Tax;
+
 new class extends Component {
     public array $cart = [
         1 => [
@@ -26,25 +30,61 @@ new class extends Component {
 
     public string $paymentMethod = 'cod';
 
-    public string $cardHolderName = '';
-    public string $cardNumber = '';
-    public string $cardExpiry = '';
-    public string $cardCvv = '';
+    public string $shippingMethod = '';
+    public array $shippingMethods = [];
 
+    public ?int $couponId = null;
     public string $couponCode = '';
     public float $discount = 0;
     public string $couponMessage = '';
     public string $couponError = '';
 
-    public function getCartCountProperty(): int
-    {
-        return collect($this->cart)->sum('quantity');
-    }
+    public ?int $taxId = null;
+    public float $taxRate = 0;
+    public string $taxName = 'Tax';
+
+    public string $cardHolderName = '';
+    public string $cardNumber = '';
+    public string $cardExpiry = '';
+    public string $cardCvv = '';
+
     public function mount()
     {
         if (!Auth::guard('customer')->check()) {
             return redirect()->route('customer.login');
         }
+        $this->email = Auth::guard('customer')->user()->email;
+        $this->phone = Auth::guard('customer')->user()->customer->phone;
+        $this->name = Auth::guard('customer')->user()->name;
+        $this->shippingMethods = ShippingMethod::where('is_active', 1)
+            ->orderBy('cost')
+            ->get()
+            ->map(
+                fn($method) => [
+                    'id' => $method->id,
+                    'name' => $method->name,
+                    'cost' => (float) $method->cost,
+                ],
+            )
+            ->toArray();
+
+        $this->shippingMethod = (string) ($this->shippingMethods[0]['id'] ?? '');
+
+        $tax = Tax::where('is_active', 1)
+            ->where('category', 'sales')
+
+            ->first();
+
+        if ($tax) {
+            $this->taxId = $tax->id;
+            $this->taxName = $tax->name;
+            $this->taxRate = (float) $tax->rate;
+        }
+    }
+
+    public function getCartCountProperty(): int
+    {
+        return collect($this->cart)->sum('quantity');
     }
 
     public function getSubtotalProperty(): float
@@ -52,14 +92,30 @@ new class extends Component {
         return collect($this->cart)->sum(fn($item) => $item['price'] * $item['quantity']);
     }
 
+    public function getSelectedShippingMethodProperty(): ?array
+    {
+        return collect($this->shippingMethods)->firstWhere('id', (int) $this->shippingMethod);
+    }
+
     public function getShippingProperty(): float
     {
-        return $this->subtotal > 0 ? 20 : 0;
+        if ($this->subtotal <= 0 || empty($this->shippingMethod)) {
+            return 0;
+        }
+
+        return (float) ($this->selectedShippingMethod['cost'] ?? 0);
+    }
+
+    public function getTaxAmountProperty(): float
+    {
+        $taxableAmount = max(0, $this->subtotal - $this->discount);
+
+        return ($taxableAmount * $this->taxRate) / 100;
     }
 
     public function getTotalProperty(): float
     {
-        return max(0, $this->subtotal + $this->shipping - $this->discount);
+        return max(0, $this->subtotal + $this->shipping + $this->taxAmount - $this->discount);
     }
 
     public function updatedPaymentMethod(): void
@@ -74,6 +130,7 @@ new class extends Component {
         $this->couponError = '';
         $this->couponMessage = '';
         $this->discount = 0;
+        $this->couponId = null;
 
         $code = strtoupper(trim($this->couponCode));
 
@@ -82,23 +139,37 @@ new class extends Component {
             return;
         }
 
-        if ($code === 'SAVE10') {
-            $this->discount = $this->subtotal * 0.1;
-            $this->couponMessage = 'Coupon applied successfully. 10% discount added.';
+        $coupon = Coupon::where('code', $code)->where('status', 1)->first();
+
+        if (!$coupon) {
+            $this->couponError = 'Invalid coupon code.';
             return;
         }
 
-        if ($code === 'FLAT50') {
-            $this->discount = 50;
-            $this->couponMessage = 'Coupon applied successfully. $50 discount added.';
+        if ($coupon->expires_at && now()->gt($coupon->expires_at)) {
+            $this->couponError = 'This coupon has expired.';
             return;
         }
 
-        $this->couponError = 'Invalid coupon code.';
+        if ($this->subtotal < $coupon->minimum_amount) {
+            $this->couponError = 'Minimum order amount is ' . number_format($coupon->minimum_amount, 2);
+            return;
+        }
+
+        if ($coupon->type === 'percentage') {
+            $this->discount = ($this->subtotal * $coupon->value) / 100;
+        } else {
+            $this->discount = $coupon->value;
+        }
+
+        $this->discount = min($this->discount, $this->subtotal);
+        $this->couponId = $coupon->id;
+        $this->couponMessage = 'Coupon applied successfully.';
     }
 
     public function removeCoupon(): void
     {
+        $this->couponId = null;
         $this->couponCode = '';
         $this->discount = 0;
         $this->couponMessage = '';
@@ -112,8 +183,9 @@ new class extends Component {
             'email' => 'required|email',
             'phone' => 'required|min:10',
             'address' => 'required|min:10',
-            'city' => 'required',
-            'paymentMethod' => 'required',
+
+            'paymentMethod' => 'required|in:cod,bank',
+            'shippingMethod' => 'required|exists:shipping_methods,id',
         ];
 
         if ($this->paymentMethod === 'bank') {
@@ -127,15 +199,39 @@ new class extends Component {
 
         $this->validate($rules);
 
-        $this->cart = [];
+        /*
+        Order::create([
+            'customer_id' => Auth::guard('customer')->id(),
+            'coupon_id' => $this->couponId,
+            'tax_id' => $this->taxId,
+            'shipping_method_id' => $this->shippingMethod,
+            'name' => $this->name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'city' => $this->city,
+            'address' => $this->address,
+            'payment_method' => $this->paymentMethod,
+            'subtotal' => $this->subtotal,
+            'discount' => $this->discount,
+            'tax_rate' => $this->taxRate,
+            'tax_amount' => $this->taxAmount,
+            'shipping_cost' => $this->shipping,
+            'total' => $this->total,
+        ]);
+        */
 
+        $this->cart = [];
         $this->removeCoupon();
 
         $this->reset(['name', 'email', 'phone', 'address', 'city', 'cardHolderName', 'cardNumber', 'cardExpiry', 'cardCvv']);
 
         $this->paymentMethod = 'cod';
+        $this->shippingMethod = (string) ($this->shippingMethods[0]['id'] ?? '');
 
         session()->flash('success', 'Order placed successfully.');
+        return redirect()->route('customer.orders.show', [
+            'order' => 9,
+        ]);
     }
 
     public function rendering($view): void
@@ -191,13 +287,6 @@ new class extends Component {
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">City</label>
-                            <input type="text" wire:model="city" class="form-control rounded-pill">
-                            @error('city')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Address</label>
@@ -212,7 +301,6 @@ new class extends Component {
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
                                 value="cod" id="cod">
-
                             <label class="form-check-label" for="cod">
                                 Cash on Delivery
                             </label>
@@ -221,7 +309,6 @@ new class extends Component {
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
                                 value="bank" id="bank">
-
                             <label class="form-check-label" for="bank">
                                 Bank / Card Payment
                             </label>
@@ -229,14 +316,11 @@ new class extends Component {
 
                         @if ($paymentMethod === 'bank')
                             <div class="border rounded-4 p-4 mb-4 bg-light">
-                                <h5 class="fw-bold mb-3">
-                                    Card Details
-                                </h5>
+                                <h5 class="fw-bold mb-3">Card Details</h5>
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Card Holder Name</label>
-                                    <input type="text" wire:model="cardHolderName" class="form-control rounded-pill"
-                                        placeholder="Name on card">
+                                    <input type="text" wire:model="cardHolderName" class="form-control rounded-pill">
                                     @error('cardHolderName')
                                         <small class="text-danger">{{ $message }}</small>
                                     @enderror
@@ -244,8 +328,7 @@ new class extends Component {
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Card Number</label>
-                                    <input type="text" wire:model="cardNumber" class="form-control rounded-pill"
-                                        placeholder="0000 0000 0000 0000">
+                                    <input type="text" wire:model="cardNumber" class="form-control rounded-pill">
                                     @error('cardNumber')
                                         <small class="text-danger">{{ $message }}</small>
                                     @enderror
@@ -263,8 +346,7 @@ new class extends Component {
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-semibold">CVV</label>
-                                        <input type="password" wire:model="cardCvv" class="form-control rounded-pill"
-                                            placeholder="123">
+                                        <input type="password" wire:model="cardCvv" class="form-control rounded-pill">
                                         @error('cardCvv')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
@@ -291,12 +373,8 @@ new class extends Component {
 
                     @forelse ($cart as $item)
                         <div class="d-flex justify-content-between border-bottom py-2">
-                            <span>
-                                {{ $item['name'] }} × {{ $item['quantity'] }}
-                            </span>
-                            <strong>
-                                {{ number_format($item['price'] * $item['quantity'], 2) }}
-                            </strong>
+                            <span>{{ $item['name'] }} × {{ $item['quantity'] }}</span>
+                            <strong>{{ number_format($item['price'] * $item['quantity'], 2) }}</strong>
                         </div>
                     @empty
                         <div class="text-muted text-center py-4">
@@ -305,6 +383,26 @@ new class extends Component {
                     @endforelse
 
                     @if (count($cart) > 0)
+
+                        <div class="my-4">
+                            <label class="form-label fw-semibold">Shipping Method</label>
+
+                            @forelse ($shippingMethods as $method)
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" wire:model.live="shippingMethod"
+                                        value="{{ $method['id'] }}" id="shipping_{{ $method['id'] }}">
+
+                                    <label class="form-check-label" for="shipping_{{ $method['id'] }}">
+                                        {{ $method['name'] }}
+                                        — {{ number_format($method['cost'], 2) }}
+                                    </label>
+                                </div>
+                            @empty
+                                <div class="text-danger small">
+                                    No shipping method available.
+                                </div>
+                            @endforelse
+                        </div>
 
                         <div class="my-4">
                             <label class="form-label fw-semibold">Coupon Code</label>
@@ -335,10 +433,6 @@ new class extends Component {
                                     {{ $couponError }}
                                 </div>
                             @endif
-
-                            <small class="text-muted d-block mt-2">
-                                Try: SAVE10 or FLAT50
-                            </small>
                         </div>
 
                         <div class="d-flex justify-content-between mt-3">
@@ -357,6 +451,11 @@ new class extends Component {
                                 <strong>- {{ number_format($discount, 2) }}</strong>
                             </div>
                         @endif
+
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>{{ $taxName }} ({{ $taxRate }}%)</span>
+                            <strong>{{ number_format($this->taxAmount, 2) }}</strong>
+                        </div>
 
                         <hr>
 

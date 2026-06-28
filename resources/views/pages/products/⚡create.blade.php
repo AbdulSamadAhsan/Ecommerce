@@ -76,20 +76,26 @@ new class extends Component {
     }
     public function save()
     {
-        $validated = $this->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'category_id' => 'required|exists:categories,id',
-            'warehouse_id' => 'required',
-            'brand_id' => 'required',
-            'name' => 'required|min:2|max:255',
-            'sku' => 'required|unique:products,sku',
-            'purchase_price' => 'required|numeric|min:0',
-            'selling_price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:1',
-            'minimum_stock' => 'required|integer|min:0',
-            'image' => 'required|image|max:2048',
-            'status' => 'required|boolean',
-        ]);
+        $validated = $this->validate(
+            [
+                'supplier_id' => 'required|exists:suppliers,id',
+                'category_id' => 'required|exists:categories,id',
+                'warehouse_id' => 'required',
+                'brand_id' => 'required',
+                'name' => 'required|min:2|max:255',
+                'sku' => 'required|unique:products,sku',
+                'purchase_price' => 'required|numeric|min:0',
+                'selling_price' => 'required|numeric|min:0',
+                'quantity' => 'required|integer|min:1',
+                'minimum_stock' => 'required|integer|min:0',
+                'image' => 'required|image|max:2048',
+                'status' => 'required|boolean',
+                'discount' => 'nullable|numeric|min:0|max:25',
+            ],
+            [
+                'discount.max' => 'Discount cannot be greater than 25%.',
+            ],
+        );
 
         $imagePath = null;
 
@@ -102,6 +108,16 @@ new class extends Component {
             if ($this->quantity < $this->minimum_stock) {
                 throw ValidationException::withMessages([
                     'quantity' => "Quantity cannot be less than minimum stock ({$this->minimum_stock}).",
+                ]);
+            }
+            if ($this->purchase_price > $this->selling_price) {
+                throw ValidationException::withMessages([
+                    'purchase_price' => "Purchase price cannot be greater than selling price ({$this->selling_price}).",
+                ]);
+            }
+            if ($this->selling_price_after_discount < $this->purchase_price) {
+                throw ValidationException::withMessages([
+                    'discount' => 'Please low the discount percentage to get the profit in product .',
                 ]);
             }
 
@@ -155,6 +171,7 @@ new class extends Component {
                 'due_amount' => 0,
                 'payment_status' => 'paid',
                 'status' => 'completed',
+                'purchase_date' => date('Y-m-d'),
                 'notes' => 'Item Purchased',
             ]);
 

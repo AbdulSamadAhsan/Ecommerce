@@ -181,7 +181,8 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
     Route::livewire('expensecategories/{id}/edit', 'pages::expenses.expensecategories.edit')
     ->name('expense-categories.edit');
 });
-
+Route::livewire('customer_order/{order}', "pages::orders.detail")
+    ->name('customer.orders.show');
 /*
 |--------------------------------------------------------------------------
 | Customer Routes

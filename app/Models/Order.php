@@ -11,4 +11,7 @@ class Order extends Model
        public function shipment(){
                      return $this->hasOne(Shipment::class);
        }
+       public function sale(){
+              return $this->belongsTo(Sale::class);
+       }
 }

@@ -1,27 +1,68 @@
 <?php
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Models\Product;
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Category;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
+    use WithPagination;
+
     public $cartCount = 0;
 
-    public $categories;
-    public $brands;
-    public $products;
+    public $categories = [];
+    public $brands = [];
+    public $products = [];
+
+    public string $search = '';
 
     public function mount()
     {
-        $this->products = Product::get();
-        $this->brands = Brand::get();
-        $this->categories = Category::get();
-
+        $this->loadCategories();
+        $this->loadBrands();
+        $this->loadProducts();
         $this->refreshCartCount();
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+        $this->loadProducts();
+    }
+
+    public function loadCategories()
+    {
+        $this->categories = Category::latest()->get();
+    }
+
+    public function loadBrands()
+    {
+        $this->brands = Brand::latest()->get();
+    }
+
+    public function loadProducts()
+    {
+        $search = trim($this->search);
+
+        $this->products = Product::query()
+            ->with(['brand', 'category'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhereHas('brand', function ($brandQuery) use ($search) {
+                            $brandQuery->where('title', 'like', '%' . $search . '%');
+                        })
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->latest()
+            ->get();
     }
 
     private function getCurrentCart()
@@ -52,11 +93,6 @@ new class extends Component {
 
     public function addToCart($product_id)
     {
-        $session_id = session()->getId();
-        $ip_add = request()->ip();
-
-        $user_id = Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null;
-
         $cart = $this->getCurrentCart();
 
         if ($cart) {
@@ -68,15 +104,20 @@ new class extends Component {
             }
         }
 
-        if (!$cart) {
-            $cart = Cart::create([
-                'session_id' => $session_id,
-                'ip_address' => $ip_add,
-                'user_id' => $user_id,
-            ]);
+        $product = Product::findOrFail($product_id);
+
+        if ($product->quantity <= 0) {
+            $this->addError('cart', 'Product is out of stock.');
+            return;
         }
 
-        $product = Product::findOrFail($product_id);
+        if (!$cart) {
+            $cart = Cart::create([
+                'session_id' => session()->getId(),
+                'ip_address' => request()->ip(),
+                'user_id' => Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null,
+            ]);
+        }
 
         CartItem::create([
             'cart_id' => $cart->id,
@@ -94,8 +135,6 @@ new class extends Component {
 
     public function rendering($view): void
     {
-        $this->refreshCartCount();
-
         $view->layout('components.layouts.ecommerce', [
             'cartCount' => $this->cartCount,
         ]);
@@ -224,9 +263,10 @@ new class extends Component {
                     </p>
 
                     <div class="bg-white rounded-pill p-2 d-flex mt-4 shadow-sm">
-                        <input type="text" class="form-control search-box" placeholder="Search products...">
+                        <input type="text" wire:model.live.debounce.500ms="search" class="form-control search-box"
+                            placeholder="Search by product, brand or category...">
 
-                        <button class="btn btn-primary rounded-pill px-4">
+                        <button type="button" wire:click="loadProducts" class="btn btn-primary rounded-pill px-4">
                             Search
                         </button>
                     </div>
@@ -274,12 +314,12 @@ new class extends Component {
             <h2 class="section-title mb-1">Popular Categories</h2>
             <p class="text-muted mb-4">Shop by your favorite category</p>
 
-            <div class="row g-4">
+            <div class="row g-4" wire:poll.10s="loadCategories">
                 @foreach ($categories as $category)
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-2" wire:key="category-{{ $category->id }}">
                         <div class="card category-card shadow-sm p-4 text-center h-100">
                             <h6 class="fw-bold mb-0">
-                                {{ $category['name'] }}
+                                {{ $category->name ?? $category->title }}
                             </h6>
                         </div>
                     </div>
@@ -291,12 +331,12 @@ new class extends Component {
             <h2 class="section-title mb-1">Top Brands</h2>
             <p class="text-muted mb-4">Shop products from trusted brands</p>
 
-            <div class="row g-4">
+            <div class="row g-4" wire:poll.10s="loadBrands">
                 @foreach ($brands as $brand)
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-2" wire:key="brand-{{ $brand->id }}">
                         <div class="card brand-card shadow-sm p-4 text-center h-100">
                             <h6 class="fw-bold mb-0">
-                                {{ $brand['title'] }}
+                                {{ $brand->title ?? $brand->name }}
                             </h6>
                         </div>
                     </div>
@@ -308,38 +348,43 @@ new class extends Component {
             <h2 class="section-title mb-1">Featured Products</h2>
             <p class="text-muted mb-4">Best selling products this week</p>
 
-
-
             @error('cart')
                 <div class="alert alert-danger alert-dismissible fade show">
-
                     {{ $message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @enderror
+
             @if (session()->has('success'))
                 <div class="alert alert-success alert-dismissible fade show">
                     {{ session('success') }}
-
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
-            <div class="row g-4">
-                @foreach ($products as $product)
-                    <div class="col-sm-6 col-lg-3">
+
+            <div class="row g-4" wire:poll.2s="loadProducts">
+                @forelse ($products as $product)
+                    <div class="col-sm-6 col-lg-3" wire:key="product-{{ $product->id }}">
                         <div class="card product-card shadow-sm p-3 h-100 position-relative">
 
-                            <span class="badge bg-danger badge-custom">
-                                {{ $product['badge'] }}
-                            </span>
+                            @if (!empty($product->badge))
+                                <span class="badge bg-danger badge-custom">
+                                    {{ $product->badge }}
+                                </span>
+                            @endif
 
-                            <img src="{{ 'storage/' . $product['image'] }}" class="product-img w-100"
-                                alt="{{ $product['name'] }}">
+                            @if ($product->image)
+                                <img src="{{ asset('storage/' . $product->image) }}" class="product-img w-100"
+                                    alt="{{ $product->name }}">
+                            @else
+                                <img src="https://via.placeholder.com/400x300?text=No+Image" class="product-img w-100"
+                                    alt="No Image">
+                            @endif
 
                             <div class="card-body px-1 pb-1">
 
                                 <h5 class="fw-bold">
-                                    {{ $product['name'] }}
+                                    {{ $product->name }}
                                 </h5>
 
                                 <div class="mb-2 text-warning">
@@ -351,24 +396,31 @@ new class extends Component {
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 mb-3">
-                                    <span class="price">{{ $product['price_after_discount'] }} Rs</span>
-                                    @if ($product['discount'] > 0)
-                                        <span class="old-price">{{ $product['selling_price'] }} Rs</span>
+                                    <span class="price">
+                                        {{ number_format($product->price_after_discount) }} Rs
+                                    </span>
+
+                                    @if ($product->discount > 0)
+                                        <span class="old-price">
+                                            {{ number_format($product->selling_price) }} Rs
+                                        </span>
                                     @endif
                                 </div>
-                                <a wire:navigate href="{{ route('product.detail', $product['id']) }}"
-                                    class="text-decoration-none text-dark">
+
+                                <a wire:navigate href="{{ route('product.detail', $product->id) }}"
+                                    class="text-decoration-none">
                                     <h5 class="fw-bold text-primary">
                                         View Detail
                                     </h5>
                                 </a>
+
                                 <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
                                     wire:target="addToCart({{ $product->id }})"
-                                    class="btn btn-primary w-100 rounded-pill" @disabled($product['Stock'] <= 0)>
+                                    class="btn btn-primary w-100 rounded-pill" @disabled($product->quantity <= 0)>
 
                                     <span wire:loading.remove wire:target="addToCart({{ $product->id }})">
                                         <i class="bi bi-cart-plus me-1"></i>
-                                        Add to Cart
+                                        {{ $product->quantity <= 0 ? 'Out of Stock' : 'Add to Cart' }}
                                     </span>
 
                                     <span wire:loading wire:target="addToCart({{ $product->id }})">
@@ -379,7 +431,13 @@ new class extends Component {
                             </div>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No products found.
+                        </div>
+                    </div>
+                @endforelse
             </div>
         </section>
 
@@ -398,5 +456,4 @@ new class extends Component {
         </section>
 
     </div>
-
 </div>

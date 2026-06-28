@@ -18,10 +18,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->foreignId('customer_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+         
 
             $table->string('invoice_no')
                 ->unique();

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->string("shipping_category");
+        Schema::table('{{ table }}', function (Blueprint $table) {
+            //
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
+        Schema::table('{{ table }}', function (Blueprint $table) {
             //
         });
     }
