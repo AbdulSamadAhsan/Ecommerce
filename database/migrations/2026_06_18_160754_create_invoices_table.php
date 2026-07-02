@@ -14,14 +14,13 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('order_id')
+            $table->foreignId('sale_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
          
 
-            $table->string('invoice_no')
-                ->unique();
+         
 
        
 
@@ -39,6 +38,7 @@ return new class extends Migration
 
             $table->date('due_date')
                 ->nullable();
+            $table->text('pdf_path')
 
             $table->text('notes')
                 ->nullable();

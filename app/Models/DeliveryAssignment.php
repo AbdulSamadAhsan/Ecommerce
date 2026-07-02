@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DeliveryAssignment extends Model
 {
+      protected $guarded=[];
       public function deliveryboy(){
                      return $this->belongsTo(DeliveryBoy::class,"delivery_boy_id");
     }

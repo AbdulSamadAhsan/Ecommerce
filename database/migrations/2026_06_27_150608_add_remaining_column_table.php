@@ -30,14 +30,7 @@ return new class extends Migration
 
         if (Schema::hasTable('orders')) {
             Schema::table('orders', function (Blueprint $table) {
-                if (!Schema::hasColumn('orders', 'expected_delivery')) {
-                    $table->dateTime('expected_delivery')->nullable();
-                }
-
-                if (!Schema::hasColumn('orders', 'cancelled_at')) {
-                    $table->dateTime('cancelled_at')->nullable();
-                }
-
+            
                 if (!Schema::hasColumn('orders', 'cancellation_reason')) {
                     $table->string('cancellation_reason')->nullable();
                 }

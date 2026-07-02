@@ -1,7 +1,8 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\WalletTopupRequest;
+use Illuminate\Support\Str;
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public int|float|string $amount = '';
 
@@ -71,7 +72,19 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
         }
 
         $this->validate($rules);
-
+        WalletTopupRequest::create([
+            'payment_method' => $this->payment_method,
+            'amount' => $this->amount,
+            'mobile_account_name' => $this->mobile_account_name,
+            'mobile_account_number' => $this->mobile_account_number,
+            'transaction_id' => rand(11111, 999999) . time(),
+            'bank_name' => $this->bank_name,
+            'account_title' => $this->account_title,
+            'account_number' => $this->account_number,
+            'iban' => $this->iban,
+            'wallet_id' => auth('customer')->user()->customer->wallet->id,
+            'customer_id' => auth('customer')->user()->customer->id,
+        ]);
         session()->flash('success', 'Wallet top-up request submitted successfully.');
 
         $this->reset(['amount', 'transaction_id', 'card_holder_name', 'card_number', 'card_expiry', 'card_cvv', 'mobile_account_name', 'mobile_account_number', 'bank_name', 'account_title', 'account_number', 'iban']);
@@ -117,7 +130,7 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                                 <option value="bank_transfer">Bank Transfer</option>
                                 <option value="easypaisa">Easypaisa</option>
                                 <option value="jazzcash">JazzCash</option>
-                                <option value="card">Card</option>
+                                <option value="card" disabled>Card</option>
                             </select>
                             @error('payment_method')
                                 <small class="text-danger">{{ $message }}</small>

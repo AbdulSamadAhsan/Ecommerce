@@ -237,7 +237,7 @@ new class extends Component {
             return 'Products table needs name or title column.';
         }
 
-        $products = DB::table('products')->latest('id')->limit(10)->get();
+        $products = DB::table('products')->latest('products.created_at')->limit(10)->get();
 
         if ($products->isEmpty()) {
             return 'No products found.';
@@ -266,12 +266,12 @@ new class extends Component {
         $name = $this->firstExistingColumn($columns, ['name', 'title']);
         $stock = $this->firstExistingColumn($columns, ['stock', 'quantity', 'qty']);
         $price = $this->firstExistingColumn($columns, ['price', 'selling_price', 'sale_price']);
-
+        $minimum_stock = $this->firstExistingColumn($columns, ['minimum_stock', 'selling_price', 'sale_price']);
         if (!$name || !$stock) {
             return 'Low stock tool needs product name/title and stock/quantity/qty columns.';
         }
 
-        $products = DB::table('products')->where($stock, '<=', 10)->orderBy($stock)->limit(10)->get();
+        $products = DB::table('products')->where($stock, '<=', $minimum_stock)->orderBy($stock)->limit(10)->get();
 
         if ($products->isEmpty()) {
             return 'No low stock products found.';
@@ -349,35 +349,127 @@ new class extends Component {
         }
 
         if (!preg_match('/\d+/', $question, $matches)) {
-            return 'Please send order number. Example: Track order 12';
+            return 'Please send order number. Example: Track order 26';
         }
 
-        $orderNumber = $matches[0];
-        $columns = Schema::getColumnListing('orders');
+        $orderId = (int) $matches[0];
 
-        $status = $this->firstExistingColumn($columns, ['order_status', 'status']);
-        $total = $this->firstExistingColumn($columns, ['total', 'grand_total', 'net_total']);
-        $payment = $this->firstExistingColumn($columns, ['payment_status', 'payment_method']);
+        $order = DB::table('orders')
+            ->leftJoin('sales', 'orders.sale_id', '=', 'sales.id')
+            ->leftJoin('shipments', 'shipments.order_id', '=', 'orders.id')
+            ->leftJoin('shipping_methods', 'shipments.shipping_method_id', '=', 'shipping_methods.id')
+            ->leftJoin('delivery_assignments', 'delivery_assignments.shipment_id', '=', 'shipments.id')
+            ->leftJoin('delivery_boys', 'delivery_assignments.delivery_boy_id', '=', 'delivery_boys.id')
+            ->leftJoin('users', 'delivery_boys.user_id', '=', 'users.id')
+            ->select(
+                'orders.id as order_id',
+                'shipments.status as order_status',
+                'orders.order_date',
+                'shipments.expected_delivery as expected_delivery',
+                'orders.address',
+                'orders.city',
 
-        $query = DB::table('orders')->where('id', $orderNumber);
+                'sales.invoice_no',
+                'sales.total_amount',
+                'sales.payment_method',
+                'sales.payment_status',
+                'sales.paid_amount',
+                'sales.due_amount',
 
-        if (Auth::check()) {
-            if (in_array('user_id', $columns, true)) {
-                $query->where('user_id', Auth::id());
-            } elseif (in_array('customer_id', $columns, true)) {
-                $query->where('customer_id', Auth::id());
-            }
-        }
+                'shipments.tracking_number',
+                'shipments.status as shipment_status',
+                'shipments.shipped_at',
+                'shipments.delivered_at',
+                'shipments.expected_delivery as shipment_expected_delivery',
 
-        $order = $query->first();
+                'shipping_methods.name as shipping_method',
+
+                'delivery_assignments.status as delivery_status',
+                'delivery_assignments.assigned_at',
+                'delivery_assignments.picked_at',
+                'delivery_assignments.delivered_at as assignment_delivered_at',
+
+                'users.name as delivery_boy_name',
+                'users.email as delivery_boy_email',
+
+                'delivery_boys.cnic as delivery_boy_cnic',
+                'delivery_boys.vehicle_type',
+                'delivery_boys.vehicle_number',
+                'delivery_boys.is_available',
+                'delivery_boys.status as delivery_boy_status',
+            )
+            ->where('orders.id', $orderId)
+            ->first();
 
         if (!$order) {
-            return "Order {$orderNumber} not found.";
+            return "Order #{$orderId} not found.";
         }
 
-        return "Order #{$orderNumber}\nStatus: " . ($status ? $order->{$status} : 'N/A') . "\nTotal: " . ($total ? $order->{$total} : 'N/A') . "\nPayment: " . ($payment ? $order->{$payment} : 'N/A');
+        return "Order #{$order->order_id}\n" .
+            'Invoice: ' .
+            ($order->invoice_no ?? 'N/A') .
+            "\n" .
+            'Order Status: ' .
+            ($order->order_status ?? 'N/A') .
+            "\n" .
+            'Shipment Status: ' .
+            ($order->shipment_status ?? 'N/A') .
+            "\n" .
+            'Delivery Status: ' .
+            ($order->delivery_status ?? 'N/A') .
+            "\n" .
+            'Tracking Number: ' .
+            ($order->tracking_number ?? 'Not assigned yet') .
+            "\n" .
+            'Shipping Method: ' .
+            ($order->shipping_method ?? 'N/A') .
+            "\n\n" .
+            "Delivery Boy Details\n" .
+            'Name: ' .
+            ($order->delivery_boy_name ?? 'Not assigned yet') .
+            "\n" .
+            'Email: ' .
+            ($order->delivery_boy_email ?? 'N/A') .
+            "\n" .
+            'CNIC: ' .
+            ($order->delivery_boy_cnic ?? 'N/A') .
+            "\n" .
+            'Vehicle Type: ' .
+            ($order->vehicle_type ?? 'N/A') .
+            "\n" .
+            'Vehicle Number: ' .
+            ($order->vehicle_number ?? 'N/A') .
+            "\n" .
+            'Available: ' .
+            (($order->is_available ?? null) == 1 ? 'Yes' : 'No') .
+            "\n" .
+            'Status: ' .
+            ($order->delivery_boy_status ?? 'N/A') .
+            "\n\n" .
+            'Total Amount: ' .
+            ($order->total_amount ?? 'N/A') .
+            "\n" .
+            'Payment Method: ' .
+            ($order->payment_method ?? 'N/A') .
+            "\n" .
+            'Payment Status: ' .
+            ($order->payment_status ?? 'N/A') .
+            "\n" .
+            'Paid Amount: ' .
+            ($order->paid_amount ?? '0') .
+            "\n" .
+            'Due Amount: ' .
+            ($order->due_amount ?? '0') .
+            "\n" .
+            'Expected Delivery: ' .
+            ($order->shipment_expected_delivery ?? ($order->expected_delivery ?? 'N/A')) .
+            "\n" .
+            'Address: ' .
+            ($order->address ?? 'N/A') .
+            "\n" .
+            'City: ' .
+            ($order->city ?? 'N/A');
     }
-
     private function listTableTool(string $table, array $nameColumns, string $label): string
     {
         if (!Schema::hasTable($table)) {

@@ -77,7 +77,7 @@ new class extends Component {
                 $query->where('user_id', $user_id);
             },
             function ($query) use ($session_id) {
-                $query->where('session_id', $session_id);
+                $query->where('ip_address', request()->ip());
             },
         )->first();
     }
@@ -113,7 +113,6 @@ new class extends Component {
 
         if (!$cart) {
             $cart = Cart::create([
-                'session_id' => session()->getId(),
                 'ip_address' => request()->ip(),
                 'user_id' => Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null,
             ]);
@@ -138,6 +137,27 @@ new class extends Component {
         $view->layout('components.layouts.ecommerce', [
             'cartCount' => $this->cartCount,
         ]);
+    }
+    public function toggleWishlist(int $productId): void
+    {
+        $customer = auth('customer')->user()?->customer;
+
+        if (!$customer) {
+            return;
+        }
+
+        $wishlist = $customer->wishlists()->firstOrCreate([]);
+
+        $wishlistItem = $wishlist->items()->where('product_id', $productId)->first();
+
+        if ($wishlistItem) {
+            $this->addError('wishlist', 'Product Already In Wishlist.');
+            return;
+        } else {
+            $wishlist->items()->create([
+                'product_id' => $productId,
+            ]);
+        }
     }
 };
 ?>
@@ -354,6 +374,12 @@ new class extends Component {
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @enderror
+            @error('wishlist')
+                <div class="alert alert-danger alert-dismissible fade show">
+                    {{ $message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @enderror
 
             @if (session()->has('success'))
                 <div class="alert alert-success alert-dismissible fade show">
@@ -372,7 +398,22 @@ new class extends Component {
                                     {{ $product->badge }}
                                 </span>
                             @endif
+                            @if (auth('customer')->check())
+                                <button type="button" wire:click="toggleWishlist({{ $product->id }})"
+                                    wire:loading.attr="disabled" wire:target="toggleWishlist({{ $product->id }})"
+                                    class="btn btn-light rounded-circle shadow-sm position-absolute"
+                                    style="top: 12px; right: 12px; z-index: 5; width: 40px; height: 40px;">
 
+                                    <span wire:loading.remove wire:target="toggleWishlist({{ $product->id }})">
+                                        <i
+                                            class="bi {{ in_array($product->id, $wishlistProductIds ?? []) ? 'bi-heart-fill text-danger' : 'bi-heart' }}"></i>
+                                    </span>
+
+                                    <span wire:loading wire:target="toggleWishlist({{ $product->id }})">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </span>
+                                </button>
+                            @endif
                             @if ($product->image)
                                 <img src="{{ asset('storage/' . $product->image) }}" class="product-img w-100"
                                     alt="{{ $product->name }}">
@@ -413,6 +454,7 @@ new class extends Component {
                                         View Detail
                                     </h5>
                                 </a>
+
 
                                 <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
                                     wire:target="addToCart({{ $product->id }})"

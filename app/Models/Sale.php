@@ -20,4 +20,9 @@ public function items()
 {
     return $this->hasMany(SaleItem::class);
 }
+
+public function salesReturns()
+{
+    return $this->hasMany(SalesReturn::class, 'sale_id', 'id');
+}
 }

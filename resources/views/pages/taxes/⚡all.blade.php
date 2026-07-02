@@ -84,8 +84,7 @@ new class extends Component {
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('taxes.show', $tax['id']) }}"
-                                    class="btn btn-sm btn-info text-white rounded-pill">View</a>
+
                                 <a href="{{ route('taxes.edit', $tax['id']) }}"
                                     class="btn btn-sm btn-warning rounded-pill">Edit</a>
                                 <button wire:click="delete({{ $tax['id'] }})" wire:confirm="Are you sure?"

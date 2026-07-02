@@ -16,30 +16,12 @@ return new class extends Migration
             if (Schema::hasColumn('carts', 'session_id')) {
                 $table->dropColumn('session_id');
             }
-               if (!Schema::hasColumn('carts', 'discount')) {
-                $table->decimal('discount', 12, 2)
-                    ->default(0)->after("ip_address");
-                    
-            }
+             
 
-            if (!Schema::hasColumn('carts', 'tax')) {
-                $table->decimal('tax', 12, 2)
-                    ->default(0)
-                   
-                    ->after('discount');
-            }
 
-            if (!Schema::hasColumn('carts', 'subtotal')) {
-                $table->decimal('subtotal', 12, 2)
-                    ->default(0)
-                    ->after('tax');
-            }
+         
 
-            if (!Schema::hasColumn('carts', 'total')) {
-                $table->decimal('total', 12, 2)
-                    ->default(0)
-                    ->after('subtotal');
-            }
+          
 
             if (!Schema::hasColumn('carts', 'status')) {
                 $table->enum('status', [

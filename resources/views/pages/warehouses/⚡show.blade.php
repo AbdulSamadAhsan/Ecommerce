@@ -1,26 +1,18 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Warehouse;
 new class extends Component {
     public int $id;
 
-    public array $warehouse = [];
-    public array $inventory = [];
-    public array $movements = [];
+    public $warehouse;
+    public $inventory;
+    public $movements;
 
     public function mount($id): void
     {
         $this->id = (int) $id;
-
-        $this->warehouse = [
-            'id' => $this->id,
-            'name' => 'Main Warehouse',
-            'location' => 'Karachi',
-            'manager' => 'Ahmed Raza',
-            'phone' => '03001234567',
-            'status' => 1,
-        ];
+        $this->warehouse = Warehouse::find($this->id);
 
         $this->inventory = [['product' => 'MacBook Pro M3', 'sku' => 'MBP-M3', 'stock' => 25, 'value' => 27500], ['product' => 'Wireless Mouse', 'sku' => 'WM-001', 'stock' => 90, 'value' => 4500]];
 
@@ -86,8 +78,8 @@ new class extends Component {
 
             <hr>
 
-            <p><strong>Location:</strong> {{ $warehouse['location'] }}</p>
-            <p><strong>Manager:</strong> {{ $warehouse['manager'] }}</p>
+
+            <p><strong>Manager:</strong> {{ $warehouse->manager->user->name }}</p>
             <p><strong>Phone:</strong> {{ $warehouse['phone'] }}</p>
 
             <p>

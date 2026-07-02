@@ -24,7 +24,7 @@ return new class extends Migration
 
     $table->string('tracking_number')->unique();
 
-    $table->decimal('shipping_cost', 12, 2)->default(0);
+  
 
     $table->enum('status', [
         'pending',

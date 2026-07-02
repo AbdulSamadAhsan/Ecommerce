@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Role;
+use App\Models\Wallet;
 new class extends Component {
     public string $first_name = '';
     public string $last_name = '';
@@ -31,11 +32,12 @@ new class extends Component {
             'role_id' => $role->id,
         ]);
         $user_id = $user->id;
-        Customer::create([
+        $customer = Customer::create([
             'phone' => $this->phone,
             'status' => 1,
             'user_id' => $user_id,
         ]);
+        Wallet::create(['customer_id' => $customer->id, 'balance' => 0]);
         session()->flash('success', 'Account created successfully.');
 
         $this->redirectRoute('customer.login', navigate: true);

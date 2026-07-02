@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Cart;
 new class extends Component {
     public string $email = '';
     public string $password = '';
@@ -22,7 +23,13 @@ new class extends Component {
             $this->addError('email', 'Invalid email or password.');
             return;
         }
-
+        $user_id = auth('customer')->user()->id;
+        $cart = Cart::where('ip_address', request()->ip())->first();
+        if ($cart) {
+            $cart->update([
+                'user_id' => $user_id,
+            ]);
+        }
         $this->redirectRoute('customer.dashboard', navigate: true);
         session()->flash('success', 'Login successful.');
     }

@@ -24,8 +24,9 @@ new class extends Component {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">Order Details</h2>
 
-        <a href="{{ route('home') }}" class="btn btn-outline-primary rounded-pill">
-            Continue Shopping
+
+        <a href="{{ route('order.invoice.report', $order->id) }}" class="btn btn-outline-primary rounded-pill">
+            Download Invoice
         </a>
     </div>
 
@@ -42,20 +43,20 @@ new class extends Component {
                         <div class="col-md-6 mb-3">
                             <strong>Status:</strong>
                             <span class="badge bg-warning text-dark">
-                                {{ ucfirst($order->status ?? 'pending') }}
+                                {{ ucfirst($order->shipment->status ?? 'pending') }}
                             </span>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <strong>Payment:</strong>
                             <span class="badge bg-info text-dark">
-                                {{ ucfirst($order->payment_status ?? 'pending') }}
+                                {{ ucfirst($order->sale->payment_status ?? 'pending') }}
                             </span>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <strong>Payment Method:</strong>
-                            {{ strtoupper($order->payment_method ?? 'COD') }}
+                            {{ strtoupper($order->sale->payment_method ?? 'COD') }}
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -126,15 +127,15 @@ new class extends Component {
                     <h4 class="fw-bold mb-3">Customer Details</h4>
 
                     <p class="mb-2">
-                        <strong>Name:</strong> {{ $order->name }}
+                        <strong>Name:</strong> {{ $order->sale->customer->user->name }}
                     </p>
 
                     <p class="mb-2">
-                        <strong>Email:</strong> {{ $order->email }}
+                        <strong>Email:</strong> {{ $order->sale->customer->user->email }}
                     </p>
 
                     <p class="mb-2">
-                        <strong>Phone:</strong> {{ $order->phone }}
+                        <strong>Phone:</strong> {{ $order->sale->customer->phone }}
                     </p>
 
                     <p class="mb-2">
@@ -162,21 +163,21 @@ new class extends Component {
                     <div class="d-flex justify-content-between mb-2">
                         <span>
                             Shipping
-                            @if ($order->shippingMethod)
+                            @if ($order->shipment?->shippingMethod)
                                 <small class="text-muted">
-                                    ({{ $order->shippingMethod->name }})
+                                    ({{ $order->shipment->shippingMethod->name }})
                                 </small>
                             @endif
                         </span>
-                        <strong>{{ number_format($order->shipping_cost ?? 0, 2) }}</strong>
+                        <strong>{{ number_format($order->sale->shipping_cost ?? 0, 2) }}</strong>
                     </div>
 
-                    @if (($order->discount ?? 0) > 0)
+                    @if (($order->sale->discount ?? 0) > 0)
                         <div class="d-flex justify-content-between mb-2 text-success">
                             <span>
                                 Discount
-                                @if ($order->coupon)
-                                    <small>({{ $order->coupon->code }})</small>
+                                @if ($order->coupon_code)
+                                    <small>({{ $order->coupon_code }})</small>
                                 @endif
                             </span>
                             <strong>-{{ number_format($order->sale->discount, 2) }}</strong>

@@ -185,6 +185,7 @@ new class extends Component {
                     'subtotal' => $this->subtotal,
                     'discount' => $this->discount ?? 0,
                     'tax' => $this->tax ?? 0,
+                    'shipping_cost' => 1000,
                     'total_amount' => $this->total_amount,
                 ]);
 
@@ -207,21 +208,48 @@ new class extends Component {
                         'stock_before' => $product->quantity,
                         'stock_after' => $product->quantity - $item['quantity'],
                     ]);
-                    Stock::create([
-                        'product_id' => $item['product_id'],
-                        'warehouse_id' => $product->warehouse_id,
-                        'quantity' => $product->quantity - $item['quantity'],
-                        'minimum_stock' => $product->minimum_stock,
-                    ]);
+
+                    Stock::updateOrCreate(
+                        [
+                            'product_id' => $item['product_id'],
+                            'warehouse_id' => $product->warehouse_id,
+                        ],
+
+                        [
+                            'quantity' => $afterStock,
+                            'quantity' => $product->quantity - $item['quantity'],
+                            'minimum_stock' => $product->minimum_stock,
+                        ],
+                    );
                     $product->quantity = $product->quantity - $item['quantity'];
                     $product->save();
                 }
 
-                Order::create([
+                $order = Order::create([
                     'sale_id' => $sale->id,
                     'address' => $this->address,
-                    'order_status' => $this->order_status,
+
                     'order_date' => $this->order_date,
+                ]);
+
+                Shipment::create([
+                    'order_id' => $order->id,
+                    'shipping_method_id' => $this->shippingMethod,
+                    'tracking_number' => $tracking,
+                    'status' => $this->order_status,
+                ]);
+                $invoice = Invoice::create([
+                    'sale_id' => $sale->id,
+                    'invoice_date' => date('Y-m-d'),
+                ]);
+                $order->load(['sale.customer', 'sale.items.product', 'shipment.shippingMethod', 'invoice']);
+                $pdf = Pdf::loadView('pdf.invoice', compact('order'));
+                $fileName = "invoices/{$this->invoice_no}.pdf";
+                $this->cartData->delete();
+                $pdf->save(storage_path('app/public/' . $fileName));
+
+                $invoice->update([
+                    'pdf_path' => $fileName,
                 ]);
             });
             session()->flash('success', 'Sale and order created successfully.');

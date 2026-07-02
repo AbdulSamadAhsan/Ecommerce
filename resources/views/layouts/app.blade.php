@@ -625,7 +625,7 @@
 
                     <a href="{{ adminRoute('shipments.create') }}"
                         class="nav-link {{ activeRoute('shipments.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Shipment
+                        <i class="bi bi-plus-circle-fill"></i> Delivery Boy Assignment
                     </a>
                 </div>
             </li>
@@ -662,8 +662,8 @@
                     </a>
 
                     <a href="{{ adminRoute('wallet-topups.create') }}"
-                        class="nav-link {{ activeRoute('wallet-topups.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Topup Request
+                        class="nav-link {{ activeRoute('wallet-topups.customer') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Topup Customer Wallet
                     </a>
                 </div>
             </li>
@@ -687,20 +687,20 @@
                 </div>
             </li>
 
-            <li class="nav-item sidebar-dropdown {{ openRoute('delivery-boys.*') }}">
+            <li class="nav-item sidebar-dropdown {{ openRoute('deliveryboys.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span><i class="bi bi-person-badge-fill"></i> Delivery Boys</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('delivery-boys.*') }}"></i>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('deliveryboys.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu {{ showRoute('delivery-boys.*') }}">
-                    <a href="{{ adminRoute('delivery-boys.index') }}"
-                        class="nav-link {{ activeRoute('delivery-boys.index') }}">
+                <div class="sidebar-dropdown-menu {{ showRoute('deliveryboys.*') }}">
+                    <a href="{{ adminRoute('deliveryboys.index') }}"
+                        class="nav-link {{ activeRoute('deliveryboys.index') }}">
                         <i class="bi bi-list-ul"></i> All Delivery Boys
                     </a>
 
-                    <a href="{{ adminRoute('delivery-boys.create') }}"
-                        class="nav-link {{ activeRoute('delivery-boys.create') }}">
+                    <a href="{{ adminRoute('deliveryboys.create') }}"
+                        class="nav-link {{ activeRoute('deliveryboys.create') }}">
                         <i class="bi bi-plus-circle-fill"></i> Add Delivery Boy
                     </a>
                 </div>
@@ -838,7 +838,21 @@
                     <i class="bi bi-bar-chart-line-fill"></i> Reports
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ adminRoute('sales_return.index') }}"
+                    class="nav-link {{ activeRoute('sales-returns.*') }}">
+                    <i class="bi bi-cart-x-fill"></i>
+                    Sales Returns
+                </a>
+            </li>
 
+            <li class="nav-item">
+                <a href="{{ adminRoute('purchase-returns.index') }}"
+                    class="nav-link {{ activeRoute('purchase-returns.*') }}">
+                    <i class="bi bi-box-arrow-in-left"></i>
+                    Purchase Returns
+                </a>
+            </li>
 
         </ul>
 

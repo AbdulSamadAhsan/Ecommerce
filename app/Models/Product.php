@@ -101,5 +101,7 @@ if($quantity_sold > 5){
 
 }
 }
-
+public function stocks(){
+       return $this->hasOne(Stock::class);
+}
 }

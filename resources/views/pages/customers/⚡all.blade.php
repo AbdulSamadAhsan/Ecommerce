@@ -1,53 +1,26 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Customer;
+use App\Models\Wallet;
 new class extends Component {
     public string $search = '';
 
-    public array $customers = [];
+    public $customers;
 
     public function mount(): void
     {
-        $this->customers = [
-            [
-                'id' => 1,
-                'name' => 'Ali Khan',
-                'email' => 'ali@example.com',
-                'phone' => '03001234567',
-                'wallet' => 8500,
-                'orders' => 12,
-                'status' => 1,
-            ],
-            [
-                'id' => 2,
-                'name' => 'Sara Ahmed',
-                'email' => 'sara@example.com',
-                'phone' => '03111234567',
-                'wallet' => 5000,
-                'orders' => 8,
-                'status' => 1,
-            ],
-            [
-                'id' => 3,
-                'name' => 'Hassan Raza',
-                'email' => 'hassan@example.com',
-                'phone' => '03211234567',
-                'wallet' => 1200,
-                'orders' => 3,
-                'status' => 0,
-            ],
-        ];
+        $this->customers = Customer::get();
     }
 
-    public function getFilteredCustomersProperty(): array
+    public function getFilteredCustomersProperty()
     {
         if (empty($this->search)) {
             return $this->customers;
         }
 
         return array_filter($this->customers, function ($customer) {
-            return str_contains(strtolower($customer['name']), strtolower($this->search)) || str_contains(strtolower($customer['email']), strtolower($this->search)) || str_contains(strtolower($customer['phone']), strtolower($this->search));
+            return str_contains(strtolower($customer->user->name), strtolower($this->search)) || str_contains(strtolower($customer->user->email), strtolower($this->search)) || str_contains(strtolower($customer['phone']), strtolower($this->search));
         });
     }
 };
@@ -120,7 +93,7 @@ new class extends Component {
                     </h6>
 
                     <h3 class="fw-bold text-info">
-                        Rs {{ number_format(collect($customers)->sum('wallet')) }}
+                        Rs {{ number_format($customers->sum(fn($customer) => $customer->wallet?->balance ?? 0), 2) }}
                     </h3>
 
                 </div>
@@ -138,7 +111,7 @@ new class extends Component {
                     </h6>
 
                     <h3 class="fw-bold text-warning">
-                        {{ collect($customers)->sum('orders') }}
+                        {{ $customers->sum(fn($customer) => $customer->sales->filter(fn($sale) => $sale->orderNumber)->count()) }}
                     </h3>
 
                 </div>
@@ -195,12 +168,12 @@ new class extends Component {
 
                                 <td>
                                     <div class="fw-semibold">
-                                        {{ $customer['name'] }}
+                                        {{ $customer->user->name }}
                                     </div>
                                 </td>
 
                                 <td>
-                                    {{ $customer['email'] }}
+                                    {{ $customer->user->email }}
                                 </td>
 
                                 <td>
@@ -208,13 +181,12 @@ new class extends Component {
                                 </td>
 
                                 <td>
-                                    Rs {{ number_format($customer['wallet']) }}
+                                    Rs {{ number_format($customer->wallet->balance) }}
                                 </td>
 
                                 <td>
-                                    {{ $customer['orders'] }}
+                                    {{ $customer->sales->filter(fn($sale) => $sale->orderNumber)->count() }}
                                 </td>
-
                                 <td>
 
                                     @if ($customer['status'])

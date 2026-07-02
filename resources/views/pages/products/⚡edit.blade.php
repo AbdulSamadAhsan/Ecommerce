@@ -131,6 +131,7 @@ new class extends Component {
                     'quantity' => "Quantity cannot be less than current stock ({$stockBefore}). Use Sale module to reduce stock.",
                 ]);
             }
+            
             $product->update([
                 'supplier_id' => $this->supplier_id,
                 'category_id' => $this->category_id,

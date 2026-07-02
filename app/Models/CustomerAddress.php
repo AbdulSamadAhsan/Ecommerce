@@ -7,20 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerAddress extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'customer_id',
-        'full_name',
-        'phone',
-        'address_line_1',
-        'address_line_2',
-        'city',
-        'state',
-        'postal_code',
-        'country',
-        'is_default',
-    ];
 
+
+    protected $table="addresses";
+    
+    protected $guarded = [];
     protected function casts(): array
     {
         return [

@@ -550,6 +550,10 @@ new class extends Component {
                                         <span class="badge bg-danger">
                                             Sale / OUT
                                         </span>
+                                    @elseif ($movement['type'] === 'return')
+                                        <span class="badge bg-warning">
+                                            Sale Return / IN
+                                        </span>
                                     @else
                                         <span class="badge bg-secondary">
                                             {{ ucfirst($movement['type']) }}

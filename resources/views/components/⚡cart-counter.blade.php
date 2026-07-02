@@ -27,7 +27,7 @@ new class extends Component {
                 $query->where('user_id', $user_id);
             },
             function ($query) use ($session_id) {
-                $query->where('session_id', $session_id);
+                $query->where('ip_address', request()->ip());
             },
         )->first();
 

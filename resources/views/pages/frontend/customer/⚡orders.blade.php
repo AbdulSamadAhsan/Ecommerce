@@ -3,7 +3,12 @@
 use Livewire\Component;
 
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
-    public array $orders = [['id' => 1001, 'date' => '2026-06-18', 'total' => 185000, 'status' => 'Delivered', 'payment' => 'Paid'], ['id' => 1002, 'date' => '2026-06-17', 'total' => 45000, 'status' => 'Processing', 'payment' => 'Pending'], ['id' => 1003, 'date' => '2026-06-15', 'total' => 78000, 'status' => 'Shipped', 'payment' => 'Paid']];
+    public $orders;
+
+    public function mount()
+    {
+        $this->orders = auth('customer')->user()->customer->sales;
+    }
 };
 ?>
 
@@ -38,13 +43,16 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                             <tbody>
                                 @foreach ($orders as $order)
                                     <tr>
-                                        <td class="fw-semibold">#{{ $order['id'] }}</td>
-                                        <td>{{ $order['date'] }}</td>
-                                        <td>Rs {{ number_format($order['total']) }}</td>
-                                        <td><span class="badge bg-success">{{ $order['status'] }}</span></td>
-                                        <td>{{ $order['payment'] }}</td>
+                                        <td class="fw-semibold">#{{ $order->orderNumber->id }}</td>
+                                        <td>{{ date('d-F-Y', strtotime($order->orderNumber->order_date)) }}</td>
+                                        <td>Rs {{ number_format($order['total_amount']) }}</td>
+                                        <td><span
+                                                class="badge bg-success">{{ ucfirst($order->orderNumber->shipment->status) }}</span>
+                                        </td>
+                                        <td>{{ $order->payment_status }}</td>
                                         <td>
-                                            <a wire:navigate href="{{ route('customer.order.detail', $order['id']) }}"
+                                            <a wire:navigate
+                                                href="{{ route('customer.order.detail', $order->orderNumber->id) }}"
                                                 class="btn btn-sm btn-outline-primary rounded-pill">
                                                 View Detail
                                             </a>

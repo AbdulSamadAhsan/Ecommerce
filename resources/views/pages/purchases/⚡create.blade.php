@@ -78,9 +78,6 @@ new class extends Component {
 
     public function updated($property)
     {
-    
-    
-    
         if (str_contains($property, 'items.') && str_contains($property, '.product_id')) {
             $index = explode('.', $property)[1];
 
@@ -191,11 +188,12 @@ new class extends Component {
                 Stock::updateOrCreate(
                     [
                         'product_id' => $item['product_id'],
+                        'warehouse_id' => $warehouseId,
                     ],
 
                     [
                         'quantity' => $afterStock,
-                        'warehouse_id' => $warehouseId,
+
                         'minimum_stock' => $productData->minimum_stock,
                     ],
                 );

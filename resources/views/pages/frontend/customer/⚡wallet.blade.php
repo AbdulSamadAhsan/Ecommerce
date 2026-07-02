@@ -3,9 +3,14 @@
 use Livewire\Component;
 
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
-    public int $balance = 12000;
+    public $balance;
 
-    public array $transactions = [['type' => 'Credit', 'amount' => 5000, 'date' => '2026-06-18', 'note' => 'Wallet top-up'], ['type' => 'Refund', 'amount' => 7000, 'date' => '2026-06-17', 'note' => 'Order refund'], ['type' => 'Debit', 'amount' => 2500, 'date' => '2026-06-16', 'note' => 'Used on order']];
+    public array $transactions = [];
+    public function mount()
+    {
+        $this->balance = auth('customer')->user()->customer->wallet->balance;
+        $this->transactions = auth('customer')->user()->customer->wallet->transactions->toArray();
+    }
 };
 ?>
 
@@ -34,6 +39,7 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                                     <th>Type</th>
                                     <th>Amount</th>
                                     <th>Date</th>
+                                    <th>Time</th>
                                     <th>Note</th>
                                 </tr>
                             </thead>
@@ -42,13 +48,14 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                                     <tr>
                                         <td>
                                             <span
-                                                class="badge {{ $transaction['type'] === 'Debit' ? 'bg-danger' : 'bg-success' }}">
-                                                {{ $transaction['type'] }}
+                                                class="badge {{ $transaction['type'] === 'debit' ? 'bg-danger' : 'bg-success' }}">
+                                                {{ ucfirst($transaction['type']) }}
                                             </span>
                                         </td>
                                         <td>Rs {{ number_format($transaction['amount']) }}</td>
-                                        <td>{{ $transaction['date'] }}</td>
-                                        <td>{{ $transaction['note'] }}</td>
+                                        <td>{{ date('d-F-Y', strtotime($transaction['created_at'])) }}</td>
+                                        <td>{{ date('h:i a', strtotime($transaction['created_at'])) }}</td>
+                                        <td>{{ $transaction['description'] }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

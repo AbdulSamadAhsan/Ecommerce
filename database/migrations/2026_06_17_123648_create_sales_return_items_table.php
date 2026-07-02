@@ -23,7 +23,7 @@ return new class extends Migration
 
     $table->integer('quantity');
 
-    $table->decimal('amount', 12, 2);
+ 
 
             $table->timestamps();
         });

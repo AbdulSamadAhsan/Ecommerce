@@ -1,14 +1,55 @@
 <?php
 
 use Livewire\Component;
+use App\Models\order;
+use App\Models\SalesReturnItem;
+use App\Models\SalesReturn;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
-    public array $stats = [
-        'orders' => 12,
-        'returns' => 2,
-        'wallet' => 12000,
-        'pending' => 3,
-    ];
+    public $stats;
+    public $pendingOrders;
+    public $pendingOrdersCount;
+    public $totalOrders;
+    public function mount()
+    {
+        $this->pendingOrders = Order::with(['sale.customer.user', 'sale.items.product', 'shipment.shippingMethod'])
+            ->whereHas('shipment', function ($query) {
+                $query->where('status', 'pending');
+            })
+            ->whereHas('sale', function ($query) {
+                $query->where('customer_id', auth('customer')->user()->customer->id);
+            })
+            ->get();
+        $this->totalOrders = Order::with(['sale.customer.user', 'sale.items.product', 'shipment.shippingMethod'])
+
+            ->whereHas('sale', function ($query) {
+                $query->where('customer_id', auth('customer')->user()->customer->id);
+            })
+            ->get();
+        $this->pendingOrdersCount = $this->pendingOrders->count();
+        $SaleReturnCount = auth('customer')
+            ->user()
+            ->customer->sales->load('salesReturns')
+            ->sum(function ($sale) {
+                return $sale->salesReturns->count();
+            });
+        $customerId = auth('customer')->user()->customer->id;
+        $salesReturns = SalesReturn::with(['sale', 'items.product'])
+            ->whereHas('sale', function ($query) use ($customerId) {
+                $query->where('customer_id', $customerId);
+            })
+            ->latest()
+            ->get();
+
+        $this->stats = [
+            'orders' => $this->totalOrders->count(),
+            'returns' => $SaleReturnCount,
+            'wallet' => auth('customer')->user()->customer->wallet->balance,
+            'pending' => $this->pendingOrdersCount,
+        ];
+    }
 };
 ?>
 

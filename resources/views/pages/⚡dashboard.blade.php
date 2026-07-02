@@ -40,7 +40,9 @@ new class extends Component {
         $this->brandsCount = Brand::count();
         $this->orders_count = Order::count();
 
-        $this->revenue = Sale::sum('subtotal');
+        $this->revenue = Sale::whereHas('orderNumber.shipment', function ($query) {
+            $query->where('status', 'delivered');
+        })->sum(DB::raw('subtotal - discount'));
         $this->suppliersCount = Supplier::count();
         $this->number_of_employee = Employee::count();
         $this->number_of_delivery_boy = DeliveryBoy::count();
@@ -49,12 +51,15 @@ new class extends Component {
         $this->low_stock_products = Product::whereColumn('quantity', '<=', 'minimum_stock')->latest()->take(10)->get();
         $sales = Sale::selectRaw(
             "
-        DATE_FORMAT(MIN(created_at), '%b %Y') as month,
-        YEAR(created_at) as year,
-        MONTH(created_at) as month_number,
-        SUM(subtotal) as total
+        DATE_FORMAT(MIN(sales.created_at), '%b %Y') as month,
+        YEAR(sales.created_at) as year,
+        MONTH(sales.created_at) as month_number,
+        SUM(sales.subtotal - sales.discount) as total
     ",
         )
+            ->whereHas('orderNumber.shipment', function ($query) {
+                $query->where('status', 'delivered');
+            })
             ->groupBy('year', 'month_number')
             ->orderBy('year')
             ->orderBy('month_number')

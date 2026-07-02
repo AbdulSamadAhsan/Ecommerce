@@ -4,7 +4,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\customer;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ProductReportController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderReportController;
 Auth::routes();
 
 Route::get('/home', [HomeController::class, 'index'])
@@ -153,6 +156,13 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
         Route::livewire('/{id}', 'pages::coupons.show')->name('show');
     });
 
+     Route::prefix("deliveryboys")->name("deliveryboys.")->group(function () {
+        Route::livewire("/", "pages::deliveryboys.all")->name("index");
+        Route::livewire("/create", "pages::deliveryboys.create")->name("create");
+        Route::livewire("/edit/{id}", "pages::deliveryboys.edit")->name("edit");
+        Route::livewire('/{id}', 'pages::deliveryboys.show')->name('show');
+    });
+
     Route::prefix("customers")->name("customers.")->group(function () {
         Route::livewire('/', 'pages::customers.all')->name('index');
         Route::livewire('/{id}', 'pages::customers.show')->name('show');
@@ -174,21 +184,38 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
 });
   Route::livewire('expensecategories', 'pages::expenses.expensecategories.all')
     ->name('expense-categories.index');
-     Route::livewire('expensecategoriescreate', 'pages::expenses.expensecategories.all')
+     Route::livewire('expensecategoriescreate', 'pages::expenses.expensecategories.create')
     ->name('expense-categories.create');
      Route::livewire('expensecategoriesshow/{id}', 'pages::expenses.expensecategories.show')
     ->name('expense-categories.show');
     Route::livewire('expensecategories/{id}/edit', 'pages::expenses.expensecategories.edit')
     ->name('expense-categories.edit');
 });
+Route::livewire("wallettoprequests","pages::wallettoprequest.all")->name("wallet-topups.index");
+Route::livewire("wallettoprequests/{id}/edit","pages::wallettoprequest.edit")->name("wallet-topups.edit");
 Route::livewire('customer_order/{order}', "pages::orders.detail")
     ->name('customer.orders.show');
+Route::livewire("sales_return","pages::sales.sale_return.all")->name("sales_return.index");
+Route::livewire("sales_return/{id}/edit","pages::sales.sale_return.edit")->name("sales_return.edit");
+Route::livewire("sales_return/{id}/show","pages::sales.sale_return.show")->name("sales_return.show");
+
+Route::livewire('/orders', 'pages::orders.all')->name('orders.index');
+
+Route::livewire('/orders/{id}/edit', 'pages::orders.edit')->name('orders.edit');
+Route::livewire('/orders/{id}', 'pages::orders.show')->name('orders.show');
+Route::get("/order/report",OrderController::class)->name("order.report");
+Route::get("/order/{id}/report",OrderReportController::class)->name("order.invoice.report");
+
+
 /*
 |--------------------------------------------------------------------------
 | Customer Routes
 |--------------------------------------------------------------------------
 */
  Route::livewire('/ai-assistant', "pages::customer.mcp")->name('customer.ai.assistant');
+
+ Route::get('/invoice/{order}', InvoiceController::class)
+    ->name("invoice.download");
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire("/login", "pages::frontend.login")->name("login");
     Route::livewire("/register", "pages::frontend.register")->name("register");

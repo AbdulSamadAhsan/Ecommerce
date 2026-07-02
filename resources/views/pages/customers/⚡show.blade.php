@@ -1,32 +1,21 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Customer;
 new class extends Component {
     public int $id;
 
-    public array $customer = [];
-    public array $orders = [];
-    public array $reviews = [];
-    public array $walletTransactions = [];
+    public $customer;
+    public $orders;
+    public $reviews;
+    public $walletTransactions;
 
     public function mount($id): void
     {
         $this->id = (int) $id;
 
-        $this->customer = [
-            'id' => $this->id,
-            'name' => 'Ali Khan',
-            'email' => 'ali@example.com',
-            'phone' => '03001234567',
-            'city' => 'Karachi',
-            'address' => 'Gulshan-e-Iqbal, Karachi',
-            'status' => 1,
-            'joined_at' => '2026-06-01',
-            'wallet_balance' => 8500,
-        ];
-
-        $this->orders = [['order_no' => 'ORD-1001', 'total' => 185000, 'status' => 'Delivered', 'date' => '2026-06-18'], ['order_no' => 'ORD-1002', 'total' => 45000, 'status' => 'Processing', 'date' => '2026-06-17']];
+        $this->customer = Customer::find($id);
+        $this->orders = $this->customer->sales;
 
         $this->reviews = [
             [
@@ -43,12 +32,11 @@ new class extends Component {
             ],
         ];
 
-        $this->walletTransactions = [['type' => 'credit', 'amount' => 5000, 'description' => 'Wallet top-up', 'date' => '2026-06-18'], ['type' => 'refund', 'amount' => 3500, 'description' => 'Order refund', 'date' => '2026-06-16']];
+        $this->walletTransactions = $this->customer->wallet->transactions;
     }
-
     public function getTotalSpentProperty(): float
     {
-        return collect($this->orders)->sum('total');
+        return collect($this->orders)->sum('total_amount');
     }
 
     public function getTotalOrdersProperty(): int
@@ -103,7 +91,7 @@ new class extends Component {
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Wallet</h6>
-                    <h3 class="fw-bold text-info">Rs {{ number_format($customer['wallet_balance']) }}</h3>
+                    <h3 class="fw-bold text-info">Rs {{ number_format($customer->wallet->balance) }}</h3>
                 </div>
             </div>
         </div>
@@ -113,14 +101,14 @@ new class extends Component {
 
     <div class="card border-0 shadow mb-4">
         <div class="card-body">
-            <h4 class="fw-bold">{{ $customer['name'] }}</h4>
+            <h4 class="fw-bold">{{ $customer->user->name }}</h4>
 
             <hr>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <strong>Email:</strong><br>
-                    {{ $customer['email'] }}
+                    {{ $customer->user->email }}
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -135,7 +123,7 @@ new class extends Component {
 
                 <div class="col-md-6 mb-3">
                     <strong>Joined:</strong><br>
-                    {{ $customer['joined_at'] }}
+                    {{ date('d-F-Y', strtotime($customer['created_at'])) }}
                 </div>
 
                 <div class="col-md-12 mb-3">
@@ -174,14 +162,14 @@ new class extends Component {
                 <tbody>
                     @forelse ($orders as $order)
                         <tr>
-                            <td>{{ $order['order_no'] }}</td>
-                            <td>Rs {{ number_format($order['total']) }}</td>
+                            <td>{{ $order->orderNumber->id }}</td>
+                            <td>Rs {{ number_format($order->total_amount) }}</td>
                             <td>
                                 <span class="badge bg-primary">
-                                    {{ $order['status'] }}
+                                    {{ $order->orderNumber->order_status }}
                                 </span>
                             </td>
-                            <td>{{ $order['date'] }}</td>
+                            <td>{{ $order->orderNumber->order_date }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -252,16 +240,17 @@ new class extends Component {
                 </thead>
 
                 <tbody>
-                    @forelse ($walletTransactions as $transaction)
+                    @forelse ($walletTransactions  as $transaction)
                         <tr>
                             <td>
-                                <span class="badge bg-success">
+                                <span
+                                    class="badge {{ $transaction['type'] === 'debit' ? 'bg-danger' : 'bg-success' }}">
                                     {{ ucfirst($transaction['type']) }}
                                 </span>
                             </td>
                             <td>Rs {{ number_format($transaction['amount']) }}</td>
                             <td>{{ $transaction['description'] }}</td>
-                            <td>{{ $transaction['date'] }}</td>
+                            <td>{{ date('d-F-Y', strtotime($transaction['created_at'])) }}</td>
                         </tr>
                     @empty
                         <tr>

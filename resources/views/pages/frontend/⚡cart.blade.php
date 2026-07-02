@@ -21,15 +21,9 @@ new class extends Component {
 
         $user_id = Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null;
 
-        return Cart::when(
-            $user_id,
-            function ($query) use ($user_id) {
-                $query->where('user_id', $user_id);
-            },
-            function ($query) use ($session_id) {
-                $query->where('session_id', $session_id);
-            },
-        )->first();
+        return Cart::when($user_id, function ($query) use ($user_id) {
+            $query->where('user_id', $user_id);
+        })->first();
     }
 
     public function loadCart(): void
