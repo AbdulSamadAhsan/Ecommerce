@@ -13,4 +13,7 @@ public function product()
 {
     return $this->belongsTo(Product::class);
 }
+public function SalesReturn(){
+     return $this->belongsTo(SalesReturn::class);
+}
 }

@@ -114,7 +114,12 @@ new class extends Component {
                     @forelse ($purchaseReturn->items as $item)
                         <tr>
                             <td>#{{ $item->id }}</td>
-                            <td>{{ $item->product->name ?? 'Deleted Product' }}</td>
+
+                            <td>
+
+                                <p> {{ $item->product->name ?? 'Deleted Product' }}</p>
+
+                            </td>
                             <td>{{ $item->quantity }}</td>
                             <td>Rs {{ number_format($item->unit_price, 2) }}</td>
                             <td>Rs {{ number_format($item->amount, 2) }}</td>

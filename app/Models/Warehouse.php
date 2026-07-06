@@ -13,5 +13,9 @@ class Warehouse extends Model
     public function manager(){
      return $this->belongsTo(Employee::class,"manager_id");
     }
+    public function products(){
+     return $this->hasMany(Product::class);
+
+    }
     
 }

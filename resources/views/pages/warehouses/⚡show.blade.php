@@ -14,7 +14,7 @@ new class extends Component {
         $this->id = (int) $id;
         $this->warehouse = Warehouse::find($this->id);
 
-        $this->inventory = [['product' => 'MacBook Pro M3', 'sku' => 'MBP-M3', 'stock' => 25, 'value' => 27500], ['product' => 'Wireless Mouse', 'sku' => 'WM-001', 'stock' => 90, 'value' => 4500]];
+        $this->inventory = $this->warehouse->products;
 
         $this->movements = [['date' => '2026-06-18', 'product' => 'MacBook Pro M3', 'type' => 'IN', 'qty' => 10], ['date' => '2026-06-19', 'product' => 'Wireless Mouse', 'type' => 'OUT', 'qty' => 5]];
     }
@@ -26,7 +26,9 @@ new class extends Component {
 
     public function getTotalValueProperty(): float
     {
-        return collect($this->inventory)->sum('value');
+        return $this->inventory->sum(function ($stock) {
+            return (float) $stock->quantity * (float) $stock->price_after_discount;
+        });
     }
 };
 ?>
@@ -66,7 +68,7 @@ new class extends Component {
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6>Stock Value</h6>
-                    <h3 class="fw-bold text-info">${{ number_format($this->totalValue, 2) }}</h3>
+                    <h3 class="fw-bold text-info">{{ number_format($this->totalValue, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -112,10 +114,10 @@ new class extends Component {
                 <tbody>
                     @foreach ($inventory as $item)
                         <tr>
-                            <td>{{ $item['product'] }}</td>
+                            <td>{{ $item['name'] }}</td>
                             <td>{{ $item['sku'] }}</td>
                             <td>{{ $item['stock'] }}</td>
-                            <td>${{ number_format($item['value'], 2) }}</td>
+                            <td>{{ number_format($item['price_after_discount'], 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

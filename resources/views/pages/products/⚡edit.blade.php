@@ -103,7 +103,7 @@ new class extends Component {
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
-            'quantity' => 'required|integer|min:0',
+
             'minimum_stock' => 'required|integer|min:0',
             'description' => 'nullable',
             'image' => 'nullable|image|max:2048',
@@ -124,14 +124,6 @@ new class extends Component {
                 $imagePath = $this->image->storeAs('products', $fileName, 'public');
             }
 
-            $stockBefore = $product->quantity;
-            $stockAfter = (int) $this->quantity;
-            if ($stockAfter < $stockBefore) {
-                throw ValidationException::withMessages([
-                    'quantity' => "Quantity cannot be less than current stock ({$stockBefore}). Use Sale module to reduce stock.",
-                ]);
-            }
-            
             $product->update([
                 'supplier_id' => $this->supplier_id,
                 'category_id' => $this->category_id,
@@ -142,40 +134,12 @@ new class extends Component {
                 'purchase_price' => $this->purchase_price,
                 'selling_price' => $this->selling_price,
                 'discount' => $this->discount,
-                'quantity' => $this->quantity,
+
                 'minimum_stock' => $this->minimum_stock,
                 'description' => $this->description,
                 'image' => $imagePath,
                 'status' => $this->status,
             ]);
-
-            Stock::updateOrCreate(
-                [
-                    'product_id' => $product->id,
-                    'warehouse_id' => $this->warehouse_id,
-                ],
-                [
-                    'quantity' => $this->quantity,
-                    'minimum_stock' => $this->minimum_stock,
-                ],
-            );
-
-            if ($stockBefore != $stockAfter && $stockAfter < $stockBefore) {
-                StockMovement::create([
-                    'product_id' => $product->id,
-                    'warehouse_id' => $this->warehouse_id,
-                    'supplier_id' => $this->supplier_id,
-                    'type' => 'adjustment',
-                    'quantity' => abs($stockAfter - $stockBefore),
-                    'stock_before' => $stockBefore,
-                    'stock_after' => $stockAfter,
-                    'reference_no' => 'EDIT-' . $product->id,
-                ]);
-            }
-            if ($stockAfter > $stockBefore) {
-                $newquantity = abs($stockAfter - $stockBefore);
-                dd('Product Purchased');
-            }
         });
 
         session()->flash('success', 'Product updated successfully.');
@@ -364,16 +328,7 @@ new class extends Component {
                                 wire:model="selling_price_after_discount" readonly>
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Quantity</label>
 
-                            <input type="number" class="form-control @error('quantity') is-invalid @enderror"
-                                wire:model.live="quantity">
-
-                            @error('quantity')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
 
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Minimum Stock</label>

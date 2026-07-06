@@ -31,31 +31,33 @@ new class extends Component {
 
     public function updatedPurchaseId(): void
     {
-        $this->items = [];
-        $this->supplier_name = '';
-        $this->warehouse_name = '';
-        $this->total_amount = 0;
+        $this->resetPurchaseData();
 
         if (!$this->purchase_id) {
             return;
         }
 
-        $purchase = Purchase::with(['supplier', 'items.product.warehouse'])->findOrFail($this->purchase_id);
+        $purchase = Purchase::with(['supplier.user', 'items.product.warehouse'])->findOrFail($this->purchase_id);
 
-        $this->supplier_name = $purchase->supplier->user->name ?? 'N/A';
+        $this->supplier_name = $purchase->supplier->user->name ?? ($purchase->supplier->name ?? 'N/A');
 
         $warehouse = $purchase->items->pluck('product.warehouse')->filter()->first();
 
         $this->warehouse_name = $warehouse->name ?? 'N/A';
 
         foreach ($purchase->items as $item) {
-            $alreadyReturned = PurchaseReturnItem::where('product_id', $item->product_id)
-                ->whereHas('purchaseReturn', function ($query) use ($item) {
-                    $query->where('purchase_id', $item->purchase_id)->whereIn('status', ['pending', 'approved']);
+            //salesreturnitem
+            $alreadyReturned = PurchaseReturnItem::where('purchase_item_id', $item->id)
+                ->whereHas('purchaseReturn', function ($query) {
+                    $query->whereIn('status', ['pending', 'approved']);
                 })
                 ->sum('quantity');
 
-            $availableQty = max(0, (int) $item->quantity - (int) $alreadyReturned);
+            $availableQty = max(0, (int) $item->quantity - (int) $alreadyReturned - (int) $item->product->salesitem->sum('quantity'));
+            $availableQty = $availableQty + $item->product->salesreturnitem->sum('quantity');
+            if ($availableQty <= 0) {
+                continue;
+            }
 
             $unitPrice = (float) ($item->purchase_price ?? 0);
 
@@ -67,13 +69,21 @@ new class extends Component {
                 'purchased_quantity' => (int) $item->quantity,
                 'already_returned' => (int) $alreadyReturned,
                 'available_quantity' => $availableQty,
-                'return_quantity' => $availableQty > 0 ? 1 : 0,
+                'return_quantity' => 1,
                 'unit_price' => $unitPrice,
                 'total_price' => 0,
             ];
         }
 
         $this->calculateTotal();
+    }
+
+    public function resetPurchaseData(): void
+    {
+        $this->items = [];
+        $this->supplier_name = '';
+        $this->warehouse_name = '';
+        $this->total_amount = 0;
     }
 
     public function updatedItems(): void
@@ -88,6 +98,16 @@ new class extends Component {
         foreach ($this->items as $key => $item) {
             $qty = (int) ($item['return_quantity'] ?? 0);
             $price = (float) ($item['unit_price'] ?? 0);
+
+            if ($qty < 1) {
+                $qty = 1;
+                $this->items[$key]['return_quantity'] = 1;
+            }
+
+            if ($qty > (int) $item['available_quantity']) {
+                $qty = (int) $item['available_quantity'];
+                $this->items[$key]['return_quantity'] = $qty;
+            }
 
             $this->items[$key]['total_price'] = $qty * $price;
 
@@ -119,11 +139,6 @@ new class extends Component {
         }
 
         foreach ($selectedItems as $item) {
-            if ((int) $item['available_quantity'] <= 0) {
-                $this->addError('items', $item['product_name'] . ' is already fully returned.');
-                return;
-            }
-
             if ((int) $item['return_quantity'] < 1) {
                 $this->addError('items', 'Return quantity must be at least 1 for ' . $item['product_name']);
                 return;
@@ -171,7 +186,21 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'purchases' => Purchase::with('supplier')->latest()->get(),
+            'purchases' => Purchase::with('supplier')
+                ->whereHas('items', function ($query) {
+                    $query->whereRaw('
+                        purchase_items.quantity > (
+                            SELECT COALESCE(SUM(purchase_return_items.quantity), 0)
+                            FROM purchase_return_items
+                            INNER JOIN purchase_returns
+                                ON purchase_returns.id = purchase_return_items.purchase_return_id
+                            WHERE purchase_return_items.purchase_item_id = purchase_items.id
+                            AND purchase_returns.status IN ("pending", "approved")
+                        )
+                    ');
+                })
+                ->latest()
+                ->get(),
         ];
     }
 };
@@ -214,7 +243,6 @@ new class extends Component {
 
                             <select wire:model.live="purchase_id"
                                 class="form-select @error('purchase_id') is-invalid @enderror">
-
                                 <option value="">Select Purchase</option>
 
                                 @foreach ($purchases as $purchase)
@@ -223,7 +251,7 @@ new class extends Component {
                                         -
                                         {{ $purchase->purchase_no ?? 'Purchase' }}
                                         -
-                                        {{ $purchase->supplier->name ?? 'Supplier' }}
+                                        {{ $purchase->supplier->user->name ?? ($purchase->supplier->name ?? 'Supplier') }}
                                     </option>
                                 @endforeach
                             </select>
@@ -253,7 +281,6 @@ new class extends Component {
 
                     <div class="mb-3">
                         <label class="form-label">Return Reason</label>
-
                         <textarea wire:model.live="reason" rows="4" class="form-control @error('reason') is-invalid @enderror"
                             placeholder="Enter return reason"></textarea>
 
@@ -264,7 +291,6 @@ new class extends Component {
 
                     <div class="mb-4">
                         <label class="form-label">Notes</label>
-
                         <textarea wire:model.live="notes" rows="3" class="form-control @error('notes') is-invalid @enderror"
                             placeholder="Optional notes"></textarea>
 
@@ -297,7 +323,7 @@ new class extends Component {
                                     <tr wire:key="purchase-item-{{ $key }}">
                                         <td>
                                             <input type="checkbox" wire:model.live="items.{{ $key }}.selected"
-                                                class="form-check-input" @disabled($item['available_quantity'] <= 0)>
+                                                class="form-check-input">
                                         </td>
 
                                         <td>
@@ -307,25 +333,20 @@ new class extends Component {
                                         </td>
 
                                         <td>{{ $item['purchased_quantity'] }}</td>
+
                                         <td>{{ $item['already_returned'] }}</td>
 
                                         <td>
-                                            @if ($item['available_quantity'] > 0)
-                                                <span class="badge bg-success rounded-pill">
-                                                    {{ $item['available_quantity'] }}
-                                                </span>
-                                            @else
-                                                <span class="badge bg-danger rounded-pill">
-                                                    Fully Returned
-                                                </span>
-                                            @endif
+                                            <span class="badge bg-success rounded-pill">
+                                                {{ $item['available_quantity'] }}
+                                            </span>
                                         </td>
 
                                         <td style="width: 130px;">
                                             <input type="number"
                                                 wire:model.live="items.{{ $key }}.return_quantity"
                                                 class="form-control" min="1"
-                                                max="{{ $item['available_quantity'] }}" @disabled($item['available_quantity'] <= 0)>
+                                                max="{{ $item['available_quantity'] }}">
                                         </td>
 
                                         <td>
@@ -333,14 +354,13 @@ new class extends Component {
                                         </td>
 
                                         <td>
-                                            Rs
-                                            {{ number_format((float) $item['return_quantity'] * (float) $item['unit_price'], 2) }}
+                                            Rs {{ number_format((float) $item['total_price'], 2) }}
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="8" class="text-center py-5 text-muted">
-                                            Select a purchase to load items.
+                                            Select a purchase to load returnable items.
                                         </td>
                                     </tr>
                                 @endforelse

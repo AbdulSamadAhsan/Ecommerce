@@ -12,7 +12,7 @@ class Product extends Model
  protected $appends=[
     "profit",
     "Badge",
-    "Stock",
+    
          'discount_amount',
         'price_after_discount',
  ];
@@ -31,6 +31,7 @@ class Product extends Model
     'status',
     'brand_id',
     "discount",
+    "stock"
 ];
 public function getBadgeAttribute(){
  $quantity= $this->salesitem->sum("quantity");
@@ -84,14 +85,16 @@ public function salesreturnitem()
 {
     return $this->hasMany(SalesReturnItem::class);
 }
-public function getStockAttribute(){
-    return ($this->purchasesitem()->sum("quantity") - $this->salesitem()->sum("quantity")) + $this->salesreturnitem()->sum("quantity");
-}
+
 
 
 public function purchasesitem()
 {
     return $this->hasMany(PurchaseItem::class);
+}
+public function purchasereturnitem()
+{
+    return $this->hasMany(PurchaseReturnItem::class);
 }
 
 public function stockmovement()
@@ -108,5 +111,9 @@ if($quantity_sold > 5){
 }
 public function stocks(){
        return $this->hasOne(Stock::class);
+}
+public function getStockAttribute()
+{
+    return $this->stocks?->quantity ?? 0;
 }
 }

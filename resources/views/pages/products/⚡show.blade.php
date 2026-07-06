@@ -14,12 +14,13 @@ new class extends Component {
     public $purchaseHistory;
 
     public $stockMovements;
-
+    public $saleReturnHistory;
+    public $purchaseReturnHistory;
     public function mount($id): void
     {
         $this->id = (int) $id;
         $productData = Product::with(['reviews', 'purchasesitem', 'salesitem'])->find($this->id);
-
+        /*   dd($productData->purchasereturnitem->first()->purchaseReturn->return_no);*/
         $this->product = [
             'id' => $this->id,
             'name' => $productData->name,
@@ -40,20 +41,6 @@ new class extends Component {
             'price_after_discount' => $productData->price_after_discount,
         ];
 
-        $this->reviews = [
-            [
-                'customer' => 'Ali Khan',
-                'rating' => 5,
-                'review' => 'Excellent product. Fast performance and premium quality.',
-                'date' => '2026-06-18',
-            ],
-            [
-                'customer' => 'Sara Ahmed',
-                'rating' => 4,
-                'review' => 'Good laptop, battery timing is impressive.',
-                'date' => '2026-06-17',
-            ],
-        ];
         $this->reviews = $productData->reviews;
         // $productData
         //     ->salesitem
@@ -72,8 +59,9 @@ new class extends Component {
         // dd($productData->salesitem->first()->sale->orderNumber->id);
 
         $this->salesHistory = $productData->salesitem;
-
+        $this->saleReturnHistory = $productData->salesreturnitem;
         $this->purchaseHistory = $productData->purchasesitem;
+        $this->purchaseReturnHistory = $productData->purchasereturnitem;
         $this->stockMovements = $productData->stockmovement;
     }
 
@@ -88,7 +76,7 @@ new class extends Component {
 
     public function getTotalSoldProperty(): int
     {
-        return collect($this->salesHistory)->sum('quantity');
+        return collect($this->salesHistory)->sum('quantity') - collect($this->saleReturnHistory)->sum('quantity');
     }
 
     public function getTotalPurchasedProperty(): int
@@ -98,7 +86,7 @@ new class extends Component {
 
     public function getTotalRevenueProperty(): float
     {
-        return collect($this->salesHistory)->sum('total_price');
+        return collect($this->salesHistory)->sum('total_price') - collect($this->saleReturnHistory)->sum('total_price');
     }
 
     public function getTotalPurchaseCostProperty(): float
@@ -510,6 +498,119 @@ new class extends Component {
 
     </div>
 
+
+    <div class="card border-0 shadow mb-4">
+
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                Sale Return History
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Sale Return No</th>
+                            <th>Customer</th>
+                            <th>Qty</th>
+                            <th>Sale Price</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @forelse ($saleReturnHistory as $salereturn)
+                            <tr>
+                                <td>{{ $salereturn->SalesReturn->return_no }}</td>
+                                <td>{{ $salereturn->SalesReturn->sale->customer->user->name }}</td>
+                                <td>{{ $salereturn['quantity'] }}</td>
+                                <td>{{ number_format($salereturn['unit_price'], 2) }}</td>
+                                <td>{{ number_format($salereturn['total_price'], 2) }}</td>
+                                <td>{{ date('d-F-Y', strtotime($salereturn->SalesReturn->created_at)) }}</td>
+                            </tr>
+
+                        @empty
+
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    No sale return history found.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+    <div class="card border-0 shadow mb-4">
+
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                Purchase Return History
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Sale Return No</th>
+
+                            <th>Qty</th>
+                            <th>Purchase Price</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @forelse ($purchaseReturnHistory as $salereturn)
+                            <tr>
+                                <td>{{ $salereturn->purchaseReturn->return_no }}</td>
+
+                                <td>{{ $salereturn['quantity'] }}</td>
+                                <td>{{ number_format($salereturn['unit_price'], 2) }}</td>
+                                <td>{{ number_format($salereturn['amount'], 2) }}</td>
+                                <td>{{ date('d-F-Y', strtotime($salereturn->purchaseReturn->created_at)) }}</td>
+                            </tr>
+
+                        @empty
+
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    No sale return history found.
+                                </td>
+                            </tr>
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
     <div class="card border-0 shadow mb-4">
 
         <div class="card-header bg-light">
@@ -553,6 +654,10 @@ new class extends Component {
                                     @elseif ($movement['type'] === 'return')
                                         <span class="badge bg-warning">
                                             Sale Return / IN
+                                        </span>
+                                    @elseif($movement['type'] === 'purchase_return')
+                                        <span class="badge bg-danger">
+                                            Purchase Return / OUT
                                         </span>
                                     @else
                                         <span class="badge bg-secondary">

@@ -62,6 +62,8 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire('/', 'pages::categories.categories')->name('index');
         Route::livewire('/create', 'pages::categories.add')->name('create');
         Route::livewire('/{id}', 'pages::categories.show')->name('show');
+        Route::livewire('/{id}/edit', 'pages::categories.edit')
+    ->name('edit');
     });
 
     Route::prefix('report')->name('reports.')->group(function () {
@@ -88,18 +90,28 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire("/", "pages::suppliers.all")->name("index");
         Route::livewire("/create", "pages::suppliers.create")->name("create");
           Route::livewire("/{id}", "pages::suppliers.show")->name("show");
+          Route::livewire('/suppliers/{id}/edit', 'pages::suppliers.edit')
+    ->name('edit');
     });
 
     Route::prefix("warehouses")->name("warehouses.")->group(function () {
         Route::livewire("/", "pages::warehouses.all")->name("index");
         Route::livewire("/create", "pages::warehouses.create")->name("create");
         Route::livewire('/{id}', 'pages::warehouses.show')->name('show');
+Route::livewire('/{id}/edit', 'pages::warehouses.edit')
+    ->name('edit');
+
+
     });
 
     Route::prefix("departments")->name("departments.")->group(function () {
         Route::livewire("/", "pages::departments.all")->name("index");
         Route::livewire("/create", "pages::departments.create")->name("create");
         Route::livewire("/{id}", "pages::departments.show")->name("show");
+        Route::livewire(
+    '/{id}/edit',
+    'pages::departments.edit'
+)->name('edit');
     });
 
     Route::prefix("institutions")->name("institutions.")->group(function () {
@@ -120,6 +132,7 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire("/", "pages::employees.all")->name("index");
         Route::livewire("/create", "pages::employees.create")->name("create");
         Route::livewire("/{id}", "pages::employees.show")->name("show");
+             Route::livewire("/{id}/edit", "pages::employees.edit")->name("edit");
          Route::livewire("/salary_payment", "pages::employees.salary")->name("salary");
 
     });
@@ -221,6 +234,8 @@ Route::livewire('/settings', 'pages::settings.index')->name('settings.index');
 
  Route::get('/invoice/{order}', InvoiceController::class)
     ->name("invoice.download");
+
+    Route::livewire("/checkout", "pages::frontend.checkout")->name("checkout")->middleware("customer"); 
 Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire("/login", "pages::frontend.login")->name("login");
     Route::livewire("/register", "pages::frontend.register")->name("register");
@@ -237,7 +252,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::livewire('/wallet', 'pages::frontend.customer.wallet')->name('wallet');
         Route::livewire("/wallet/add", "pages::frontend.customer.wallet.add")->name("wallet.add");
         Route::livewire('/profile', 'pages::frontend.customer.profile')->name('profile');
-Route::livewire("/checkout", "pages::frontend.checkout")->name("checkout");      
+     
         Route::livewire('/support-ticket', 'pages::frontend.customer.support-ticket')->name('support.ticket');
         Route::livewire('/my-support-tickets', 'pages::frontend.customer.my-support-ticket')->name('my.support.tickets');
         Route::livewire('/support-tickets/{ticketNo}', 'pages::frontend.customer.ticket-detail')->name('ticket.detail');
