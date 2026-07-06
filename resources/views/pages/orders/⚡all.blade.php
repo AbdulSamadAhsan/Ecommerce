@@ -78,6 +78,7 @@ new class extends Component {
 
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Payment Method</th>
                         <th>Payment</th>
                         <th>Action</th>
                     </tr>
@@ -85,6 +86,9 @@ new class extends Component {
 
                 <tbody>
                     @forelse ($orders as $order)
+                        @php
+                            $status = str_replace('_', ' ', $order->shipment->status);
+                        @endphp
                         <tr>
                             <td>#{{ $order['id'] }}</td>
 
@@ -96,7 +100,7 @@ new class extends Component {
 
                                 <a href="{{ route('orders.show', $order['id']) }}"
                                     class="btn btn-sm btn-info text-white rounded-pill">View</a>
-                                @if (($order->shipment?->status ?? 'Pending') !== 'Delivered')
+                                @if (!in_array($order->shipment->status, ['cancelled', 'delivered']))
                                     <a href="{{ route('orders.edit', $order->id) }}"
                                         class="btn btn-sm btn-warning rounded-pill">Edit</a>
                                 @endif

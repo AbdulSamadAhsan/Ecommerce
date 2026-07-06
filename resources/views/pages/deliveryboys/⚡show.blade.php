@@ -8,9 +8,19 @@ new class extends Component {
 
     public function mount($id)
     {
-        $this->deliveryboy = Deliveryboy::with(['user', 'shipments.order.sale.customer.user'])
+        $this->deliveryboy = Deliveryboy::with(['user', 'shipments.deliveryassign', 'shipments.order.sale.customer.user'])
             ->withCount('shipments')
             ->findOrFail($id);
+    }
+    public function getTotalDeliveryFeeProperty()
+    {
+        return $this->deliveryboy->shipments
+            ->filter(function ($shipment) {
+                return $shipment->status === 'Delivered';
+            })
+            ->sum(function ($shipment) {
+                return $shipment->order?->sale?->shipping_cost ?? 0;
+            });
     }
 };
 ?>
@@ -35,7 +45,10 @@ new class extends Component {
             <p><strong>Vehicle Type:</strong> {{ ucfirst($deliveryboy->vehicle_type) }}</p>
             <p><strong>Vehicle Number:</strong> {{ $deliveryboy->vehicle_number ?? '-' }}</p>
             <p><strong>Total Shipments:</strong> {{ $deliveryboy->shipments_count }}</p>
-
+            <p>
+                <strong>Total Earning:</strong>
+                Rs {{ number_format($this->totalDeliveryFee, 2) }}
+            </p>
             <p>
                 <strong>Status:</strong>
                 <span class="badge {{ $deliveryboy->is_available ? 'bg-success' : 'bg-danger' }}">
@@ -58,9 +71,9 @@ new class extends Component {
                             <th>Order</th>
                             <th>Tracking No</th>
                             <th>Customer</th>
-                            <th>Total</th>
-                            <th>Shipment Status</th>
-                            <th>Assignment Status</th>
+                            <th>Delivery Fee</th>
+                            <th>Order Status</th>
+
                         </tr>
                     </thead>
 
@@ -73,18 +86,14 @@ new class extends Component {
                                     {{ $shipment->order->sale->customer->user->name ?? ($shipment->order->sale->customer->name ?? 'N/A') }}
                                 </td>
                                 <td>
-                                    Rs {{ number_format($shipment->order->sale->total_amount ?? 0, 2) }}
+                                    Rs {{ number_format($shipment->order->sale->shipping_cost ?? 0, 2) }}
                                 </td>
                                 <td>
                                     <span class="badge bg-info">
                                         {{ ucfirst($shipment->status ?? 'pending') }}
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="badge bg-warning text-dark">
-                                        {{ ucfirst($shipment->pivot->status ?? 'assigned') }}
-                                    </span>
-                                </td>
+
                             </tr>
                         @empty
                             <tr>

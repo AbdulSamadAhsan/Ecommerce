@@ -19,12 +19,15 @@ use App\Models\StockMovement;
 use App\Models\Product;
 use App\Models\Shipment;
 use App\Models\Wallet;
-
+use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 new class extends Component {
     public $cart;
     public $cartData;
+
+    public float $max_cash_order_amount = 0;
+    public bool $cashAutoChanged = false;
 
     public string $name = '';
     public string $email = '';
@@ -36,6 +39,7 @@ new class extends Component {
     public string $remainingPaymentMethod = 'cash';
 
     public float $walletBalance = 0;
+    public $walletPayAmount = 0;
     public float $walletUsedAmount = 0;
     public float $remainingAmount = 0;
 
@@ -52,39 +56,38 @@ new class extends Component {
     public float $taxRate = 0;
     public string $taxName = 'Tax';
 
-    public $invoice_no = '';
+    public string $invoice_no = '';
 
     public string $cardHolderName = '';
     public string $cardNumber = '';
     public string $cardExpiry = '';
     public string $cardCvv = '';
-    public $bank_name;
-    public $transaction_id;
-    public $transfer_date;
-    public $iban;
-    public $branch_name;
-    public $remainingPaymentcardHolderName;
-    public string $remainingPaymentcardNumber = '';
-    public string $remainingPaymentcardExpiry = '';
-    public string $remainingPaymentcardCvv = '';
-    public $remainingPaymentcardbank_name;
-    public $remainingPaymentcardtransaction_id;
-    public $remainingPaymentcardtransfer_date;
-    public $remainingPaymentcardiban;
-    public $remainingPaymentcardbranch_name;
-    public function generateInvoiceNo()
-    {
-        $lastSale = Sale::latest('id')->first();
-        $nextId = $lastSale ? $lastSale->id + 1 : 1;
 
-        return 'SALE-' . now()->format('Ymd') . '-' . date('Hi') . str_pad($nextId, 4, '0', STR_PAD_LEFT);
-    }
+    public string $bank_name = '';
+    public string $transaction_id = '';
+    public string $transfer_date = '';
+    public string $iban = '';
+    public string $branch_name = '';
+
+    public string $remainingPaymentCardHolderName = '';
+    public string $remainingPaymentCardNumber = '';
+    public string $remainingPaymentCardExpiry = '';
+    public string $remainingPaymentCardCvv = '';
+
+    public string $remainingPaymentBankName = '';
+    public string $remainingPaymentTransactionId = '';
+    public string $remainingPaymentTransferDate = '';
+    public string $remainingPaymentIban = '';
+    public string $remainingPaymentBranchName = '';
 
     public function mount()
     {
         if (!Auth::guard('customer')->check()) {
             return redirect()->route('customer.login');
         }
+
+        $setting = Setting::first();
+        $this->max_cash_order_amount = (float) ($setting->max_cash_order_amount ?? 0);
 
         $user = Auth::guard('customer')->user();
         $customer = $user->customer;
@@ -93,18 +96,15 @@ new class extends Component {
             ->where('user_id', Auth::guard('customer')->id())
             ->first();
 
-        if (!$this->cartData) {
+        if (!$this->cartData || $this->cartData->items->count() === 0) {
             return redirect()->route('front');
         }
-
-        $this->cart = $this->cartData->items;
 
         $this->email = $user->email;
         $this->name = $user->name;
         $this->phone = $customer->phone ?? '';
 
         $wallet = Wallet::firstOrCreate(['customer_id' => $customer->id], ['balance' => 0]);
-
         $this->walletBalance = (float) $wallet->balance;
 
         $address = $customer->addresses()->where('is_default', true)->first();
@@ -129,8 +129,7 @@ new class extends Component {
             )
             ->toArray();
 
-        $express = collect($this->shippingMethods)->firstWhere('shipping_category', 'express');
-
+        $express = collect($this->shippingMethods)->firstWhere('shipping_category', 'Express');
         $this->shippingMethod = (string) ($express['id'] ?? ($this->shippingMethods[0]['id'] ?? ''));
 
         $tax = Tax::where('is_active', 1)->where('category', 'sales')->first();
@@ -141,7 +140,122 @@ new class extends Component {
             $this->taxRate = (float) $tax->rate;
         }
 
+        $this->refreshCartFromDatabase();
+
+        $this->removeUnavailableCartItems();
+
+        if ($redirect = $this->ensureCartStillHasItems()) {
+            return $redirect;
+        }
+
+        $this->recalculateCheckoutTotals();
+    }
+
+    private function refreshCartFromDatabase(): void
+    {
+        $this->cartData = Cart::with(['items.product'])
+            ->where('user_id', Auth::guard('customer')->id())
+            ->first();
+
+        $this->cart = $this->cartData ? $this->cartData->items()->with('product')->get() : collect();
+    }
+
+    private function removeUnavailableCartItems(): void
+    {
+        if (!$this->cartData) {
+            return;
+        }
+
+        $removedNames = [];
+
+        foreach ($this->cartData->items()->with('product')->get() as $item) {
+            if (!$item->product || (int) $item->product->quantity <= 0 || (int) $item->product->quantity < (int) $item->quantity) {
+                $removedNames[] = $item->product->name ?? 'Unavailable product';
+                $item->delete();
+            }
+        }
+
+        $this->refreshCartFromDatabase();
+
+        if (!empty($removedNames)) {
+            session()->flash('error', implode(', ', $removedNames) . ' removed from cart because stock is not available.');
+        }
+    }
+
+    private function ensureCartStillHasItems()
+    {
+        if (!$this->cartData || $this->cartData->items()->count() === 0) {
+            if ($this->cartData) {
+                $this->cartData->delete();
+            }
+
+            session()->flash('error', 'Your cart is empty because all items are out of stock.');
+
+            return redirect()->route('front');
+        }
+
+        return null;
+    }
+
+    private function recalculateCheckoutTotals(): void
+    {
+        $this->recalculateCouponAfterCartChange();
+        $this->syncCashPaymentMethod();
         $this->calculateWalletPayment();
+    }
+
+    private function recalculateCouponAfterCartChange(): void
+    {
+        if (!$this->couponId && trim($this->couponCode) === '') {
+            $this->discount = 0;
+            return;
+        }
+
+        $coupon = Coupon::query()
+            ->when($this->couponId, fn($query) => $query->where('id', $this->couponId))
+            ->when(!$this->couponId && trim($this->couponCode) !== '', fn($query) => $query->where('code', strtoupper(trim($this->couponCode))))
+            ->first();
+
+        if (!$coupon || !$coupon->is_active || ($coupon->expires_at && now()->gt($coupon->expires_at))) {
+            $this->couponId = null;
+            $this->couponCode = '';
+            $this->discount = 0;
+            $this->couponMessage = '';
+            $this->couponError = 'Coupon removed because it is no longer valid.';
+            return;
+        }
+
+        $minimumAmount = $coupon->minimum_order_amount ?? ($coupon->minimum_amount ?? 0);
+
+        if ($this->subtotal < $minimumAmount) {
+            $this->couponId = null;
+            $this->couponCode = '';
+            $this->discount = 0;
+            $this->couponMessage = '';
+            $this->couponError = 'Coupon removed because subtotal is now less than Rs ' . number_format($minimumAmount, 2);
+            return;
+        }
+
+        if ($coupon->discount_type === 'percentage') {
+            $this->discount = ($this->subtotal * $coupon->discount_value) / 100;
+        } else {
+            $this->discount = $coupon->discount_value;
+        }
+
+        $this->discount = min($this->discount, $this->subtotal);
+
+        $this->couponId = $coupon->id;
+        $this->couponCode = strtoupper($coupon->code);
+        $this->couponMessage = 'Coupon applied successfully.';
+        $this->couponError = '';
+    }
+
+    public function generateInvoiceNo(): string
+    {
+        $lastSale = Sale::latest('id')->first();
+        $nextId = $lastSale ? $lastSale->id + 1 : 1;
+
+        return 'SALE-' . now()->format('Ymd') . '-' . date('Hi') . str_pad($nextId, 4, '0', STR_PAD_LEFT);
     }
 
     public function getCartCountProperty(): int
@@ -151,7 +265,7 @@ new class extends Component {
 
     public function getSubtotalProperty(): float
     {
-        return collect($this->cart)->sum(fn($item) => $item->price * $item->quantity);
+        return collect($this->cart)->sum(fn($item) => (float) $item->price * (int) $item->quantity);
     }
 
     public function getSelectedShippingMethodProperty(): ?array
@@ -172,31 +286,66 @@ new class extends Component {
     {
         $taxableAmount = max(0, $this->subtotal - $this->discount);
 
-        return ($taxableAmount * $this->taxRate) / 100;
+        return round(($taxableAmount * $this->taxRate) / 100, 2);
     }
 
     public function getTotalProperty(): float
     {
-        return max(0, $this->subtotal + $this->shipping + $this->taxAmount - $this->discount);
+        return round(max(0, $this->subtotal + $this->shipping + $this->taxAmount - $this->discount), 2);
+    }
+
+    public function getCashDisabledProperty(): bool
+    {
+        return $this->max_cash_order_amount > 0 && $this->total > $this->max_cash_order_amount;
     }
 
     public function updatedPaymentMethod(): void
     {
+        if ($this->paymentMethod === 'card') {
+            $this->cashAutoChanged = false;
+        }
+
         if ($this->paymentMethod !== 'card') {
             $this->reset(['cardHolderName', 'cardNumber', 'cardExpiry', 'cardCvv']);
         }
 
-        $this->calculateWalletPayment();
+        if ($this->paymentMethod !== 'bank') {
+            $this->reset(['bank_name', 'transaction_id', 'transfer_date', 'iban', 'branch_name']);
+        }
+
+        $this->recalculateCheckoutTotals();
     }
 
     public function updatedShippingMethod(): void
     {
-        $this->calculateWalletPayment();
+        $this->recalculateCheckoutTotals();
     }
 
     public function updatedRemainingPaymentMethod(): void
     {
         $this->calculateWalletPayment();
+    }
+
+    public function updatedWalletPayAmount(): void
+    {
+        $this->calculateWalletPayment();
+    }
+
+    public function syncCashPaymentMethod(): void
+    {
+        if ($this->cashDisabled && $this->paymentMethod === 'cash') {
+            $this->paymentMethod = 'card';
+            $this->cashAutoChanged = true;
+        }
+
+        if (!$this->cashDisabled && $this->paymentMethod === 'card' && $this->cashAutoChanged) {
+            $this->paymentMethod = 'cash';
+            $this->cashAutoChanged = false;
+        }
+
+        if ($this->paymentMethod === 'wallet' && $this->walletBalance <= 0) {
+            $this->paymentMethod = $this->cashDisabled ? 'card' : 'cash';
+        }
     }
 
     public function calculateWalletPayment(): void
@@ -205,11 +354,27 @@ new class extends Component {
         $this->remainingAmount = 0;
 
         if ($this->paymentMethod !== 'wallet') {
+            $this->walletPayAmount = 0;
             return;
         }
 
-        $this->walletUsedAmount = min($this->walletBalance, $this->total);
-        $this->remainingAmount = max(0, $this->total - $this->walletUsedAmount);
+        $maxWalletAllowed = min($this->walletBalance, $this->total);
+
+        if ((float) $this->walletPayAmount <= 0) {
+            $this->walletPayAmount = $maxWalletAllowed;
+        }
+
+        if ((float) $this->walletPayAmount > $maxWalletAllowed) {
+            $this->walletPayAmount = $maxWalletAllowed;
+        }
+
+        $this->walletPayAmount = round((float) $this->walletPayAmount, 2);
+        $this->walletUsedAmount = $this->walletPayAmount;
+        $this->remainingAmount = max(0, round($this->total - $this->walletUsedAmount, 2));
+
+        if ($this->remainingAmount > 0 && $this->remainingPaymentMethod === 'cash' && $this->max_cash_order_amount > 0 && $this->remainingAmount > $this->max_cash_order_amount) {
+            $this->remainingPaymentMethod = 'card';
+        }
     }
 
     public function applyCoupon(): void
@@ -223,6 +388,7 @@ new class extends Component {
 
         if ($code === '') {
             $this->couponError = 'Please enter coupon code.';
+            $this->recalculateCheckoutTotals();
             return;
         }
 
@@ -230,32 +396,32 @@ new class extends Component {
 
         if (!$coupon) {
             $this->couponError = 'Invalid coupon code.';
+            $this->recalculateCheckoutTotals();
             return;
         }
 
         if ($coupon->expires_at && now()->gt($coupon->expires_at)) {
             $this->couponError = 'This coupon has expired.';
+            $this->recalculateCheckoutTotals();
             return;
         }
 
         $minimumAmount = $coupon->minimum_order_amount ?? ($coupon->minimum_amount ?? 0);
 
         if ($this->subtotal < $minimumAmount) {
-            $this->couponError = 'Minimum order amount is ' . number_format($minimumAmount, 2);
+            $this->couponError = 'Minimum order amount is Rs ' . number_format($minimumAmount, 2);
+            $this->recalculateCheckoutTotals();
             return;
         }
 
-        if ($coupon->discount_type === 'percentage') {
-            $this->discount = ($this->subtotal * $coupon->discount_value) / 100;
-        } else {
-            $this->discount = $coupon->discount_value;
-        }
-
-        $this->discount = min($this->discount, $this->subtotal);
         $this->couponId = $coupon->id;
         $this->couponCode = $code;
+
+        $this->recalculateCouponAfterCartChange();
+
         $this->couponMessage = 'Coupon applied successfully.';
 
+        $this->syncCashPaymentMethod();
         $this->calculateWalletPayment();
     }
 
@@ -267,6 +433,7 @@ new class extends Component {
         $this->couponMessage = '';
         $this->couponError = '';
 
+        $this->syncCashPaymentMethod();
         $this->calculateWalletPayment();
     }
 
@@ -276,17 +443,17 @@ new class extends Component {
             return $this->paymentMethod;
         }
 
-        if ($this->remainingAmount <= 0) {
-            return 'wallet';
-        }
-
-        return 'wallet+' . $this->remainingPaymentMethod;
+        return $this->remainingAmount <= 0 ? 'wallet' : 'wallet+' . $this->remainingPaymentMethod;
     }
 
     private function finalPaymentStatus(): string
     {
         if ($this->paymentMethod === 'wallet') {
-            return $this->remainingAmount <= 0 ? 'paid' : 'partial';
+            if ($this->remainingAmount <= 0) {
+                return 'paid';
+            }
+
+            return in_array($this->remainingPaymentMethod, ['card', 'bank'], true) ? 'paid' : 'partial';
         }
 
         return in_array($this->paymentMethod, ['card', 'bank'], true) ? 'paid' : 'pending';
@@ -295,6 +462,10 @@ new class extends Component {
     private function paidAmount(): float
     {
         if ($this->paymentMethod === 'wallet') {
+            if ($this->remainingAmount > 0 && in_array($this->remainingPaymentMethod, ['card', 'bank'], true)) {
+                return $this->total;
+            }
+
             return $this->walletUsedAmount;
         }
 
@@ -303,11 +474,29 @@ new class extends Component {
 
     private function dueAmount(): float
     {
+        if ($this->paymentMethod === 'wallet' && $this->remainingAmount > 0 && $this->remainingPaymentMethod === 'cash') {
+            return $this->remainingAmount;
+        }
+
         return max(0, $this->total - $this->paidAmount());
     }
 
     public function placeOrder()
     {
+        $this->refreshCartFromDatabase();
+        $this->removeUnavailableCartItems();
+
+        if ($redirect = $this->ensureCartStillHasItems()) {
+            return $redirect;
+        }
+
+        $this->recalculateCheckoutTotals();
+
+        if ($this->paymentMethod === 'cash' && $this->cashDisabled) {
+            session()->flash('error', 'Cash on Delivery is not allowed for orders greater than Rs ' . number_format($this->max_cash_order_amount, 2));
+            return;
+        }
+
         $rules = [
             'name' => 'required|min:3',
             'email' => 'required|email',
@@ -327,10 +516,54 @@ new class extends Component {
             ];
         }
 
+        if ($this->paymentMethod === 'bank') {
+            $rules += [
+                'bank_name' => 'required|min:2',
+                'branch_name' => 'required|min:2',
+                'transaction_id' => 'required|min:3',
+                'iban' => 'required|min:10',
+                'transfer_date' => 'required|date',
+            ];
+        }
+
+        if ($this->paymentMethod === 'wallet') {
+            $maxWalletAllowed = min($this->walletBalance, $this->total);
+
+            $rules += [
+                'walletPayAmount' => 'required|numeric|min:1|max:' . $maxWalletAllowed,
+            ];
+        }
+
         if ($this->paymentMethod === 'wallet' && $this->remainingAmount > 0) {
             $rules += [
                 'remainingPaymentMethod' => 'required|in:cash,card,bank',
             ];
+
+            if ($this->remainingPaymentMethod === 'cash') {
+                if ($this->max_cash_order_amount > 0 && $this->remainingAmount > $this->max_cash_order_amount) {
+                    session()->flash('error', 'Cash is not allowed for remaining amount greater than Rs ' . number_format($this->max_cash_order_amount, 2));
+                    return;
+                }
+            }
+
+            if ($this->remainingPaymentMethod === 'card') {
+                $rules += [
+                    'remainingPaymentCardHolderName' => 'required|min:3',
+                    'remainingPaymentCardNumber' => 'required|min:13|max:19',
+                    'remainingPaymentCardExpiry' => 'required|min:4|max:10',
+                    'remainingPaymentCardCvv' => 'required|min:3|max:4',
+                ];
+            }
+
+            if ($this->remainingPaymentMethod === 'bank') {
+                $rules += [
+                    'remainingPaymentBankName' => 'required|min:2',
+                    'remainingPaymentBranchName' => 'required|min:2',
+                    'remainingPaymentTransactionId' => 'required|min:3',
+                    'remainingPaymentIban' => 'required|min:10',
+                    'remainingPaymentTransferDate' => 'required|date',
+                ];
+            }
         }
 
         $this->validate($rules);
@@ -347,12 +580,32 @@ new class extends Component {
                 $customer = Auth::guard('customer')->user()->customer;
 
                 $wallet = Wallet::where('customer_id', $customer->id)->lockForUpdate()->firstOrFail();
-
                 $this->walletBalance = (float) $wallet->balance;
+
+                $lockedProducts = [];
+
+                foreach ($this->cart as $item) {
+                    $product = Product::where('id', $item->product_id)->lockForUpdate()->firstOrFail();
+
+                    if ((int) $product->quantity < (int) $item->quantity) {
+                        throw new \Exception($product->name . ' stock is not enough. Please refresh checkout.');
+                    }
+
+                    $lockedProducts[$product->id] = $product;
+                }
+
                 $this->calculateWalletPayment();
 
                 if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount <= 0) {
-                    throw new \Exception('Your wallet balance is empty.');
+                    throw new \Exception('Please enter a valid wallet amount.');
+                }
+
+                if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount > $wallet->balance) {
+                    throw new \Exception('Wallet amount cannot be greater than your current wallet balance.');
+                }
+
+                if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount > $this->total) {
+                    throw new \Exception('Wallet amount cannot be greater than order total.');
                 }
 
                 $sale = Sale::create([
@@ -387,16 +640,11 @@ new class extends Component {
                     'city' => $this->city,
                     'address' => $this->address,
                     'order_date' => now(),
-
                     'coupon_code' => $this->couponCode ?: null,
                 ]);
 
                 foreach ($this->cart as $item) {
-                    $product = Product::where('id', $item->product_id)->lockForUpdate()->firstOrFail();
-
-                    if ($product->quantity < $item->quantity) {
-                        throw new \Exception($product->name . ' stock is not enough.');
-                    }
+                    $product = $lockedProducts[$item->product_id];
 
                     SaleItem::create([
                         'sale_id' => $sale->id,
@@ -436,13 +684,10 @@ new class extends Component {
                     ]);
                 }
 
-                $tracking = 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
-
                 Shipment::create([
                     'order_id' => $order->id,
                     'shipping_method_id' => $this->shippingMethod,
-                    'tracking_number' => $tracking,
-
+                    'tracking_number' => 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8)),
                     'status' => 'pending',
                 ]);
 
@@ -473,7 +718,6 @@ new class extends Component {
             });
 
             $this->cart = [];
-            $this->removeCoupon();
 
             session()->flash('success', 'Order placed successfully.');
 
@@ -486,6 +730,7 @@ new class extends Component {
             }
 
             session()->flash('error', $e->getMessage());
+
             return;
         }
     }
@@ -498,7 +743,6 @@ new class extends Component {
     }
 };
 ?>
-
 <div class="container py-5">
 
     <h2 class="fw-bold mb-4">Checkout</h2>
@@ -569,8 +813,24 @@ new class extends Component {
 
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
-                                value="cash" id="cash">
-                            <label class="form-check-label" for="cash">Cash on Delivery</label>
+                                value="cash" id="cash" @disabled($this->cashDisabled)>
+
+                            <label class="form-check-label {{ $this->cashDisabled ? 'text-muted' : '' }}"
+                                for="cash">
+                                Cash on Delivery
+
+                                @if ($this->max_cash_order_amount > 0)
+                                    <span class="badge bg-danger ms-2">
+                                        Max Cash Rs {{ number_format($this->max_cash_order_amount, 2) }}
+                                    </span>
+                                @endif
+
+                                @if ($this->cashDisabled)
+                                    <span class="badge bg-warning text-dark ms-2">
+                                        Not allowed for this total
+                                    </span>
+                                @endif
+                            </label>
                         </div>
 
                         <div class="form-check mb-2">
@@ -584,30 +844,23 @@ new class extends Component {
                                 value="bank" id="bank">
                             <label class="form-check-label" for="bank">Bank Transfer</label>
                         </div>
-                        <div class="form-check mb-4">
 
+                        <div class="form-check mb-4">
                             <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
                                 value="wallet" id="wallet" @disabled($walletBalance <= 0)>
 
                             <label class="form-check-label {{ $walletBalance <= 0 ? 'text-muted' : '' }}"
                                 for="wallet">
-
                                 Wallet Payment
-
                                 <span class="text-muted">
                                     (Balance: Rs {{ number_format($walletBalance, 2) }})
                                 </span>
 
                                 @if ($walletBalance <= 0)
-                                    <span class="badge bg-danger ms-2">
-                                        Insufficient Balance
-                                    </span>
+                                    <span class="badge bg-danger ms-2">Insufficient Balance</span>
                                 @endif
-
                             </label>
-
                         </div>
-
 
                         @if ($paymentMethod === 'wallet')
                             <div class="border rounded-4 p-4 mb-4 bg-light">
@@ -616,6 +869,21 @@ new class extends Component {
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Wallet Balance</span>
                                     <strong>Rs {{ number_format($walletBalance, 2) }}</strong>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Amount to Pay from Wallet</label>
+                                    <input type="number" step="0.01" min="1"
+                                        max="{{ min($walletBalance, $this->total) }}" wire:model.live="walletPayAmount"
+                                        class="form-control rounded-pill" placeholder="Enter wallet amount">
+
+                                    <small class="text-muted">
+                                        Maximum allowed: Rs {{ number_format(min($walletBalance, $this->total), 2) }}
+                                    </small>
+
+                                    @error('walletPayAmount')
+                                        <small class="text-danger d-block">{{ $message }}</small>
+                                    @enderror
                                 </div>
 
                                 <div class="d-flex justify-content-between mb-2">
@@ -631,33 +899,38 @@ new class extends Component {
                                 </div>
 
                                 @if ($remainingAmount > 0)
-                                    <label class="form-label fw-semibold">
-                                        Pay remaining amount with
-                                    </label>
+                                    <label class="form-label fw-semibold">Pay remaining amount with</label>
 
                                     <select wire:model.live="remainingPaymentMethod" class="form-select rounded-pill">
-                                        <option value="cash">Cash on Delivery</option>
+                                        <option value="cash" @disabled($max_cash_order_amount > 0 && $remainingAmount > $max_cash_order_amount)>
+                                            Cash on Delivery
+                                        </option>
                                         <option value="card">Card Payment</option>
                                         <option value="bank">Bank Transfer</option>
                                     </select>
-                                    @if ($remainingPaymentMethod == 'card')
+
+                                    @error('remainingPaymentMethod')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+
+                                    @if ($remainingPaymentMethod === 'card')
                                         <div class="border rounded-4 p-4 mt-4 mb-4 bg-light">
-                                            <h5 class="fw-bold mb-3">Card Details</h5>
+                                            <h5 class="fw-bold mb-3">Remaining Card Details</h5>
 
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Card Holder Name</label>
-                                                <input type="text" wire:model="remainingPaymentcardHolderName"
+                                                <input type="text" wire:model="remainingPaymentCardHolderName"
                                                     class="form-control rounded-pill">
-                                                @error('cardHolderName')
+                                                @error('remainingPaymentCardHolderName')
                                                     <small class="text-danger">{{ $message }}</small>
                                                 @enderror
                                             </div>
 
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Card Number</label>
-                                                <input type="text" wire:model="remainingPaymentcardNumber"
+                                                <input type="text" wire:model="remainingPaymentCardNumber"
                                                     class="form-control rounded-pill">
-                                                @error('cardNumber')
+                                                @error('remainingPaymentCardNumber')
                                                     <small class="text-danger">{{ $message }}</small>
                                                 @enderror
                                             </div>
@@ -665,73 +938,69 @@ new class extends Component {
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">Expiry Date</label>
-                                                    <input type="text" wire:model="remainingPaymentcardExpiry"
+                                                    <input type="text" wire:model="remainingPaymentCardExpiry"
                                                         class="form-control rounded-pill" placeholder="MM/YY">
-                                                    @error('cardExpiry')
+                                                    @error('remainingPaymentCardExpiry')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
 
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">CVV</label>
-                                                    <input type="password" wire:model="remainingPaymentcardCvv"
+                                                    <input type="password" wire:model="remainingPaymentCardCvv"
                                                         class="form-control rounded-pill">
-                                                    @error('cardCvv')
+                                                    @error('remainingPaymentCardCvv')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
                                             </div>
                                         </div>
-                                    @elseif ($remainingPaymentMethod == 'bank')
+                                    @elseif ($remainingPaymentMethod === 'bank')
                                         <div class="border rounded-4 p-4 mt-4 mb-4 bg-light">
-                                            <h5 class="fw-bold mb-3">Bank Details</h5>
+                                            <h5 class="fw-bold mb-3">Remaining Bank Details</h5>
 
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Bank Name</label>
-                                                <input type="text" wire:model="remainingPaymentbank_name"
+                                                <input type="text" wire:model="remainingPaymentBankName"
                                                     class="form-control rounded-pill">
-                                                @error('bank_name')
+                                                @error('remainingPaymentBankName')
                                                     <small class="text-danger">{{ $message }}</small>
                                                 @enderror
                                             </div>
 
-
-
                                             <div class="row">
-
-
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">Branch Name</label>
-                                                    <input type="text" wire:model="remainingPaymentbranch_name"
-                                                        class="form-control rounded-pill" placeholder="MM/YY">
-                                                    @error('cardExpiry')
+                                                    <input type="text" wire:model="remainingPaymentBranchName"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentBranchName')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
 
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">Transaction ID</label>
-                                                    <input type="text" wire:model="remainingPaymenttransaction_id"
+                                                    <input type="text" wire:model="remainingPaymentTransactionId"
                                                         class="form-control rounded-pill">
-                                                    @error('transaction_id')
+                                                    @error('remainingPaymentTransactionId')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
 
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">IBAN</label>
-                                                    <input type="text" wire:model="remainingPaymentiban"
-                                                        class="form-control rounded-pill" placeholder="MM/YY">
-                                                    @error('iban')
+                                                    <input type="text" wire:model="remainingPaymentIban"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentIban')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
 
                                                 <div class="col-md-6 mb-3">
                                                     <label class="form-label fw-semibold">Transfer Date</label>
-                                                    <input type="date" wire:model="remainingPaymenttransfer_date"
+                                                    <input type="date" wire:model="remainingPaymentTransferDate"
                                                         class="form-control rounded-pill">
-                                                    @error('transfer_date')
+                                                    @error('remainingPaymentTransferDate')
                                                         <small class="text-danger">{{ $message }}</small>
                                                     @enderror
                                                 </div>
@@ -801,16 +1070,12 @@ new class extends Component {
                                     @enderror
                                 </div>
 
-
-
                                 <div class="row">
-
-
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-semibold">Branch Name</label>
                                         <input type="text" wire:model="branch_name"
-                                            class="form-control rounded-pill" placeholder="MM/YY">
-                                        @error('cardExpiry')
+                                            class="form-control rounded-pill">
+                                        @error('branch_name')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
                                     </div>
@@ -826,8 +1091,7 @@ new class extends Component {
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-semibold">IBAN</label>
-                                        <input type="text" wire:model="iban" class="form-control rounded-pill"
-                                            placeholder="MM/YY">
+                                        <input type="text" wire:model="iban" class="form-control rounded-pill">
                                         @error('iban')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
@@ -844,6 +1108,7 @@ new class extends Component {
                                 </div>
                             </div>
                         @endif
+
                         <button type="submit" class="btn btn-primary rounded-pill px-5">
                             Place Order
                         </button>
@@ -883,7 +1148,7 @@ new class extends Component {
 
                                     <label class="form-check-label" for="shipping_{{ $method['id'] }}">
                                         {{ $method['name'] }}
-                                        — {{ number_format($method['cost'], 2) }}
+                                        — Rs {{ number_format($method['cost'], 2) }}
                                     </label>
                                 </div>
                             @empty
@@ -891,6 +1156,10 @@ new class extends Component {
                                     No shipping method available.
                                 </div>
                             @endforelse
+
+                            @error('shippingMethod')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="my-4">
@@ -926,36 +1195,36 @@ new class extends Component {
 
                         <div class="d-flex justify-content-between mt-3">
                             <span>Subtotal</span>
-                            <strong>{{ number_format($this->subtotal, 2) }}</strong>
+                            <strong>Rs {{ number_format($this->subtotal, 2) }}</strong>
                         </div>
 
                         <div class="d-flex justify-content-between mt-2">
                             <span>Shipping</span>
-                            <strong>{{ number_format($this->shipping, 2) }}</strong>
+                            <strong>Rs {{ number_format($this->shipping, 2) }}</strong>
                         </div>
 
                         @if ($discount > 0)
                             <div class="d-flex justify-content-between mt-2 text-success">
                                 <span>Discount</span>
-                                <strong>- {{ number_format($discount, 2) }}</strong>
+                                <strong>- Rs {{ number_format($discount, 2) }}</strong>
                             </div>
                         @endif
 
                         <div class="d-flex justify-content-between mt-2">
                             <span>{{ $taxName }} ({{ $taxRate }}%)</span>
-                            <strong>{{ number_format($this->taxAmount, 2) }}</strong>
+                            <strong>Rs {{ number_format($this->taxAmount, 2) }}</strong>
                         </div>
 
                         @if ($paymentMethod === 'wallet')
                             <div class="d-flex justify-content-between mt-2 text-success">
                                 <span>Wallet Used</span>
-                                <strong>- {{ number_format($walletUsedAmount, 2) }}</strong>
+                                <strong>- Rs {{ number_format($walletUsedAmount, 2) }}</strong>
                             </div>
 
                             @if ($remainingAmount > 0)
                                 <div class="d-flex justify-content-between mt-2 text-danger">
                                     <span>Remaining Payable</span>
-                                    <strong>{{ number_format($remainingAmount, 2) }}</strong>
+                                    <strong>Rs {{ number_format($remainingAmount, 2) }}</strong>
                                 </div>
                             @endif
                         @endif
@@ -964,7 +1233,7 @@ new class extends Component {
 
                         <div class="d-flex justify-content-between fs-5">
                             <strong>Total</strong>
-                            <strong>{{ number_format($this->total, 2) }}</strong>
+                            <strong>Rs {{ number_format($this->total, 2) }}</strong>
                         </div>
 
                     @endif

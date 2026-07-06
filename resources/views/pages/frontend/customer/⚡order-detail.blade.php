@@ -85,7 +85,7 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
 
     private function isOrderDelivered(): bool
     {
-        return ($this->order['raw_status'] ?? '') === 'delivered';
+        return ($this->order['raw_status'] ?? '') == 'delivered';
     }
 
     private function approvedReturnedQuantity(SaleItem $saleItem): int

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class WalletTransaction extends Model
+class Setting extends Model
 {
     //
       protected $guarded=[];

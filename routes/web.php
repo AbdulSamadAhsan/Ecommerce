@@ -22,7 +22,7 @@ Route::get('/home', [HomeController::class, 'index'])
 
 Route::livewire("/", "pages::frontend.home")->name("front");
 Route::livewire("/cart", "pages::frontend.cart")->name("cart");
-Route::livewire("/checkout", "pages::frontend.checkout")->name("checkout");
+
 Route::livewire('/product/{id}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
 
@@ -200,13 +200,18 @@ Route::livewire("sales_return/{id}/edit","pages::sales.sale_return.edit")->name(
 Route::livewire("sales_return/{id}/show","pages::sales.sale_return.show")->name("sales_return.show");
 
 Route::livewire('/orders', 'pages::orders.all')->name('orders.index');
-
+Route::livewire('/purchase-returns', 'pages::purchases.returns.all')->name('purchases.returns.index');
+Route::livewire("/purchase-returns/create","pages::purchases.returns.create")->name("purchases.returns.create");
+Route::livewire('/purchase-returns/{id}/show', 'pages::purchases.returns.show')->name('purchases.returns.show');
+Route::livewire('/purchase-returns/{id}/edit', 'pages::purchases.returns.edit')->name('purchases.returns.edit');
 Route::livewire('/orders/{id}/edit', 'pages::orders.edit')->name('orders.edit');
 Route::livewire('/orders/{id}', 'pages::orders.show')->name('orders.show');
 Route::get("/order/report",OrderController::class)->name("order.report");
 Route::get("/order/{id}/report",OrderReportController::class)->name("order.invoice.report");
-
-
+Route::livewire("customer-support-tickets","pages::tickets.all")->name('customer-support-tickets.index');
+Route::livewire("customer-support-tickets/{id}/edit","pages::tickets.edit")->name('customer-support-tickets.edit');
+Route::livewire("customer-support-tickets/{id}","pages::tickets.show")->name('customer-support-tickets.show');
+Route::livewire('/settings', 'pages::settings.index')->name('settings.index');
 /*
 |--------------------------------------------------------------------------
 | Customer Routes
@@ -221,7 +226,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::livewire("/register", "pages::frontend.register")->name("register");
     Route::livewire("/forget_password", "pages::frontend.forget_password")->name("forget_password");
     Route::livewire("/reset_password/{token}", "pages::frontend.reset_password")->name("password_reset");
-
+  Route::livewire('/contact-us', 'pages::frontend.customer.contact-us')->name('contact-us');
     Route::middleware('customer')->group(function () {
         Route::livewire('/dashboard', 'pages::frontend.customer.dashboard')->name('dashboard');
        
@@ -232,10 +237,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::livewire('/wallet', 'pages::frontend.customer.wallet')->name('wallet');
         Route::livewire("/wallet/add", "pages::frontend.customer.wallet.add")->name("wallet.add");
         Route::livewire('/profile', 'pages::frontend.customer.profile')->name('profile');
-        Route::livewire('/contact-us', 'pages::frontend.customer.contact-us')->name('contact-us');
+Route::livewire("/checkout", "pages::frontend.checkout")->name("checkout");      
         Route::livewire('/support-ticket', 'pages::frontend.customer.support-ticket')->name('support.ticket');
         Route::livewire('/my-support-tickets', 'pages::frontend.customer.my-support-ticket')->name('my.support.tickets');
         Route::livewire('/support-tickets/{ticketNo}', 'pages::frontend.customer.ticket-detail')->name('ticket.detail');
         Route::livewire('/wishlist', 'pages::frontend.customer.wishlist')->name('wishlist');
+        Route::get("/logout",function(){
+              auth("customer")->logout();
+              return redirect()->route("customer.login");
+        })->name('logout');
     });
 });

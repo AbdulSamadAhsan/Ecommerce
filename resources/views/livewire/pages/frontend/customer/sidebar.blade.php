@@ -51,7 +51,7 @@
             class="list-group-item list-group-item-action {{ request()->routeIs('customer.addresses') ? 'active' : '' }}">
             <i class="bi bi-geo-alt-fill me-2"></i> Saved Addresses
         </a>
-        <a href="#" class="list-group-item list-group-item-action text-danger">
+        <a href="{{ route('customer.logout') }}" class="list-group-item list-group-item-action text-danger">
             <i class="bi bi-box-arrow-right me-2"></i>
             Logout
         </a>

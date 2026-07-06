@@ -1,9 +1,9 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\CustomerSupportTicket;
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
-    public array $tickets = [
+    public $tickets = [
         [
             'ticket_no' => 'TK-1001',
             'order_no' => '1001',
@@ -29,6 +29,11 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
             'created_at' => '2026-06-15',
         ],
     ];
+
+    public function mount()
+    {
+        $this->tickets = CustomerSupportTicket::get();
+    }
 };
 ?>
 
@@ -73,7 +78,7 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
 
                                         <td>{{ $ticket['ticket_no'] }}</td>
 
-                                        <td>#{{ $ticket['order_no'] }}</td>
+                                        <td>#{{ $ticket->order->id }}</td>
 
                                         <td>{{ $ticket['subject'] }}</td>
 

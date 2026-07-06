@@ -38,7 +38,7 @@ return new class extends Migration
 
             $table->date('due_date')
                 ->nullable();
-            $table->text('pdf_path')
+            $table->text('pdf_path');
 
             $table->text('notes')
                 ->nullable();

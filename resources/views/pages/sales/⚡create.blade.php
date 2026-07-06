@@ -1,25 +1,37 @@
 <?php
 
 use Livewire\Component;
-use Livewire\Attributes\Layout;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Order;
 use App\Models\Stock;
+use App\Models\Shipment;
 use App\Models\StockMovement;
-use Illuminate\Support\Facades\DB;
+use App\Models\ShippingMethod;
 use App\Models\Tax;
+use App\Models\Invoice;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 new class extends Component {
     public $customer_id = '';
     public $invoice_no = '';
     public $address = '';
     public $order_status = 'pending';
+    public $payment_status = 'pending';
+    public $payment_method = 'cash';
     public $order_date = '';
     public $discount = 0;
     public $tax = 0;
     public $tax_rate = 0;
+    public $shippingMethod = '';
+    public $shipping_cost = 0;
+    public $paid_amount = 0;
+    public $tracking = '';
+
     public $items = [
         [
             'product_id' => '',
@@ -33,8 +45,12 @@ new class extends Component {
     {
         $this->order_date = now()->format('Y-m-d');
         $this->invoice_no = $this->generateInvoiceNo();
+
         $taxdata = Tax::where('is_active', 1)->where('category', 'sales')->first();
-        $this->tax_rate = $taxdata->rate;
+
+        $this->tax_rate = $taxdata?->rate ?? 0;
+
+        $this->tracking = 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
     }
 
     public function generateInvoiceNo()
@@ -69,6 +85,7 @@ new class extends Component {
     {
         if (str_contains($property, 'items.') && str_contains($property, '.product_id')) {
             $index = (int) explode('.', $property)[1];
+
             $productId = $this->items[$index]['product_id'] ?? null;
 
             if ($productId && $this->isDuplicateProduct($productId, $index)) {
@@ -76,23 +93,23 @@ new class extends Component {
                 $this->items = array_values($this->items);
 
                 session()->flash('error', 'Duplicate product row removed.');
+
                 $this->calculateTotals();
                 return;
             }
 
             $product = Product::find($productId);
 
-            $this->items[$index]['unit_price'] = $product ? $product->price_after_discount ?? 0 : 0;
+            $this->items[$index]['unit_price'] = $product?->price_after_discount ?? ($product?->selling_price ?? 0);
         }
 
-        $this->removeDuplicateRows();
         $this->calculateTotals();
     }
 
     public function isDuplicateProduct($productId, $currentIndex)
     {
         foreach ($this->items as $index => $item) {
-            if ($index !== $currentIndex && !empty($item['product_id']) && (int) $item['product_id'] === (int) $productId) {
+            if ($index !== $currentIndex && (int) ($item['product_id'] ?? 0) === (int) $productId) {
                 return true;
             }
         }
@@ -100,25 +117,13 @@ new class extends Component {
         return false;
     }
 
-    public function removeDuplicateRows()
+    public function updatedShippingMethod($value)
     {
-        $seen = [];
+        $method = ShippingMethod::find($value);
 
-        foreach ($this->items as $index => $item) {
-            $productId = $item['product_id'] ?? null;
+        $this->shipping_cost = $method?->cost ?? 0;
 
-            if (!$productId) {
-                continue;
-            }
-
-            if (in_array($productId, $seen)) {
-                unset($this->items[$index]);
-            } else {
-                $seen[] = $productId;
-            }
-        }
-
-        $this->items = array_values($this->items);
+        $this->calculateTotals();
     }
 
     public function calculateTotals()
@@ -129,6 +134,7 @@ new class extends Component {
 
             $this->items[$index]['total_price'] = $qty * $price;
         }
+
         $this->tax = round(($this->subtotal * $this->tax_rate) / 100, 2);
     }
 
@@ -136,14 +142,15 @@ new class extends Component {
     {
         return collect($this->items)->sum('total_price');
     }
-    public function getTaxAmountProperty()
-    {
-        return round(($this->subtotal * $this->tax) / 100, 2);
-    }
 
     public function getTotalAmountProperty()
     {
-        return max($this->subtotal - (float) $this->discount + (float) $this->tax, 0);
+        return max($this->subtotal - (float) $this->discount + (float) $this->tax + (float) $this->shipping_cost, 0);
+    }
+
+    public function getDueAmountProperty()
+    {
+        return max($this->total_amount - (float) $this->paid_amount, 0);
     }
 
     public function rules()
@@ -153,9 +160,13 @@ new class extends Component {
             'invoice_no' => 'required|string|max:255',
             'address' => 'required|string',
             'order_status' => 'required|string',
+            'payment_status' => 'required|string',
+            'payment_method' => 'required|string',
             'order_date' => 'required|date',
             'discount' => 'nullable|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'shippingMethod' => 'nullable|exists:shipping_methods,id',
 
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id|distinct',
@@ -166,9 +177,9 @@ new class extends Component {
 
     public function save()
     {
-        $this->removeDuplicateRows();
         $this->calculateTotals();
         $this->validate();
+
         try {
             DB::transaction(function () {
                 foreach ($this->items as $item) {
@@ -185,11 +196,21 @@ new class extends Component {
                     'subtotal' => $this->subtotal,
                     'discount' => $this->discount ?? 0,
                     'tax' => $this->tax ?? 0,
-                    'shipping_cost' => 1000,
+                    'shipping_cost' => $this->shipping_cost ?? 0,
                     'total_amount' => $this->total_amount,
+                    'paid_amount' => $this->paid_amount ?? 0,
+                    'due_amount' => $this->due_amount,
+                    'payment_status' => $this->payment_status,
+                    'payment_method' => $this->payment_method,
+                    'shipping_cost' => $this->shipping_cost,
                 ]);
 
                 foreach ($this->items as $item) {
+                    $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+
+                    $stockBefore = $product->quantity;
+                    $stockAfter = $stockBefore - $item['quantity'];
+
                     SaleItem::create([
                         'sale_id' => $sale->id,
                         'product_id' => $item['product_id'],
@@ -198,60 +219,66 @@ new class extends Component {
                         'total_price' => $item['total_price'],
                     ]);
 
-                    $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
                     StockMovement::create([
-                        'quantity' => $item['quantity'],
-                        'product_id' => $item['product_id'],
+                        'product_id' => $product->id,
                         'warehouse_id' => $product->warehouse_id,
                         'supplier_id' => $product->supplier_id,
+                        'quantity' => $item['quantity'],
                         'type' => 'sale',
-                        'stock_before' => $product->quantity,
-                        'stock_after' => $product->quantity - $item['quantity'],
+                        'stock_before' => $stockBefore,
+                        'stock_after' => $stockAfter,
                     ]);
 
                     Stock::updateOrCreate(
                         [
-                            'product_id' => $item['product_id'],
+                            'product_id' => $product->id,
                             'warehouse_id' => $product->warehouse_id,
                         ],
-
                         [
-                            'quantity' => $afterStock,
-                            'quantity' => $product->quantity - $item['quantity'],
+                            'quantity' => $stockAfter,
                             'minimum_stock' => $product->minimum_stock,
                         ],
                     );
-                    $product->quantity = $product->quantity - $item['quantity'];
-                    $product->save();
+
+                    $product->update([
+                        'quantity' => $stockAfter,
+                    ]);
                 }
 
                 $order = Order::create([
                     'sale_id' => $sale->id,
                     'address' => $this->address,
-
                     'order_date' => $this->order_date,
                 ]);
 
-                Shipment::create([
-                    'order_id' => $order->id,
-                    'shipping_method_id' => $this->shippingMethod,
-                    'tracking_number' => $tracking,
-                    'status' => $this->order_status,
-                ]);
+                if ($this->shippingMethod) {
+                    Shipment::create([
+                        'order_id' => $order->id,
+                        'shipping_method_id' => $this->shippingMethod,
+                        'tracking_number' => $this->tracking,
+                        'status' => $this->order_status,
+                    ]);
+                }
+
                 $invoice = Invoice::create([
                     'sale_id' => $sale->id,
-                    'invoice_date' => date('Y-m-d'),
+
+                    'invoice_date' => now()->format('Y-m-d'),
                 ]);
+
                 $order->load(['sale.customer', 'sale.items.product', 'shipment.shippingMethod', 'invoice']);
+
                 $pdf = Pdf::loadView('pdf.invoice', compact('order'));
-                $fileName = "invoices/{$this->invoice_no}.pdf";
-                $this->cartData->delete();
+
+                $fileName = 'invoices/' . $this->invoice_no . '.pdf';
+
                 $pdf->save(storage_path('app/public/' . $fileName));
 
                 $invoice->update([
                     'pdf_path' => $fileName,
                 ]);
             });
+
             session()->flash('success', 'Sale and order created successfully.');
             $this->resetForm();
         } catch (\Exception $e) {
@@ -265,9 +292,15 @@ new class extends Component {
         $this->invoice_no = $this->generateInvoiceNo();
         $this->address = '';
         $this->order_status = 'pending';
+        $this->payment_status = 'pending';
+        $this->payment_method = 'cash';
         $this->order_date = now()->format('Y-m-d');
         $this->discount = 0;
         $this->tax = 0;
+        $this->shippingMethod = '';
+        $this->shipping_cost = 0;
+        $this->paid_amount = 0;
+        $this->tracking = 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
 
         $this->items = [
             [
@@ -285,15 +318,15 @@ new class extends Component {
     {
         return [
             'customers' => Customer::with('user')->get(),
-            'products' => Product::orderBy('name')->get(),
-            'sales' => Sale::with('customer.user')->latest()->get(),
+            'products' => Product::where('quantity', '>', 'minimum_stock')->orderBy('name')->get(),
+            'shipping_methods' => ShippingMethod::get(),
         ];
     }
 };
 ?>
 
 <div class="container-fluid">
-    <h4 class="mb-3">Create Sale & Order </h4>
+    <h4 class="mb-3">Create Sale & Order</h4>
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -326,7 +359,7 @@ new class extends Component {
 
                     <div class="col-md-4 mb-3">
                         <label>Invoice No</label>
-                        <input type="text" wire:model="invoice_no" class="form-control">
+                        <input type="text" wire:model="invoice_no" class="form-control" readonly>
                         @error('invoice_no')
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
@@ -336,6 +369,50 @@ new class extends Component {
                         <label>Order Date</label>
                         <input type="date" wire:model="order_date" class="form-control">
                         @error('order_date')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label>Payment Status</label>
+                        <select wire:model.live="payment_status" class="form-control">
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="partial">Partial</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        @error('payment_status')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label>Payment Method</label>
+                        <select wire:model.live="payment_method" class="form-control">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="bank">Bank</option>
+
+                        </select>
+                        @error('payment_method')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label>Shipping Method</label>
+                        <select wire:model.live="shippingMethod" class="form-control">
+                            <option value="">Select Shipping Method</option>
+
+                            @foreach ($shipping_methods as $method)
+                                <option value="{{ $method->id }}">
+                                    {{ $method->name ?? $method->title }} - Rs {{ $method->cost }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('shippingMethod')
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
@@ -354,7 +431,7 @@ new class extends Component {
                     <select wire:model="order_status" class="form-control">
                         <option value="pending">Pending</option>
                         <option value="processing">Processing</option>
-                        <option value="completed">Completed</option>
+                        <option value="delivered">Completed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                     @error('order_status')
@@ -369,8 +446,7 @@ new class extends Component {
                         $selectedProductIds = collect($items)->pluck('product_id')->filter()->values()->toArray();
                     @endphp
 
-                    <div class="row mb-3 align-items-end"
-                        wire:key="sale-item-{{ $index }}-{{ $item['product_id'] ?? 'empty' }}">
+                    <div class="row mb-3 align-items-end" wire:key="sale-item-{{ $index }}">
                         <div class="col-md-4">
                             <label>Product</label>
                             <select wire:model.live="items.{{ $index }}.product_id" class="form-control">
@@ -436,12 +512,32 @@ new class extends Component {
 
                     <div class="col-md-3 mb-3">
                         <label>Tax</label>
-                        <input type="number" wire:model.live="tax" class="form-control" min="0" readonly>
+                        <input type="number" value="{{ $this->tax }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>Shipping Cost</label>
+                        <input type="number" wire:model.live="shipping_cost" class="form-control" min="0">
                     </div>
 
                     <div class="col-md-3 mb-3">
                         <label>Total Amount</label>
                         <input type="number" value="{{ $this->total_amount }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>Paid Amount</label>
+                        <input type="number" wire:model.live="paid_amount" class="form-control" min="0">
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>Due Amount</label>
+                        <input type="number" value="{{ $this->due_amount }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>Tracking No</label>
+                        <input type="text" value="{{ $tracking }}" class="form-control" readonly>
                     </div>
                 </div>
 

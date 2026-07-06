@@ -98,14 +98,14 @@
             <td>
                 Rs.
                 {{ number_format(
-                    $orders->filter(fn($order) => optional($order->shipment)->status === 'Delivered')->sum(fn($order) => $order->sale->total_amount ?? 0),
+                    $orders->filter(fn($order) => optional($order->shipment)->status === 'delivered')->sum(fn($order) => $order->sale->total_amount ?? 0),
                     2,
                 ) }}
             </td>
 
             <th>Completed Orders</th>
             <td>
-                {{ $orders->filter(fn($order) => optional($order->shipment)->status === 'Delivered')->count() }}
+                {{ $orders->filter(fn($order) => optional($order->shipment)->status === 'delivered')->count() }}
             </td>
 
 

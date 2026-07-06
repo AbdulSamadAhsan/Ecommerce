@@ -1,66 +1,106 @@
 <?php
 
 use Livewire\Component;
+use App\Models\CustomerSupportTicket;
+use App\Models\TicketMessage;
+use App\Events\TicketMessageSent;
 
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public string $ticketNo;
+    public int $ticketId;
     public string $reply = '';
 
-    public array $ticket = [];
-
+    public $ticket;
     public array $messages = [];
 
     public function mount($ticketNo): void
     {
+        $customer = auth('customer')->user()->customer;
+
+        $this->ticket = CustomerSupportTicket::where('ticket_no', $ticketNo)->where('customer_id', $customer->id)->firstOrFail();
+
         $this->ticketNo = $ticketNo;
+        $this->ticketId = $this->ticket->id;
 
-        $this->ticket = [
-            'ticket_no' => $ticketNo,
-            'order_no' => '1001',
-            'subject' => 'Product Damaged',
-            'priority' => 'high',
-            'status' => 'open',
-            'created_at' => '2026-06-18',
-        ];
+        $this->loadMessages();
+    }
 
-        $this->messages = [
-            [
-                'sender' => 'customer',
-                'name' => 'Customer',
-                'message' => 'My product arrived damaged. Please help.',
-                'time' => '2026-06-18 10:30 AM',
-            ],
-            [
-                'sender' => 'support',
-                'name' => 'Support Team',
-                'message' => 'Please share product pictures and order details.',
-                'time' => '2026-06-18 11:00 AM',
-            ],
+    public function getListeners(): array
+    {
+        return [
+            "echo:ticket.{$this->ticketId},.message.sent" => 'messageReceived',
         ];
+    }
+
+    public function messageReceived($event): void
+    {
+        $this->messages[] = $event['message'];
+    }
+
+    public function loadMessages(): void
+    {
+        $ticket = CustomerSupportTicket::findOrFail($this->ticketId);
+
+        $messages = [];
+
+        if ($ticket->message) {
+            $messages[] = [
+                'id' => 'ticket-' . $ticket->id,
+                'message' => $ticket->message,
+                'message_by' => 'customer',
+                'created_at' => $ticket->created_at->format('Y-m-d h:i A'),
+            ];
+        }
+
+        $chatMessages = TicketMessage::where('customer_support_ticket_id', $ticket->id)
+            ->oldest()
+            ->get()
+            ->map(
+                fn($m) => [
+                    'id' => $m->id,
+                    'message' => $m->message,
+                    'message_by' => $m->message_by,
+                    'created_at' => $m->created_at->format('Y-m-d h:i A'),
+                ],
+            )
+            ->toArray();
+
+        $this->messages = array_merge($messages, $chatMessages);
     }
 
     public function sendReply(): void
     {
         $this->validate([
-            'reply' => 'required|min:3',
+            'reply' => 'required|min:3|max:5000',
         ]);
 
-        $this->messages[] = [
-            'sender' => 'customer',
-            'name' => 'Customer',
+        $customer = auth('customer')->user()->customer;
+
+        $message = TicketMessage::create([
+            'customer_support_ticket_id' => $this->ticketId,
+            'customer_id' => $customer->id,
+            'employee_id' => null,
             'message' => $this->reply,
-            'time' => now()->format('Y-m-d h:i A'),
-        ];
+            'message_by' => 'customer',
+            'is_internal' => false,
+        ]);
 
         $this->reply = '';
 
-        session()->flash('success', 'Reply sent successfully.');
+        $this->messages[] = [
+            'id' => $message->id,
+            'customer_support_ticket_id' => $message->customer_support_ticket_id,
+            'message' => $message->message,
+            'message_by' => $message->message_by,
+            'created_at' => $message->created_at->format('Y-m-d h:i A'),
+        ];
+
+        event(new TicketMessageSent($message));
     }
 };
 ?>
 
 <div class="container py-5">
-
     <div class="row g-4">
 
         <div class="col-lg-3">
@@ -70,74 +110,61 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
         <div class="col-lg-9">
 
             <a wire:navigate href="{{ route('customer.my.support.tickets') }}" class="btn btn-light rounded-pill mb-4">
-                <i class="bi bi-arrow-left"></i>
-                Back to Tickets
+                <i class="bi bi-arrow-left"></i> Back to Tickets
             </a>
-
-            @if (session('success'))
-                <div class="alert alert-success rounded-4">
-                    {{ session('success') }}
-                </div>
-            @endif
 
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body">
-
                     <div class="d-flex justify-content-between flex-wrap gap-3">
                         <div>
                             <h3 class="fw-bold mb-1">
-                                Ticket {{ $ticket['ticket_no'] }}
+                                Ticket {{ $ticket->ticket_no }}
                             </h3>
 
                             <p class="text-muted mb-0">
-                                Order #{{ $ticket['order_no'] }} —
-                                {{ $ticket['subject'] }}
+                                Order #{{ $ticket->order_id }} — {{ $ticket->subject }}
                             </p>
                         </div>
 
                         <div>
                             <span class="badge bg-warning text-dark">
-                                {{ ucfirst($ticket['priority']) }}
+                                {{ ucfirst($ticket->priority) }}
                             </span>
 
                             <span class="badge bg-danger">
-                                {{ ucfirst($ticket['status']) }}
+                                {{ ucfirst($ticket->status) }}
                             </span>
                         </div>
                     </div>
-
                 </div>
             </div>
 
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body">
 
-                    <h4 class="fw-bold mb-4">
-                        Conversation
-                    </h4>
+                    <h4 class="fw-bold mb-4">Conversation</h4>
 
-                    @foreach ($messages as $message)
-                        <div class="mb-4 {{ $message['sender'] === 'customer' ? 'text-end' : '' }}">
+                    @forelse ($messages as $msg)
+                        <div class="mb-4 {{ $msg['message_by'] === 'customer' ? 'text-end' : '' }}">
                             <div class="d-inline-block p-3 rounded-4 shadow-sm
-                                {{ $message['sender'] === 'customer' ? 'bg-primary text-white' : 'bg-light' }}"
-                                style="max-width: 75%;">
+                                {{ $msg['message_by'] === 'customer' ? 'bg-primary text-white' : 'bg-light' }}"
+                                style="max-width:75%;">
 
                                 <div class="fw-bold mb-1">
-                                    {{ $message['name'] }}
+                                    {{ $msg['message_by'] === 'customer' ? 'Customer' : 'Support Team' }}
                                 </div>
 
-                                <div>
-                                    {{ $message['message'] }}
-                                </div>
+                                <div>{{ $msg['message'] }}</div>
 
                                 <small
-                                    class="{{ $message['sender'] === 'customer' ? 'text-white-50' : 'text-muted' }}">
-                                    {{ $message['time'] }}
+                                    class="{{ $msg['message_by'] === 'customer' ? 'text-white-50' : 'text-muted' }}">
+                                    {{ $msg['created_at'] }}
                                 </small>
-
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <p class="text-muted mb-0">No messages yet.</p>
+                    @endforelse
 
                 </div>
             </div>
@@ -145,31 +172,24 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
 
-                    <h4 class="fw-bold mb-3">
-                        Send Reply
-                    </h4>
+                    <h4 class="fw-bold mb-3">Send Reply</h4>
 
                     <form wire:submit.prevent="sendReply">
-
                         <textarea wire:model="reply" rows="4" class="form-control rounded-4 mb-2" placeholder="Type your message..."></textarea>
 
                         @error('reply')
-                            <small class="text-danger d-block mb-2">
-                                {{ $message }}
-                            </small>
+                            <small class="text-danger d-block mb-2">{{ $message }}</small>
                         @enderror
 
-                        <button class="btn btn-primary rounded-pill px-4">
-                            Send Reply
+                        <button class="btn btn-primary rounded-pill px-4" wire:loading.attr="disabled">
+                            <span wire:loading.remove>Send Reply</span>
+                            <span wire:loading>Sending...</span>
                         </button>
-
                     </form>
 
                 </div>
             </div>
 
         </div>
-
     </div>
-
 </div>

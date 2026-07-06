@@ -1,15 +1,26 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Order;
+use App\Models\CustomerSupportTicket as SupportTicket;
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public string $order_id = '';
     public string $subject = '';
     public string $priority = 'medium';
     public string $message = '';
 
-    public array $orders = [['id' => 1001, 'label' => '#1001 - Rs 185,000 - Delivered'], ['id' => 1002, 'label' => '#1002 - Rs 45,000 - Processing'], ['id' => 1003, 'label' => '#1003 - Rs 78,000 - Shipped']];
+    public $orders = [['id' => 1001, 'label' => '#1001 - Rs 185,000 - Delivered'], ['id' => 1002, 'label' => '#1002 - Rs 45,000 - Processing'], ['id' => 1003, 'label' => '#1003 - Rs 78,000 - Shipped']];
+    public function mount(): void
+    {
+        $customer = auth('customer')->user()->customer;
 
+        $this->orders = Order::with('sale')
+            ->whereHas('sale', function ($query) use ($customer) {
+                $query->where('customer_id', $customer->id);
+            })
+            ->latest()
+            ->get();
+    }
     public function submitTicket(): void
     {
         $this->validate([
@@ -17,6 +28,16 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
             'subject' => 'required|min:3',
             'priority' => 'required',
             'message' => 'required|min:10',
+        ]);
+
+        SupportTicket::create([
+            'ticket_no' => 'TCK-' . now()->format('Ymd') . '-' . str_pad(SupportTicket::max('id') + 1, 6, '0', STR_PAD_LEFT),
+            'customer_id' => auth('customer')->user()->customer->id,
+            'order_id' => $this->order_id,
+            'subject' => $this->subject,
+            'priority' => $this->priority,
+            'message' => $this->message,
+            'status' => 'open',
         ]);
 
         session()->flash('success', 'Support ticket submitted successfully.');
@@ -53,8 +74,10 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                                 <option value="">Choose order</option>
 
                                 @foreach ($orders as $order)
-                                    <option value="{{ $order['id'] }}">
-                                        {{ $order['label'] }}
+                                    <option value="{{ $order->id }}">
+                                        #{{ $order->id }}
+                                        - Rs {{ number_format($order->sale->total_amount ?? 0, 2) }}
+                                        - {{ ucfirst($order->status) }}
                                     </option>
                                 @endforeach
                             </select>

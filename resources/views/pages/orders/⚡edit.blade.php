@@ -22,7 +22,7 @@ new class extends Component {
     {
         $order = Order::with(['shipment.deliveryassign', 'sale'])->findOrFail($id);
 
-        if ($order->shipment?->status === 'delivered') {
+        if (in_array($order->shipment?->status, ['delivered', 'cancelled'])) {
             redirect()->route('orders.index');
             return;
         }
@@ -116,7 +116,7 @@ new class extends Component {
                         'warehouse_id' => $product->warehouse_id,
                         'supplier_id' => $product->supplier_id,
                         'product_id' => $product->id,
-                        'type' => 'order_cancelled',
+                        'type' => 'return',
                         'quantity' => $item->quantity,
                         'stock_before' => $stockBefore,
                         'stock_after' => $stockAfter,
@@ -172,6 +172,10 @@ new class extends Component {
 
                 if ($this->status === 'delivered' && !$order->shipment->delivered_at) {
                     $shipmentData['delivered_at'] = now();
+                    $order->sale()->update([
+                        'paid_amount' => (float) $order->sale->paid_amount + (float) $order->sale->due_amount,
+                        'due_amount' => 0,
+                    ]);
                 }
 
                 if ($this->status === 'cancelled' && !$order->shipment->cancelled_at) {

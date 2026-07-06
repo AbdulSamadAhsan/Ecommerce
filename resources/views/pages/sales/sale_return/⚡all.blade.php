@@ -91,7 +91,7 @@ new class extends Component {
                                     class="btn btn-sm btn-info text-white rounded-pill">
                                     View
                                 </a>
-                                @if ($return->status != 'approved')
+                                @if (!in_array($return->status, ['approved', 'declined']))
                                     <a href="{{ route('sales_return.edit', $return['id']) }}"
                                         class="btn btn-sm btn-warning rounded-pill">
                                         Edit

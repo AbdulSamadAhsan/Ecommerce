@@ -462,7 +462,7 @@ new class extends Component {
 
                                     <span wire:loading.remove wire:target="addToCart({{ $product->id }})">
                                         <i class="bi bi-cart-plus me-1"></i>
-                                        {{ $product->quantity <= 0 ? 'Out of Stock' : 'Add to Cart' }}
+                                        {{ $product->quantity == 0 ? 'Out of Stock' : 'Add to Cart' }}
                                     </span>
 
                                     <span wire:loading wire:target="addToCart({{ $product->id }})">

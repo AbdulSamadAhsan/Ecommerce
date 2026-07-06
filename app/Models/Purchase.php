@@ -28,4 +28,25 @@ public function product()
         'product_id'   // Local key on purchase_items
     );
 }
+    public function warehouse()
+{
+    return $this->hasOneThrough(
+        Warehouse::class,
+        Product::class,
+        'id',              // products.id
+        'id',              // warehouses.id
+        'id',              // purchases.id
+        'warehouse_id'     // products.warehouse_id
+    )
+    ->join(
+        'purchase_items',
+        'purchase_items.product_id',
+        '=',
+        'products.id'
+    )
+    ->whereColumn(
+        'purchase_items.purchase_id',
+        'purchases.id'
+    );
+}
 }

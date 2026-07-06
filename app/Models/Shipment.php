@@ -17,14 +17,10 @@ class Shipment extends Model
     {
         return $this->belongsTo(ShippingMethod::class);
     }
-    public function getStatusAttribute($value){
-       if($value=="out_for_delivery"){
-        return "Out For Delivery";
-       }elseif($value=="in_transit"){
-        return "On The Way";
-       }else{
-        return ucfirst($value);
-       }
+  public function order()
+{
+    return $this->belongsTo(Order::class, 'order_id');
+}
 
-    }
+  
 }

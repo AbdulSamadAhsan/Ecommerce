@@ -11,24 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('customer_support_ticket_id')
+        Schema::table('purchase_returns', function (Blueprint $table) {
+             $table->foreignId('supplier_id')
         ->constrained()
         ->cascadeOnDelete();
+   $table->foreignId('warehouse_id')
+            ->nullable()
+            ->after('id')
+            ->constrained()
+            ->cascadeOnDelete();
 
-   
 
-
-
-    $table->text('message');
-
-    $table->string('attachment')
-        ->nullable();
-
-    $table->boolean('is_internal')
-        ->default(false);
-            $table->timestamps();
         });
     }
 
@@ -37,6 +30,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket_messages');
+        Schema::table('purchase_returns', function (Blueprint $table) {
+            //
+        });
     }
 };

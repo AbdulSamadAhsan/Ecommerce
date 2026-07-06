@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('delivery_boy_account_transactions', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('ticket_messages', function (Blueprint $table) {
+           $table->enum('message_by', ['admin', 'customer'])
+          ->default('customer')
+          ->after('message');
         });
     }
 
@@ -22,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('delivery_boy_account_transactions');
+        Schema::table('ticket_messages', function (Blueprint $table) {
+            //
+        });
     }
 };

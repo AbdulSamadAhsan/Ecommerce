@@ -29,7 +29,7 @@ new class extends Component {
 
         <div class="card-body">
             <p><strong>Order:</strong> #{{ $salesReturn->order_id }}</p>
-            <p><strong>Customer:</strong> {{ $salesReturn->customer->name ?? 'Walk-in Customer' }}</p>
+            <p><strong>Customer:</strong> {{ $salesReturn->customer->user->name ?? 'Walk-in Customer' }}</p>
             <p><strong>Total Amount:</strong> Rs. {{ number_format($salesReturn->total_amount, 2) }}</p>
             <p><strong>Reason:</strong> {{ $salesReturn->reason ?? '-' }}</p>
 
@@ -68,8 +68,8 @@ new class extends Component {
                         <tr>
                             <td>{{ $item->product->name ?? 'Deleted Product' }}</td>
                             <td>{{ $item->quantity }}</td>
-                            <td>Rs. {{ number_format($item->price, 2) }}</td>
-                            <td>Rs. {{ number_format($item->total, 2) }}</td>
+                            <td>Rs. {{ number_format($item->unit_price, 2) }}</td>
+                            <td>Rs. {{ number_format($item->total_price, 2) }}</td>
                         </tr>
                     @empty
                         <tr>

@@ -331,6 +331,12 @@ new class extends Component {
             <div class="border rounded p-3 bg-light">
                 {{ $order->notes ?: 'No notes available.' }}
             </div>
+            @if ($order->shipment->status == 'cancelled')
+                <p class="mt-4 mb-2"><strong>Cancellation Reason:</strong></p>
+                <div class="border rounded p-3 bg-light">
+                    {{ $order->cancellation_reason ?: 'No Cancellation Reason.' }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

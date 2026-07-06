@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('delivery_boy_accounts', function (Blueprint $table) {
+        Schema::create('settings', function (Blueprint $table) {
             $table->id();
-             $table->foreignId('delivery_boy_id')
-        ->constrained()
-        ->cascadeOnDelete();
-             $table->decimal("amount",12,2);
+            $table->string("max_cash_order_amount");
+            $table->string("cancellation_penalty");
+     
+            $table->string("cancellation_window");
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('delivery_boy_accounts');
+        Schema::dropIfExists('settings');
     }
 };

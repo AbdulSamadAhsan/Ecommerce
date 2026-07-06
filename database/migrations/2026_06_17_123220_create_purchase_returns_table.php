@@ -16,7 +16,11 @@ return new class extends Migration
                 $table->foreignId('purchase_id')
         ->constrained()
         ->cascadeOnDelete();
-
+      $table->enum("status",[
+        "pending",
+        "approved",
+        "declined"
+      ]);
     $table->string('return_no')->unique();
 
     $table->decimal('total_amount', 12, 2);

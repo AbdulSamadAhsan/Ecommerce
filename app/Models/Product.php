@@ -80,8 +80,12 @@ public function salesitem()
 {
     return $this->hasMany(SaleItem::class);
 }
+public function salesreturnitem()
+{
+    return $this->hasMany(SalesReturnItem::class);
+}
 public function getStockAttribute(){
-    return $this->purchasesitem()->sum("quantity") - $this->salesitem()->sum("quantity");
+    return ($this->purchasesitem()->sum("quantity") - $this->salesitem()->sum("quantity")) + $this->salesreturnitem()->sum("quantity");
 }
 
 
@@ -89,6 +93,7 @@ public function purchasesitem()
 {
     return $this->hasMany(PurchaseItem::class);
 }
+
 public function stockmovement()
 {
     return $this->hasMany(StockMovement::class);

@@ -642,6 +642,13 @@
                         <i class="bi bi-list-ul"></i> All Purchases
                     </a>
 
+
+                    <a href="{{ adminRoute('purchases.returns.index') }}"
+                        class="nav-link {{ activeRoute('purchases.returns.*') }}">
+                        <i class="bi bi-box-arrow-in-left"></i>
+                        Purchase Returns
+                    </a>
+
                     <a href="{{ adminRoute('purchases.create') }}"
                         class="nav-link {{ activeRoute('purchases.create') }}">
                         <i class="bi bi-plus-circle-fill"></i> Add Purchase
@@ -668,15 +675,15 @@
                 </div>
             </li>
 
-            <li class="nav-item sidebar-dropdown {{ openRoute('tickets.*') }}">
+            <li class="nav-item sidebar-dropdown {{ openRoute('customer-support-tickets.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span><i class="bi bi-headset"></i> Tickets</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('tickets.*') }}"></i>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('customer-support-tickets.*') }}"></i>
                 </a>
 
-                <div class="sidebar-dropdown-menu {{ showRoute('tickets.*') }}">
-                    <a href="{{ adminRoute('tickets.index') }}"
-                        class="nav-link {{ activeRoute('tickets.index') }}">
+                <div class="sidebar-dropdown-menu {{ showRoute('customer-support-tickets.*') }}">
+                    <a href="{{ adminRoute('customer-support-tickets.index') }}"
+                        class="nav-link {{ activeRoute('customer-support-tickets.index') }}">
                         <i class="bi bi-list-ul"></i> All Tickets
                     </a>
 
@@ -847,10 +854,11 @@
             </li>
 
             <li class="nav-item">
-                <a href="{{ adminRoute('purchase-returns.index') }}"
-                    class="nav-link {{ activeRoute('purchase-returns.*') }}">
-                    <i class="bi bi-box-arrow-in-left"></i>
-                    Purchase Returns
+                <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
+
+                    <i class="bi bi-gear"></i>
+
+                    Settings
                 </a>
             </li>
 

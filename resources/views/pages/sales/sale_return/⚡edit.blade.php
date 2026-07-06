@@ -72,6 +72,8 @@ new class extends Component {
         ]);
 
         session()->flash('success', 'Sales return updated successfully.');
+
+        return redirect()->route('sales_return.index');
     }
 };
 ?>
