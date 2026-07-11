@@ -28,7 +28,7 @@ new class extends Component {
         </div>
 
         <div class="card-body">
-            <p><strong>Customer:</strong> {{ $ticket->customer->name ?? 'Guest' }}</p>
+            <p><strong>Customer:</strong> {{ $ticket->customer->user->name ?? 'Guest' }}</p>
             <p><strong>Subject:</strong> {{ $ticket->subject }}</p>
 
             <p>

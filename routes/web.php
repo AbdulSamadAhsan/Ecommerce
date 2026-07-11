@@ -50,6 +50,16 @@ Route::middleware('auth')->group(function () {
     ProductReportController::class
 )->name('report');
     });
+
+
+Route::prefix("shipments")->name("shipments.")->group(function(){
+   Route::livewire("/","pages::shipments.all")->name("index");
+      Route::livewire("/create","pages::shipments.create")->name("create");
+       Route::livewire("/{id}/edit","pages::shipments.edit")->name("edit");
+        Route::livewire("/{id}","pages::shipments.show")->name("show");
+
+});
+
 Route::prefix("purchases")->name("purchases.")->group(function () {
     Route::livewire("/create", "pages::purchases.create")->name("create");
     Route::livewire("/history", "pages::purchases.all")->name("history");
@@ -70,11 +80,36 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire('sales', 'pages::reports.sales')->name('sales');
         Route::livewire('stock', 'pages::reports.stock')->name('stock');
         Route::livewire('supplier', 'pages::reports.supplier')->name('supplier');
+             Route::livewire('/', 'pages::reports.all')->name('index');
+    });
+    Route::prefix('stocks')->name('stocks.')->group(function () {
+        Route::livewire('/', 'pages::stock.stock')->name('index');
+    
     });
 
+    Route::prefix("deliveryassignment")->name("delivery-boy-assignments.")->group(function(){
+         Route::livewire("/","pages::deliveryboys.orders.deliveryassignment.all")->name("index");
+        Route::livewire("/create","pages::deliveryboys.orders.deliveryassignment.create")->name("create");
+                Route::livewire("/{id}/edit","pages::deliveryboys.orders.deliveryassignment.edit")->name("edit");
+                        Route::livewire("/{id}","pages::deliveryboys.orders.deliveryassignment.show")->name("show");
+
+    });
+
+
+    Route::livewire('/shipping-methods', 'pages::shipments.shipping-methods.all')
+    ->name('shipping-methods.index');
+
+Route::livewire('/shipping-methods/create', 'pages::shipments.shipping-methods.create')
+    ->name('shipping-methods.create');
+
+Route::livewire('/shipping-methods/{id}/edit', 'pages::shipments.shipping-methods.edit')
+    ->name('shipping-methods.edit');
+
+Route::livewire('/shipping-methods/{id}', 'pages::shipments.shipping-methods.show')
+    ->name('shipping-methods.show');
     Route::prefix('sales')->name('sales.')->group(function () {
         Route::livewire('history', 'pages::sales.history')->name('history');
-        Route::livewire('create', 'pages::sales.create')->name('create');
+   
         Route::livewire('invoice', 'pages::sales.invoices')->name('invoice');
         Route::livewire("/{id}","pages::sales.show")->name("show");
     });
@@ -85,12 +120,17 @@ Route::prefix("purchases")->name("purchases.")->group(function () {
         Route::livewire("/edit/{id}", "pages::brands.edit")->name("edit");
         Route::livewire('/{id}', 'pages::brands.show')->name('show');
     });
-
+           Route::livewire('suppliers/payment', 'pages::suppliers.payment.create')
+    ->name('suppliers.payment.create');
+             Route::livewire('suppliers_payments', 'pages::suppliers.payment.index')
+    ->name('suppliers.payment.index');
     Route::prefix("suppliers")->name("suppliers.")->group(function () {
         Route::livewire("/", "pages::suppliers.all")->name("index");
         Route::livewire("/create", "pages::suppliers.create")->name("create");
+       
           Route::livewire("/{id}", "pages::suppliers.show")->name("show");
-          Route::livewire('/suppliers/{id}/edit', 'pages::suppliers.edit')
+         
+          Route::livewire('/{id}/edit', 'pages::suppliers.edit')
     ->name('edit');
     });
 
@@ -217,6 +257,9 @@ Route::livewire('/purchase-returns', 'pages::purchases.returns.all')->name('purc
 Route::livewire("/purchase-returns/create","pages::purchases.returns.create")->name("purchases.returns.create");
 Route::livewire('/purchase-returns/{id}/show', 'pages::purchases.returns.show')->name('purchases.returns.show');
 Route::livewire('/purchase-returns/{id}/edit', 'pages::purchases.returns.edit')->name('purchases.returns.edit');
+
+     Route::livewire('orders/create', 'pages::orders.create')->name('orders.create');
+
 Route::livewire('/orders/{id}/edit', 'pages::orders.edit')->name('orders.edit');
 Route::livewire('/orders/{id}', 'pages::orders.show')->name('orders.show');
 Route::get("/order/report",OrderController::class)->name("order.report");
@@ -231,6 +274,9 @@ Route::livewire('/settings', 'pages::settings.index')->name('settings.index');
 |--------------------------------------------------------------------------
 */
  Route::livewire('/ai-assistant', "pages::customer.mcp")->name('customer.ai.assistant');
+
+ Route::livewire('/customer/ai', 'pages::customer.ai')
+    ->name('customer.ai.chatbot');
 
  Route::get('/invoice/{order}', InvoiceController::class)
     ->name("invoice.download");

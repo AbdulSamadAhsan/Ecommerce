@@ -6,8 +6,8 @@ use App\Models\StockMovement;
 
 new class extends Component {
     public string $search = '';
-    public array $products = [];
-    public array $stockMovements = [];
+    public $products;
+    public $stockMovements;
 
     public function mount(): void
     {
@@ -26,14 +26,12 @@ new class extends Component {
                 $query->where('name', 'like', '%' . $this->search . '%')->orWhere('sku', 'like', '%' . $this->search . '%');
             })
             ->latest()
-            ->get()
-            ->toArray();
+            ->get();
 
         $this->stockMovements = StockMovement::with(['product', 'warehouse', 'supplier'])
             ->latest()
             ->limit(20)
-            ->get()
-            ->toArray();
+            ->get();
     }
 };
 ?>
@@ -75,7 +73,7 @@ new class extends Component {
                             <td>{{ $product['name'] }}</td>
                             <td>{{ $product['sku'] }}</td>
                             <td>{{ $product['category']['name'] ?? 'N/A' }}</td>
-                            <td>{{ $product['supplier']['name'] ?? 'N/A' }}</td>
+                            <td>{{ $product->supplier->user->name ?? 'N/A' }}</td>
                             <td>{{ $product['warehouse']['name'] ?? 'N/A' }}</td>
                             <td>{{ $product['quantity'] }}</td>
                             <td>{{ $product['minimum_stock'] }}</td>
@@ -118,12 +116,29 @@ new class extends Component {
 
                 <tbody>
                     @forelse ($stockMovements as $movement)
+                        @php
+                            $typeColor = match ($movement['type']) {
+                                'purchase' => 'bg-success',
+                                'sale' => 'bg-primary',
+                                'purchase_return' => 'bg-warning text-dark',
+                                'return' => 'bg-info',
+                                'adjustment' => 'bg-secondary',
+                                'damage' => 'bg-danger',
+                                default => 'bg-dark',
+                            };
+                        @endphp
+
+
                         <tr>
                             <td>#{{ $movement['id'] }}</td>
                             <td>{{ $movement['product']['name'] ?? 'N/A' }}</td>
                             <td>{{ $movement['warehouse']['name'] ?? 'N/A' }}</td>
-                            <td>{{ $movement['supplier']['name'] ?? 'N/A' }}</td>
-                            <td><span class="badge bg-info">{{ ucfirst($movement['type']) }}</span></td>
+                            <td>{{ $movement->supplier->user->name ?? 'N/A' }}</td>
+                            <td>
+                                <span class="badge {{ $typeColor }}">
+                                    {{ ucwords(str_replace('_', ' ', $movement['type'])) }}
+                                </span>
+                            </td>
                             <td>{{ $movement['quantity'] }}</td>
                             <td>{{ $movement['stock_before'] }}</td>
                             <td>{{ $movement['stock_after'] }}</td>

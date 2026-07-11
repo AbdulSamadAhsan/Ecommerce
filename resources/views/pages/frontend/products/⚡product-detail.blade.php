@@ -322,9 +322,9 @@ new class extends Component {
                 </div>
 
                 <button wire:click="addToCart({{ $product->id }})" class="btn btn-primary rounded-pill px-5"
-                    @disabled($product['quantity'] <= 0)>
+                    @disabled($product->stock <= 0)>
                     <i class="bi bi-cart-plus me-1"></i>
-                    Add to Cart
+                    {{ $product->stock <= 0 ? 'Out of Stock' : 'Add to Cart' }}
                 </button>
                 @if (auth('customer')->check())
                     <button wire:click="addToWishlist({{ $product->id }})"

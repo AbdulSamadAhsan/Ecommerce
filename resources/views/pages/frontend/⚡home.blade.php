@@ -61,6 +61,7 @@ new class extends Component {
                         });
                 });
             })
+            ->where('status', 1)
             ->latest()
             ->get();
     }
@@ -458,11 +459,11 @@ new class extends Component {
 
                                 <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
                                     wire:target="addToCart({{ $product->id }})"
-                                    class="btn btn-primary w-100 rounded-pill" @disabled($product->quantity <= 0)>
+                                    class="btn btn-primary w-100 rounded-pill" @disabled($product->stock <= 0)>
 
                                     <span wire:loading.remove wire:target="addToCart({{ $product->id }})">
                                         <i class="bi bi-cart-plus me-1"></i>
-                                        {{ $product->quantity == 0 ? 'Out of Stock' : 'Add to Cart' }}
+                                        {{ $product->stock <= 0 ? 'Out of Stock' : 'Add to Cart' }}
                                     </span>
 
                                     <span wire:loading wire:target="addToCart({{ $product->id }})">

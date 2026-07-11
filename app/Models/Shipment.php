@@ -22,5 +22,20 @@ class Shipment extends Model
     return $this->belongsTo(Order::class, 'order_id');
 }
 
+
+
+    public function deliveryBoy()
+    {
+        return $this->hasOneThrough(
+            DeliveryBoy::class,
+            DeliveryAssignment::class,
+            'shipment_id',       // FK on delivery_assignments table
+            'id',                // FK on delivery_boys table
+            'id',                // Local key on shipments table
+            'delivery_boy_id'    // Local key on delivery_assignments table
+        );
+    }
+
+
   
 }

@@ -251,15 +251,6 @@ new class extends Component {
                     'order_date' => $this->order_date,
                 ]);
 
-                if ($this->shippingMethod) {
-                    Shipment::create([
-                        'order_id' => $order->id,
-                        'shipping_method_id' => $this->shippingMethod,
-                        'tracking_number' => $this->tracking,
-                        'status' => $this->order_status,
-                    ]);
-                }
-
                 $invoice = Invoice::create([
                     'sale_id' => $sale->id,
 
@@ -326,7 +317,7 @@ new class extends Component {
 ?>
 
 <div class="container-fluid">
-    <h4 class="mb-3">Create Sale & Order</h4>
+    <h4 class="mb-3">Create Order</h4>
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

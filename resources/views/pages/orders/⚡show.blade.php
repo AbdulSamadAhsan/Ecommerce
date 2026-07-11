@@ -50,7 +50,7 @@ new class extends Component {
 
                 <div class="col-md-4">
                     <strong>Tracking No:</strong>
-                    {{ $order->shipment->tracking_number ?? '-' }}
+                    {{ $order->shipment->tracking_number ?? 'No tracking number provided' }}
                 </div>
 
                 <div class="col-md-4">
@@ -109,62 +109,62 @@ new class extends Component {
             </div>
         </div>
     </div>
+    @if ($order->shipment)
+        <div class="card shadow border-0 mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Shipment Information</h5>
+            </div>
 
-    <div class="card shadow border-0 mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Shipment Information</h5>
-        </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <strong>Shipping Method:</strong>
+                        {{ $order->shipment->shippingMethod->name ?? '-' }}
+                    </div>
 
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <strong>Shipping Method:</strong>
-                    {{ $order->shipment->shippingMethod->name ?? '-' }}
-                </div>
+                    <div class="col-md-6">
+                        <strong>Tracking Number:</strong>
+                        {{ $order->shipment->tracking_number ?? 'Shippment Not Assigned Yet' }}
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Tracking Number:</strong>
-                    {{ $order->shipment->tracking_number ?? '-' }}
-                </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <span class="badge bg-info rounded-pill">
+                            {{ ucfirst(str_replace('_', ' ', $order->shipment->status ?? 'pending')) }}
+                        </span>
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Status:</strong>
-                    <span class="badge bg-info rounded-pill">
-                        {{ ucfirst(str_replace('_', ' ', $order->shipment->status ?? 'pending')) }}
-                    </span>
-                </div>
+                    <div class="col-md-6">
+                        <strong>Expected Delivery:</strong>
+                        {{ $order?->shipment?->expected_delivery ? date('d M Y h:i A', strtotime($order->shipment->expected_delivery)) : '-' }}
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Expected Delivery:</strong>
-                    {{ $order->shipment->expected_delivery ? date('d M Y h:i A', strtotime($order->shipment->expected_delivery)) : '-' }}
-                </div>
+                    <div class="col-md-6">
+                        <strong>Packed At:</strong>
+                        {{ $order?->shipment?->packed_at ? date('d M Y h:i A', strtotime($order->shipment->packed_at)) : '-' }}
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Packed At:</strong>
-                    {{ $order->shipment->packed_at ? date('d M Y h:i A', strtotime($order->shipment->packed_at)) : '-' }}
-                </div>
+                    <div class="col-md-6">
+                        <strong>Shipped At:</strong>
+                        {{ $order?->shipment?->shipped_at ? date('d M Y h:i A', strtotime($order->shipment->shipped_at)) : '-' }}
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Shipped At:</strong>
-                    {{ $order->shipment->shipped_at ? date('d M Y h:i A', strtotime($order->shipment->shipped_at)) : '-' }}
-                </div>
+                    <div class="col-md-6">
+                        <strong>Delivered At:</strong>
+                        {{ $order?->shipment?->delivered_at ? date('d M Y h:i A', strtotime($order->shipment->delivered_at)) : '-' }}
+                    </div>
 
-                <div class="col-md-6">
-                    <strong>Delivered At:</strong>
-                    {{ $order->shipment->delivered_at ? date('d M Y h:i A', strtotime($order->shipment->delivered_at)) : '-' }}
-                </div>
-
-                <div class="col-md-6">
-                    <strong>Cancelled At:</strong>
-                    {{ $order->shipment->cancelled_at ? date('d M Y h:i A', strtotime($order->shipment->cancelled_at)) : '-' }}
+                    <div class="col-md-6">
+                        <strong>Cancelled At:</strong>
+                        {{ $order?->shipment?->cancelled_at ? date('d M Y h:i A', strtotime($order->shipment->cancelled_at)) : '-' }}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
+    @endif
     @if ($order->shipment && $order->shipment->deliveryassign)
         @php
-            $assignment = $order->shipment->deliveryassign;
+            $assignment = $order?->shipment?->deliveryassign;
             $deliveryBoy = $assignment->deliveryBoy;
         @endphp
 
@@ -331,7 +331,7 @@ new class extends Component {
             <div class="border rounded p-3 bg-light">
                 {{ $order->notes ?: 'No notes available.' }}
             </div>
-            @if ($order->shipment->status == 'cancelled')
+            @if ($order?->shipment?->status == 'cancelled')
                 <p class="mt-4 mb-2"><strong>Cancellation Reason:</strong></p>
                 <div class="border rounded p-3 bg-light">
                     {{ $order->cancellation_reason ?: 'No Cancellation Reason.' }}

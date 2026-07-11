@@ -244,6 +244,19 @@ new class extends Component {
             }
 
             $purchase->items()->delete();
+            if ($this->payment_status == 'paid') {
+                $this->paid_amount = $this->total_amount;
+                $this->due_amount = 0;
+                SupplierPayment::create([
+                    'amount' => $this->paid_amount,
+                    'payment_method' => 'card',
+                    'payment_date' => $this->purchase_date,
+                    'transaction_id' => 'TXN-' . strtoupper(uniqid()),
+                    'purchase_id' => $purchase->id,
+                    'supplier_id' => $this->supplier_id,
+                    'notes' => 'Item Purchased : ' . collect($this->items)->sum('quantity'),
+                ]);
+            }
 
             $purchase->update([
                 'supplier_id' => $this->supplier_id,

@@ -74,6 +74,10 @@ new class extends Component {
                             </td>
 
                             <td>
+                                <a href="{{ route('categories.edit', $category['id']) }}"
+                                    class="btn btn-sm btn-info rounded-pill text-white">
+                                    Edit
+                                </a>
                                 <a href="{{ route('categories.show', $category['id']) }}"
                                     class="btn btn-sm btn-info rounded-pill text-white">
                                     View

@@ -161,12 +161,25 @@ new class extends Component {
 
                 <tbody>
                     @forelse ($orders as $order)
+                        @php
+                            $shipmentStatus = data_get($order, 'orderNumber.shipment.status', 'pending');
+
+                            $statusBadge = match ($shipmentStatus) {
+                                'delivered' => 'bg-success',
+                                'cancelled' => 'bg-danger',
+                                'out_for_delivery' => 'bg-secondary',
+                                'shipped' => 'bg-warning',
+                                default => 'bg-primary',
+                            };
+                        @endphp
+
+
                         <tr>
                             <td>{{ $order->orderNumber->id }}</td>
                             <td>Rs {{ number_format($order->total_amount) }}</td>
                             <td>
-                                <span class="badge bg-primary">
-                                    {{ $order->orderNumber->order_status }}
+                                <span class="badge {{ $statusBadge }}">
+                                    {{ ucwords(str_replace('_', ' ', $order->orderNumber->shipment->status)) }}
                                 </span>
                             </td>
                             <td>{{ $order->orderNumber->order_date }}</td>

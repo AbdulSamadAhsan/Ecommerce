@@ -5,7 +5,7 @@ use App\Models\CustomerSupportTicket;
 
 new class extends Component {
     public string $search = '';
-    public array $tickets = [];
+    public $tickets;
 
     public function mount(): void
     {
@@ -31,8 +31,7 @@ new class extends Component {
                     });
             })
             ->latest()
-            ->get()
-            ->toArray();
+            ->get();
     }
 
     public function delete($id): void
@@ -83,7 +82,7 @@ new class extends Component {
                         <tr>
                             <td>#{{ $ticket['id'] }}</td>
                             <td>{{ $ticket['ticket_no'] }}</td>
-                            <td>{{ $ticket['customer']['name'] ?? 'Guest' }}</td>
+                            <td>{{ $ticket->customer->user->name ?? 'Guest' }}</td>
                             <td>{{ $ticket['subject'] }}</td>
 
                             <td>

@@ -1,38 +1,36 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\Supplier;
 new class extends Component {
     public int $id;
 
     public array $supplier = [];
-    public array $purchases = [];
-    public array $payments = [];
-    public array $products = [];
+    public $purchases;
+    public $payments;
+    public $products;
 
     public function mount($id): void
     {
         $this->id = (int) $id;
-
+        $supplier_data = Supplier::find($this->id);
         $this->supplier = [
             'id' => $this->id,
-            'name' => 'Apple Store',
-            'email' => 'supplier@example.com',
-            'phone' => '03001234567',
-            'address' => 'Karachi, Pakistan',
+            'name' => $supplier_data->user->name,
+            'email' => $supplier_data->user->email,
+            'phone' => $supplier_data->phone,
+            'address' => $supplier_data->address,
             'status' => 1,
         ];
 
-        $this->purchases = [['purchase_no' => 'PUR-1001', 'amount' => 11000, 'status' => 'received', 'date' => '2026-06-10'], ['purchase_no' => 'PUR-1002', 'amount' => 16200, 'status' => 'pending', 'date' => '2026-06-12']];
+        $this->purchases = $supplier_data->purchases;
+        $this->payments = $supplier_data->payments;
 
-        $this->payments = [['amount' => 10000, 'method' => 'bank_transfer', 'date' => '2026-06-11'], ['amount' => 5000, 'method' => 'cash', 'date' => '2026-06-13']];
-
-        $this->products = [['name' => 'MacBook Pro M3', 'sku' => 'MBP-M3', 'price' => 1100], ['name' => 'iPhone 15', 'sku' => 'IPH-15', 'price' => 999]];
+        $this->products = $supplier_data->products;
     }
-
     public function getTotalPurchasesProperty(): float
     {
-        return collect($this->purchases)->sum('amount');
+        return collect($this->purchases)->sum('total_amount');
     }
 
     public function getTotalPaidProperty(): float
@@ -64,7 +62,7 @@ new class extends Component {
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6>Total Sales</h6>
-                    <h3 class="fw-bold text-primary">${{ number_format($this->totalPurchases, 2) }}</h3>
+                    <h3 class="fw-bold text-primary">{{ number_format($this->totalPurchases, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -73,7 +71,7 @@ new class extends Component {
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6>Total Paid</h6>
-                    <h3 class="fw-bold text-success">${{ number_format($this->totalPaid, 2) }}</h3>
+                    <h3 class="fw-bold text-success">{{ number_format($this->totalPaid, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -82,7 +80,7 @@ new class extends Component {
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6>Balance</h6>
-                    <h3 class="fw-bold text-danger">${{ number_format($this->balance, 2) }}</h3>
+                    <h3 class="fw-bold text-danger">{{ number_format($this->balance, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -129,15 +127,63 @@ new class extends Component {
                 <tbody>
                     @foreach ($payments as $payment)
                         <tr>
-                            <td>${{ number_format($payment['amount'], 2) }}</td>
-                            <td>{{ ucfirst(str_replace('_', ' ', $payment['method'])) }}</td>
-                            <td>{{ $payment['date'] }}</td>
+                            <td>{{ number_format($payment['amount'], 2) }}</td>
+                            <td>{{ ucfirst(str_replace('_', ' ', $payment['payment_method'])) }}</td>
+                            <td>{{ date('d-F-Y', strtotime($payment['created_at'])) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
+
+    <div class="card border-0 shadow mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Purchase History</h5>
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Purchase No</th>
+                        <th>Amount</th>
+                        <th>Payment Status</th>
+                        <th> No Of Item </th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($purchases as $purchase)
+                        <tr>
+                            <td>{{ $purchase->purchase_no }}</td>
+                            <td>{{ number_format($purchase['total_amount'], 2) }}</td>
+                            <td>{{ ucfirst(str_replace('_', ' ', $purchase['payment_status'])) }}</td>
+                            <td>
+                                {{ count($purchase->items) }}
+                            </td>
+                            <td>{{ date('d-F-Y', strtotime($purchase['purchase_date'])) }}</td>
+
+                            <td>
+                                <a href="{{ route('purchases.show', $purchase['id']) }}"
+                                    class="btn btn-sm btn-info rounded-pill text-white">
+                                    View
+                                </a>
+                            </td>
+
+
+
+
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
 
     <div class="card border-0 shadow">
         <div class="card-header bg-light">
@@ -159,7 +205,7 @@ new class extends Component {
                         <tr>
                             <td>{{ $product['name'] }}</td>
                             <td>{{ $product['sku'] }}</td>
-                            <td>${{ number_format($product['price'], 2) }}</td>
+                            <td>Rs {{ number_format($product['purchase_price'], 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

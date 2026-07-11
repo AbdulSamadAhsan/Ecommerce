@@ -72,9 +72,7 @@ new class extends Component {
             <p class="text-muted mb-0">View all sales records and invoices</p>
         </div>
 
-        <a href="{{ route('sales.create') }}" class="btn btn-primary">
-            Create Sale
-        </a>
+
     </div>
 
     @if (session('success'))

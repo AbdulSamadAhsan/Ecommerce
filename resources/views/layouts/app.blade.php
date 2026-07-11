@@ -492,14 +492,12 @@
                         <i class="bi bi-list-check"></i> All Orders
                     </a>
 
-                    <a href="{{ adminRoute('orders.pending') }}" class="nav-link {{ activeRoute('orders.pending') }}">
-                        <i class="bi bi-clock-history"></i> Pending Orders
+
+                    <a href="{{ adminRoute('orders.create') }}" class="nav-link {{ activeRoute('orders.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Order
                     </a>
 
-                    <a href="{{ adminRoute('orders.completed') }}"
-                        class="nav-link {{ activeRoute('orders.completed') }}">
-                        <i class="bi bi-check-circle-fill"></i> Completed Orders
-                    </a>
+
                 </div>
             </li>
 
@@ -537,6 +535,10 @@
                     <a href="{{ adminRoute('suppliers.create') }}"
                         class="nav-link {{ activeRoute('suppliers.create') }}">
                         <i class="bi bi-plus-circle-fill"></i> Add Supplier
+                    </a>
+                    <a href="{{ adminRoute('suppliers.payment.index') }}"
+                        class="nav-link {{ activeRoute('suppliers.payment.index') }}">
+                        <i class="bi bi-cash-stack"></i> Payments
                     </a>
                 </div>
             </li>
@@ -625,8 +627,25 @@
 
                     <a href="{{ adminRoute('shipments.create') }}"
                         class="nav-link {{ activeRoute('shipments.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Delivery Boy Assignment
+                        <i class="bi bi-plus-circle-fill"></i>Create
                     </a>
+                    <a href="{{ adminRoute('delivery-boy-assignments.index') }}"
+                        class="nav-link {{ activeRoute('delivery-boy-assignments.index') }}">
+                        <i class="bi bi-plus-circle-fill"></i>Assigned Delivery
+                    </a>
+                    <a href="{{ adminRoute('delivery-boy-assignments.create') }}"
+                        class="nav-link {{ activeRoute('delivery-boy-assignments.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i>Assign Delivery
+                    </a>
+                    <a href="{{ adminRoute('shipping-methods.index') }}"
+                        class="nav-link {{ activeRoute('shipping-methods.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Shipping Method
+                    </a>
+                    <a href="{{ adminRoute('shipping-methods.create') }}"
+                        class="nav-link {{ activeRoute(' shipping-methods.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i>Add Shipping Method
+                    </a>
+
                 </div>
             </li>
 
@@ -668,10 +687,7 @@
                         <i class="bi bi-list-ul"></i> All Topup Requests
                     </a>
 
-                    <a href="{{ adminRoute('wallet-topups.create') }}"
-                        class="nav-link {{ activeRoute('wallet-topups.customer') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Topup Customer Wallet
-                    </a>
+
                 </div>
             </li>
 
@@ -687,10 +703,6 @@
                         <i class="bi bi-list-ul"></i> All Tickets
                     </a>
 
-                    <a href="{{ adminRoute('tickets.create') }}"
-                        class="nav-link {{ activeRoute('tickets.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Ticket
-                    </a>
                 </div>
             </li>
 

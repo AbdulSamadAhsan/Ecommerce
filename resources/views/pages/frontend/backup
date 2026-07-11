@@ -1,0 +1,1146 @@
+<?php
+
+use Livewire\Component;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
+use App\Models\ShippingMethod;
+use App\Models\Coupon;
+use App\Models\Tax;
+use App\Models\Sale;
+use App\Models\Order;
+use App\Models\Invoice;
+use App\Models\Cart;
+use App\Models\SaleItem;
+use App\Models\Stock;
+use App\Models\StockMovement;
+use App\Models\Product;
+use App\Models\Shipment;
+use App\Models\Wallet;
+use App\Models\Setting;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+new class extends Component {
+    public $cart;
+    public $cartData;
+
+    public float $max_cash_order_amount = 0;
+    public bool $cashAutoChanged = false;
+
+    public string $name = '';
+    public string $email = '';
+    public string $phone = '';
+    public string $address = '';
+    public string $city = '';
+
+    public string $paymentMethod = 'cash';
+    public string $remainingPaymentMethod = 'cash';
+
+    public float $walletBalance = 0;
+    public float $walletPayAmount = 0;
+    public float $walletUsedAmount = 0;
+    public float $remainingAmount = 0;
+
+    public string $shippingMethod = '';
+    public array $shippingMethods = [];
+
+    public ?int $couponId = null;
+    public string $couponCode = '';
+    public float $discount = 0;
+    public string $couponMessage = '';
+    public string $couponError = '';
+
+    public ?int $taxId = null;
+    public float $taxRate = 0;
+    public string $taxName = 'Tax';
+
+    public string $invoice_no = '';
+
+    public string $cardHolderName = '';
+    public string $cardNumber = '';
+    public string $cardExpiry = '';
+    public string $cardCvv = '';
+
+    public string $bank_name = '';
+    public string $transaction_id = '';
+    public string $transfer_date = '';
+    public string $iban = '';
+    public string $branch_name = '';
+
+    public string $remainingPaymentCardHolderName = '';
+    public string $remainingPaymentCardNumber = '';
+    public string $remainingPaymentCardExpiry = '';
+    public string $remainingPaymentCardCvv = '';
+
+    public string $remainingPaymentBankName = '';
+    public string $remainingPaymentTransactionId = '';
+    public string $remainingPaymentTransferDate = '';
+    public string $remainingPaymentIban = '';
+    public string $remainingPaymentBranchName = '';
+
+    public function mount()
+    {
+        if (!Auth::guard('customer')->check()) {
+            return redirect()->route('customer.login');
+        }
+
+        $setting = Setting::first();
+
+        $this->max_cash_order_amount = (float) ($setting->max_cash_order_amount ?? 0);
+
+        $user = Auth::guard('customer')->user();
+        $customer = $user->customer;
+
+        $this->cartData = Cart::with(['items.product'])
+            ->where('user_id', Auth::guard('customer')->id())
+            ->first();
+
+        if (!$this->cartData || $this->cartData->items->count() === 0) {
+            return redirect()->route('front');
+        }
+
+        $this->cart = $this->cartData->items;
+
+        $this->email = $user->email;
+        $this->name = $user->name;
+        $this->phone = $customer->phone ?? '';
+
+        $wallet = Wallet::firstOrCreate(['customer_id' => $customer->id], ['balance' => 0]);
+
+        $this->walletBalance = (float) $wallet->balance;
+
+        $address = $customer->addresses()->where('is_default', true)->first();
+
+        if ($address) {
+            $this->city = $address->city ?? '';
+
+            $this->address = trim(($address->address_line_1 ?? '') . ' ' . ($address->address_line_2 ?? '') . ' ' . ($address->province ?? '') . ' ' . ($address->city ?? ''));
+        }
+
+        $this->invoice_no = $this->generateInvoiceNo();
+
+        $this->shippingMethods = ShippingMethod::where('is_active', 1)
+            ->orderBy('cost')
+            ->get()
+            ->map(
+                fn($method) => [
+                    'id' => $method->id,
+                    'name' => $method->name,
+                    'cost' => (float) $method->cost,
+                    'shipping_category' => $method->shipping_category ?? null,
+                ],
+            )
+            ->toArray();
+
+        $express = collect($this->shippingMethods)->firstWhere('shipping_category', 'Express');
+
+        $this->shippingMethod = (string) ($express['id'] ?? ($this->shippingMethods[0]['id'] ?? ''));
+
+        $tax = Tax::where('is_active', 1)->where('category', 'sales')->first();
+
+        if ($tax) {
+            $this->taxId = $tax->id;
+            $this->taxName = $tax->name;
+            $this->taxRate = (float) $tax->rate;
+        }
+
+        $this->syncCashPaymentMethod();
+    }
+
+    public function generateInvoiceNo(): string
+    {
+        $lastSale = Sale::latest('id')->first();
+
+        $nextId = $lastSale ? $lastSale->id + 1 : 1;
+
+        return 'SALE-' . now()->format('Ymd') . '-' . date('Hi') . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function getCartCountProperty(): int
+    {
+        return collect($this->cart)->sum('quantity');
+    }
+
+    public function getSubtotalProperty(): float
+    {
+        return collect($this->cart)->sum(fn($item) => $item->price * $item->quantity);
+    }
+
+    public function getSelectedShippingMethodProperty(): ?array
+    {
+        return collect($this->shippingMethods)->firstWhere('id', (int) $this->shippingMethod);
+    }
+
+    public function getShippingProperty(): float
+    {
+        if ($this->subtotal <= 0 || empty($this->shippingMethod)) {
+            return 0;
+        }
+
+        return (float) ($this->selectedShippingMethod['cost'] ?? 0);
+    }
+
+    public function getTaxAmountProperty(): float
+    {
+        $taxableAmount = max(0, $this->subtotal - $this->discount);
+
+        return ($taxableAmount * $this->taxRate) / 100;
+    }
+
+    public function getTotalProperty(): float
+    {
+        return max(0, $this->subtotal + $this->shipping + $this->taxAmount - $this->discount);
+    }
+
+    public function getCashDisabledProperty(): bool
+    {
+        return $this->max_cash_order_amount > 0 && $this->total > $this->max_cash_order_amount;
+    }
+
+    public function updatedPaymentMethod(): void
+    {
+        if ($this->paymentMethod === 'card') {
+            $this->cashAutoChanged = false;
+        }
+
+        if ($this->paymentMethod !== 'card') {
+            $this->reset(['cardHolderName', 'cardNumber', 'cardExpiry', 'cardCvv']);
+        }
+
+        if ($this->paymentMethod !== 'bank') {
+            $this->reset(['bank_name', 'transaction_id', 'transfer_date', 'iban', 'branch_name']);
+        }
+
+        $this->syncCashPaymentMethod();
+    }
+
+    public function updatedShippingMethod(): void
+    {
+        $this->syncCashPaymentMethod();
+    }
+
+    public function updatedRemainingPaymentMethod(): void
+    {
+        $this->calculateWalletPayment();
+    }
+
+    public function updatedWalletPayAmount(): void
+    {
+        $this->calculateWalletPayment();
+    }
+
+    public function syncCashPaymentMethod(): void
+    {
+        if ($this->cashDisabled && $this->paymentMethod === 'cash') {
+            $this->paymentMethod = 'card';
+            $this->cashAutoChanged = true;
+        }
+
+        if (!$this->cashDisabled && $this->paymentMethod === 'card' && $this->cashAutoChanged) {
+            $this->paymentMethod = 'cash';
+            $this->cashAutoChanged = false;
+        }
+
+        if ($this->paymentMethod === 'wallet' && $this->walletBalance <= 0) {
+            $this->paymentMethod = $this->cashDisabled ? 'card' : 'cash';
+        }
+
+        $this->calculateWalletPayment();
+    }
+
+    public function calculateWalletPayment(): void
+    {
+        $this->walletUsedAmount = 0;
+        $this->remainingAmount = 0;
+
+        if ($this->paymentMethod !== 'wallet') {
+            $this->walletPayAmount = 0;
+            return;
+        }
+
+        $maxWalletAllowed = min($this->walletBalance, $this->total);
+
+        if ($this->walletPayAmount <= 0) {
+            $this->walletPayAmount = $maxWalletAllowed;
+        }
+
+        if ($this->walletPayAmount > $maxWalletAllowed) {
+            $this->walletPayAmount = $maxWalletAllowed;
+        }
+
+        $this->walletPayAmount = round((float) $this->walletPayAmount, 2);
+        $this->walletUsedAmount = $this->walletPayAmount;
+        $this->remainingAmount = max(0, round($this->total - $this->walletUsedAmount, 2));
+
+        if ($this->remainingAmount > 0 && $this->remainingPaymentMethod === 'cash' && $this->max_cash_order_amount > 0 && $this->remainingAmount > $this->max_cash_order_amount) {
+            $this->remainingPaymentMethod = 'card';
+        }
+    }
+
+    public function applyCoupon(): void
+    {
+        $this->couponError = '';
+        $this->couponMessage = '';
+        $this->discount = 0;
+        $this->couponId = null;
+
+        $code = strtoupper(trim($this->couponCode));
+
+        if ($code === '') {
+            $this->couponError = 'Please enter coupon code.';
+            $this->syncCashPaymentMethod();
+            return;
+        }
+
+        $coupon = Coupon::where('code', $code)->where('is_active', 1)->first();
+
+        if (!$coupon) {
+            $this->couponError = 'Invalid coupon code.';
+            $this->syncCashPaymentMethod();
+            return;
+        }
+
+        if ($coupon->expires_at && now()->gt($coupon->expires_at)) {
+            $this->couponError = 'This coupon has expired.';
+            $this->syncCashPaymentMethod();
+            return;
+        }
+
+        $minimumAmount = $coupon->minimum_order_amount ?? ($coupon->minimum_amount ?? 0);
+
+        if ($this->subtotal < $minimumAmount) {
+            $this->couponError = 'Minimum order amount is Rs ' . number_format($minimumAmount, 2);
+            $this->syncCashPaymentMethod();
+            return;
+        }
+
+        if ($coupon->discount_type === 'percentage') {
+            $this->discount = ($this->subtotal * $coupon->discount_value) / 100;
+        } else {
+            $this->discount = $coupon->discount_value;
+        }
+
+        $this->discount = min($this->discount, $this->subtotal);
+
+        $this->couponId = $coupon->id;
+        $this->couponCode = $code;
+        $this->couponMessage = 'Coupon applied successfully.';
+
+        $this->syncCashPaymentMethod();
+    }
+
+    public function removeCoupon(): void
+    {
+        $this->couponId = null;
+        $this->couponCode = '';
+        $this->discount = 0;
+        $this->couponMessage = '';
+        $this->couponError = '';
+
+        $this->syncCashPaymentMethod();
+    }
+
+    private function finalPaymentMethod(): string
+    {
+        if ($this->paymentMethod !== 'wallet') {
+            return $this->paymentMethod;
+        }
+
+        if ($this->remainingAmount <= 0) {
+            return 'wallet';
+        }
+
+        return 'wallet+' . $this->remainingPaymentMethod;
+    }
+
+    private function finalPaymentStatus(): string
+    {
+        if ($this->paymentMethod === 'wallet') {
+            if ($this->remainingAmount <= 0) {
+                return 'paid';
+            }
+
+            return in_array($this->remainingPaymentMethod, ['card', 'bank'], true) ? 'paid' : 'partial';
+        }
+
+        return in_array($this->paymentMethod, ['card', 'bank'], true) ? 'paid' : 'pending';
+    }
+
+    private function paidAmount(): float
+    {
+        if ($this->paymentMethod === 'wallet') {
+            if ($this->remainingAmount > 0 && in_array($this->remainingPaymentMethod, ['card', 'bank'], true)) {
+                return $this->total;
+            }
+
+            return $this->walletUsedAmount;
+        }
+
+        return in_array($this->paymentMethod, ['card', 'bank'], true) ? $this->total : 0;
+    }
+
+    private function dueAmount(): float
+    {
+        if ($this->paymentMethod === 'wallet' && $this->remainingAmount > 0 && $this->remainingPaymentMethod === 'cash') {
+            return $this->remainingAmount;
+        }
+
+        return max(0, $this->total - $this->paidAmount());
+    }
+
+    public function placeOrder()
+    {
+        $this->syncCashPaymentMethod();
+
+        if ($this->paymentMethod === 'cash' && $this->cashDisabled) {
+            session()->flash('error', 'Cash on Delivery is not allowed for orders greater than Rs ' . number_format($this->max_cash_order_amount, 2));
+
+            return;
+        }
+
+        $rules = [
+            'name' => 'required|min:3',
+            'email' => 'required|email',
+            'phone' => 'required|min:10',
+            'address' => 'required|min:10',
+            'city' => 'required',
+            'paymentMethod' => 'required|in:cash,card,bank,wallet',
+            'shippingMethod' => 'required|exists:shipping_methods,id',
+        ];
+
+        if ($this->paymentMethod === 'card') {
+            $rules += [
+                'cardHolderName' => 'required|min:3',
+                'cardNumber' => 'required|min:13|max:19',
+                'cardExpiry' => 'required|min:4|max:10',
+                'cardCvv' => 'required|min:3|max:4',
+            ];
+        }
+
+        if ($this->paymentMethod === 'bank') {
+            $rules += [
+                'bank_name' => 'required|min:2',
+                'branch_name' => 'required|min:2',
+                'transaction_id' => 'required|min:3',
+                'iban' => 'required|min:10',
+                'transfer_date' => 'required|date',
+            ];
+        }
+
+        if ($this->paymentMethod === 'wallet') {
+            $maxWalletAllowed = min($this->walletBalance, $this->total);
+
+            $rules += [
+                'walletPayAmount' => 'required|numeric|min:1|max:' . $maxWalletAllowed,
+            ];
+        }
+
+        if ($this->paymentMethod === 'wallet' && $this->remainingAmount > 0) {
+            $rules += [
+                'remainingPaymentMethod' => 'required|in:cash,card,bank',
+            ];
+
+            if ($this->remainingPaymentMethod === 'cash') {
+                if ($this->max_cash_order_amount > 0 && $this->remainingAmount > $this->max_cash_order_amount) {
+                    session()->flash('error', 'Cash is not allowed for remaining amount greater than Rs ' . number_format($this->max_cash_order_amount, 2));
+
+                    return;
+                }
+            }
+
+            if ($this->remainingPaymentMethod === 'card') {
+                $rules += [
+                    'remainingPaymentCardHolderName' => 'required|min:3',
+                    'remainingPaymentCardNumber' => 'required|min:13|max:19',
+                    'remainingPaymentCardExpiry' => 'required|min:4|max:10',
+                    'remainingPaymentCardCvv' => 'required|min:3|max:4',
+                ];
+            }
+
+            if ($this->remainingPaymentMethod === 'bank') {
+                $rules += [
+                    'remainingPaymentBankName' => 'required|min:2',
+                    'remainingPaymentBranchName' => 'required|min:2',
+                    'remainingPaymentTransactionId' => 'required|min:3',
+                    'remainingPaymentIban' => 'required|min:10',
+                    'remainingPaymentTransferDate' => 'required|date',
+                ];
+            }
+        }
+
+        $this->validate($rules);
+
+        $order = null;
+        $invoice = null;
+
+        $fileName = "invoices/{$this->invoice_no}.pdf";
+        $directory = storage_path('app/public/invoices');
+        $fullPath = storage_path('app/public/' . $fileName);
+
+        try {
+            DB::transaction(function () use (&$order, &$invoice, $fileName, $directory, $fullPath) {
+                $customer = Auth::guard('customer')->user()->customer;
+
+                $wallet = Wallet::where('customer_id', $customer->id)->lockForUpdate()->firstOrFail();
+
+                $this->walletBalance = (float) $wallet->balance;
+
+                $this->calculateWalletPayment();
+
+                if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount <= 0) {
+                    throw new Exception('Please enter a valid wallet amount.');
+                }
+
+                if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount > $wallet->balance) {
+                    throw new Exception('Wallet amount cannot be greater than your current wallet balance.');
+                }
+
+                if ($this->paymentMethod === 'wallet' && $this->walletUsedAmount > $this->total) {
+                    throw new Exception('Wallet amount cannot be greater than order total.');
+                }
+
+                $sale = Sale::create([
+                    'customer_id' => $customer->id,
+                    'invoice_no' => $this->invoice_no,
+                    'subtotal' => $this->subtotal,
+                    'total_amount' => $this->total,
+                    'tax' => $this->taxAmount,
+                    'shipping_cost' => $this->shipping,
+                    'sale_type' => 'online',
+                    'discount' => $this->discount,
+                    'payment_method' => $this->finalPaymentMethod(),
+                    'payment_status' => $this->finalPaymentStatus(),
+                    'paid_amount' => $this->paidAmount(),
+                    'due_amount' => $this->dueAmount(),
+                ]);
+
+                if ($this->paymentMethod === 'wallet') {
+                    $wallet->decrement('balance', $this->walletUsedAmount);
+
+                    $wallet->transactions()->create([
+                        'amount' => $this->walletUsedAmount,
+                        'type' => 'debit',
+                        'reference_type' => 'sale',
+                        'reference_id' => $sale->id,
+                        'description' => 'Payment for invoice ' . $this->invoice_no,
+                    ]);
+                }
+
+                $order = Order::create([
+                    'sale_id' => $sale->id,
+                    'city' => $this->city,
+                    'address' => $this->address,
+                    'order_date' => now(),
+                    'coupon_code' => $this->couponCode ?: null,
+                ]);
+
+                foreach ($this->cart as $item) {
+                    $product = Product::where('id', $item->product_id)->lockForUpdate()->firstOrFail();
+
+                    if ($product->stock < $item->quantity) {
+                        throw new Exception($product->name . ' stock is not enough.');
+                    }
+
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
+
+                    $stockBefore = $product->quantity;
+                    $stockAfter = $stockBefore - $item->quantity;
+
+                    StockMovement::create([
+                        'quantity' => $item->quantity,
+                        'product_id' => $item->product_id,
+                        'warehouse_id' => $product->warehouse_id,
+                        'supplier_id' => $product->supplier_id,
+                        'type' => 'sale',
+                        'stock_before' => $stockBefore,
+                        'stock_after' => $stockAfter,
+                        'reference_no' => $sale->invoice_no,
+                    ]);
+
+                    Stock::updateOrCreate(
+                        [
+                            'product_id' => $item->product_id,
+                            'warehouse_id' => $product->warehouse_id,
+                        ],
+                        [
+                            'quantity' => $stockAfter,
+                            'minimum_stock' => $product->minimum_stock,
+                        ],
+                    );
+
+                    $product->update([
+                        'quantity' => $stockAfter,
+                    ]);
+                }
+
+                Shipment::create([
+                    'order_id' => $order->id,
+                    'shipping_method_id' => $this->shippingMethod,
+                    'tracking_number' => 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8)),
+                    'status' => 'pending',
+                ]);
+
+                $invoice = Invoice::create([
+                    'sale_id' => $sale->id,
+                    'invoice_date' => now(),
+                ]);
+
+                if (!File::exists($directory)) {
+                    File::makeDirectory($directory, 0755, true);
+                }
+
+                $order->load(['sale.customer', 'sale.items.product', 'shipment.shippingMethod', 'invoice']);
+
+                $pdf = Pdf::loadView('pdf.invoice', compact('order'));
+
+                $pdf->save($fullPath);
+
+                if (!File::exists($fullPath)) {
+                    throw new Exception('Invoice PDF was not created.');
+                }
+
+                $invoice->update([
+                    'pdf_path' => $fileName,
+                ]);
+
+                $this->cartData->items()->delete();
+                $this->cartData->delete();
+            });
+
+            $this->cart = [];
+
+            session()->flash('success', 'Order placed successfully.');
+
+            return redirect()->route('customer.orders.show', [
+                'order' => $order->id,
+            ]);
+        } catch (Exception $e) {
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+
+            session()->flash('error', $e->getMessage());
+
+            return;
+        }
+    }
+
+    public function rendering($view): void
+    {
+        $view->layout('components.layouts.ecommerce', [
+            'cartCount' => $this->cartCount,
+        ]);
+    }
+};
+?>
+
+<div class="container py-5">
+
+    <h2 class="fw-bold mb-4">Checkout</h2>
+
+    @if (session('success'))
+        <div class="alert alert-success rounded-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger rounded-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+
+                    <h4 class="fw-bold mb-4">Billing Details</h4>
+
+                    <form wire:submit.prevent="placeOrder">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <input type="text" wire:model="name" readonly class="form-control rounded-pill">
+                            @error('name')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" wire:model="email" readonly class="form-control rounded-pill">
+                            @error('email')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Phone</label>
+                            <input type="text" wire:model="phone" readonly class="form-control rounded-pill">
+                            @error('phone')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">City</label>
+                            <input type="text" wire:model="city" class="form-control rounded-pill">
+                            @error('city')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Address</label>
+                            <textarea wire:model="address" class="form-control rounded-4" rows="4"></textarea>
+                            @error('address')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <h5 class="fw-bold mt-4 mb-3">Payment Method</h5>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
+                                value="cash" id="cash" @disabled($this->cashDisabled)>
+
+                            <label class="form-check-label {{ $this->cashDisabled ? 'text-muted' : '' }}"
+                                for="cash">
+                                Cash on Delivery
+
+                                @if ($this->max_cash_order_amount > 0)
+                                    <span class="badge bg-danger ms-2">
+                                        Max Cash Rs {{ number_format($this->max_cash_order_amount, 2) }}
+                                    </span>
+                                @endif
+
+                                @if ($this->cashDisabled)
+                                    <span class="badge bg-warning text-dark ms-2">
+                                        Not allowed for this total
+                                    </span>
+                                @endif
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
+                                value="card" id="card">
+                            <label class="form-check-label" for="card">Card Payment</label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
+                                value="bank" id="bank">
+                            <label class="form-check-label" for="bank">Bank Transfer</label>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
+                                value="wallet" id="wallet" @disabled($walletBalance <= 0)>
+
+                            <label class="form-check-label {{ $walletBalance <= 0 ? 'text-muted' : '' }}"
+                                for="wallet">
+                                Wallet Payment
+                                <span class="text-muted">
+                                    (Balance: Rs {{ number_format($walletBalance, 2) }})
+                                </span>
+
+                                @if ($walletBalance <= 0)
+                                    <span class="badge bg-danger ms-2">Insufficient Balance</span>
+                                @endif
+                            </label>
+                        </div>
+
+                        @if ($paymentMethod === 'wallet')
+                            <div class="border rounded-4 p-4 mb-4 bg-light">
+                                <h5 class="fw-bold mb-3">Wallet Payment</h5>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Wallet Balance</span>
+                                    <strong>Rs {{ number_format($walletBalance, 2) }}</strong>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Amount to Pay from Wallet</label>
+                                    <input type="number" step="0.01" min="1"
+                                        wire:model.live="walletPayAmount" class="form-control rounded-pill"
+                                        placeholder="Enter wallet amount">
+
+                                    <small class="text-muted">
+                                        Maximum allowed: Rs {{ number_format(min($walletBalance, $this->total), 2) }}
+                                    </small>
+
+                                    @error('walletPayAmount')
+                                        <small class="text-danger d-block">{{ $message }}</small>
+                                    @enderror
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Wallet Used</span>
+                                    <strong class="text-success">Rs {{ number_format($walletUsedAmount, 2) }}</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Remaining Amount</span>
+                                    <strong class="{{ $remainingAmount > 0 ? 'text-danger' : 'text-success' }}">
+                                        Rs {{ number_format($remainingAmount, 2) }}
+                                    </strong>
+                                </div>
+
+                                @if ($remainingAmount > 0)
+                                    <label class="form-label fw-semibold">Pay remaining amount with</label>
+
+                                    <select wire:model.live="remainingPaymentMethod" class="form-select rounded-pill">
+                                        <option value="cash" @disabled($max_cash_order_amount > 0 && $remainingAmount > $max_cash_order_amount)>
+                                            Cash on Delivery
+                                        </option>
+                                        <option value="card">Card Payment</option>
+                                        <option value="bank">Bank Transfer</option>
+                                    </select>
+
+                                    @error('remainingPaymentMethod')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+
+                                    @if ($remainingPaymentMethod === 'card')
+                                        <div class="border rounded-4 p-4 mt-4 mb-4 bg-light">
+                                            <h5 class="fw-bold mb-3">Remaining Card Details</h5>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Card Holder Name</label>
+                                                <input type="text" wire:model="remainingPaymentCardHolderName"
+                                                    class="form-control rounded-pill">
+                                                @error('remainingPaymentCardHolderName')
+                                                    <small class="text-danger">{{ $message }}</small>
+                                                @enderror
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Card Number</label>
+                                                <input type="text" wire:model="remainingPaymentCardNumber"
+                                                    class="form-control rounded-pill">
+                                                @error('remainingPaymentCardNumber')
+                                                    <small class="text-danger">{{ $message }}</small>
+                                                @enderror
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">Expiry Date</label>
+                                                    <input type="text" wire:model="remainingPaymentCardExpiry"
+                                                        class="form-control rounded-pill" placeholder="MM/YY">
+                                                    @error('remainingPaymentCardExpiry')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">CVV</label>
+                                                    <input type="password" wire:model="remainingPaymentCardCvv"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentCardCvv')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @elseif ($remainingPaymentMethod === 'bank')
+                                        <div class="border rounded-4 p-4 mt-4 mb-4 bg-light">
+                                            <h5 class="fw-bold mb-3">Remaining Bank Details</h5>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Bank Name</label>
+                                                <input type="text" wire:model="remainingPaymentBankName"
+                                                    class="form-control rounded-pill">
+                                                @error('remainingPaymentBankName')
+                                                    <small class="text-danger">{{ $message }}</small>
+                                                @enderror
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">Branch Name</label>
+                                                    <input type="text" wire:model="remainingPaymentBranchName"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentBranchName')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">Transaction ID</label>
+                                                    <input type="text" wire:model="remainingPaymentTransactionId"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentTransactionId')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">IBAN</label>
+                                                    <input type="text" wire:model="remainingPaymentIban"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentIban')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-semibold">Transfer Date</label>
+                                                    <input type="date" wire:model="remainingPaymentTransferDate"
+                                                        class="form-control rounded-pill">
+                                                    @error('remainingPaymentTransferDate')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="alert alert-success rounded-4 mb-0">
+                                        Full order amount will be paid from wallet.
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($paymentMethod === 'card')
+                            <div class="border rounded-4 p-4 mb-4 bg-light">
+                                <h5 class="fw-bold mb-3">Card Details</h5>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Card Holder Name</label>
+                                    <input type="text" wire:model="cardHolderName"
+                                        class="form-control rounded-pill">
+                                    @error('cardHolderName')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Card Number</label>
+                                    <input type="text" wire:model="cardNumber" class="form-control rounded-pill">
+                                    @error('cardNumber')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Expiry Date</label>
+                                        <input type="text" wire:model="cardExpiry"
+                                            class="form-control rounded-pill" placeholder="MM/YY">
+                                        @error('cardExpiry')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">CVV</label>
+                                        <input type="password" wire:model="cardCvv"
+                                            class="form-control rounded-pill">
+                                        @error('cardCvv')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($paymentMethod === 'bank')
+                            <div class="border rounded-4 p-4 mb-4 bg-light">
+                                <h5 class="fw-bold mb-3">Bank Details</h5>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Bank Name</label>
+                                    <input type="text" wire:model="bank_name" class="form-control rounded-pill">
+                                    @error('bank_name')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Branch Name</label>
+                                        <input type="text" wire:model="branch_name"
+                                            class="form-control rounded-pill">
+                                        @error('branch_name')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Transaction ID</label>
+                                        <input type="text" wire:model="transaction_id"
+                                            class="form-control rounded-pill">
+                                        @error('transaction_id')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">IBAN</label>
+                                        <input type="text" wire:model="iban" class="form-control rounded-pill">
+                                        @error('iban')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Transfer Date</label>
+                                        <input type="date" wire:model="transfer_date"
+                                            class="form-control rounded-pill">
+                                        @error('transfer_date')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <button type="submit" class="btn btn-primary rounded-pill px-5">
+                            Place Order
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+
+                    <h4 class="fw-bold mb-4">Order Summary</h4>
+
+                    @forelse ($cart as $item)
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <span>{{ $item->product->name }} × {{ $item->quantity }}</span>
+                            <strong>{{ number_format($item->price * $item->quantity, 2) }}</strong>
+                        </div>
+                    @empty
+                        <div class="text-muted text-center py-4">
+                            Your cart is empty.
+                        </div>
+                    @endforelse
+
+                    @if (count($cart) > 0)
+
+                        <div class="my-4">
+                            <label class="form-label fw-semibold">Shipping Method</label>
+
+                            @forelse ($shippingMethods as $method)
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" wire:model.live="shippingMethod"
+                                        value="{{ $method['id'] }}" id="shipping_{{ $method['id'] }}">
+
+                                    <label class="form-check-label" for="shipping_{{ $method['id'] }}">
+                                        {{ $method['name'] }}
+                                        — Rs {{ number_format($method['cost'], 2) }}
+                                    </label>
+                                </div>
+                            @empty
+                                <div class="text-danger small">
+                                    No shipping method available.
+                                </div>
+                            @endforelse
+
+                            @error('shippingMethod')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="my-4">
+                            <label class="form-label fw-semibold">Coupon Code</label>
+
+                            <div class="input-group">
+                                <input type="text" wire:model="couponCode" class="form-control rounded-start-pill"
+                                    placeholder="Enter coupon code">
+
+                                <button type="button" wire:click="applyCoupon"
+                                    class="btn btn-primary rounded-end-pill">
+                                    Apply
+                                </button>
+                            </div>
+
+                            @if ($couponMessage)
+                                <div class="text-success small mt-2">
+                                    {{ $couponMessage }}
+
+                                    <button type="button" wire:click="removeCoupon"
+                                        class="btn btn-sm btn-link text-danger p-0 ms-2">
+                                        Remove
+                                    </button>
+                                </div>
+                            @endif
+
+                            @if ($couponError)
+                                <div class="text-danger small mt-2">
+                                    {{ $couponError }}
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <span>Subtotal</span>
+                            <strong>Rs {{ number_format($this->subtotal, 2) }}</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>Shipping</span>
+                            <strong>Rs {{ number_format($this->shipping, 2) }}</strong>
+                        </div>
+
+                        @if ($discount > 0)
+                            <div class="d-flex justify-content-between mt-2 text-success">
+                                <span>Discount</span>
+                                <strong>- Rs {{ number_format($discount, 2) }}</strong>
+                            </div>
+                        @endif
+
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>{{ $taxName }} ({{ $taxRate }}%)</span>
+                            <strong>Rs {{ number_format($this->taxAmount, 2) }}</strong>
+                        </div>
+
+                        @if ($paymentMethod === 'wallet')
+                            <div class="d-flex justify-content-between mt-2 text-success">
+                                <span>Wallet Used</span>
+                                <strong>- Rs {{ number_format($walletUsedAmount, 2) }}</strong>
+                            </div>
+
+                            @if ($remainingAmount > 0)
+                                <div class="d-flex justify-content-between mt-2 text-danger">
+                                    <span>Remaining Payable</span>
+                                    <strong>Rs {{ number_format($remainingAmount, 2) }}</strong>
+                                </div>
+                            @endif
+                        @endif
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between fs-5">
+                            <strong>Total</strong>
+                            <strong>Rs {{ number_format($this->total, 2) }}</strong>
+                        </div>
+
+                    @endif
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

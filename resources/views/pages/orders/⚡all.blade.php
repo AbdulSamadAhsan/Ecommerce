@@ -87,22 +87,30 @@ new class extends Component {
                 <tbody>
                     @forelse ($orders as $order)
                         @php
-                            $status = str_replace('_', ' ', $order->shipment->status);
+                            $status = str_replace('_', ' ', $order?->shipment?->status);
                         @endphp
                         <tr>
                             <td>#{{ $order['id'] }}</td>
 
                             <td>Rs. {{ number_format($order->sale->total_amount ?? 0, 2) }}</td>
-                            <td><span class="badge bg-info">{{ ucfirst($order->shipment->status) }}</span></td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ ucfirst($order?->shipment?->status ?? 'pending') }}
+                                </span>
+                            </td>
                             <td><span class="badge bg-info">{{ ucfirst($order->sale->payment_method) }}</span></td>
                             <td><span class="badge bg-secondary">{{ ucfirst($order->sale->payment_status) }}</span></td>
                             <td>
 
                                 <a href="{{ route('orders.show', $order['id']) }}"
                                     class="btn btn-sm btn-info text-white rounded-pill">View</a>
-                                @if (!in_array($order->shipment->status, ['cancelled', 'delivered']))
-                                    <a href="{{ route('orders.edit', $order->id) }}"
-                                        class="btn btn-sm btn-warning rounded-pill">Edit</a>
+                                @if (!in_array($order?->shipment?->status, ['cancelled', 'delivered']))
+                                    @if ($order->shipment)
+                                        <a href="{{ route('orders.edit', $order->id) }}"
+                                            class="btn btn-sm btn-warning rounded-pill">
+                                            Edit
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

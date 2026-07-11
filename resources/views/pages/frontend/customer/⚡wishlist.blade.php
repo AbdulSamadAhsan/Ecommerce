@@ -118,10 +118,10 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
 
                                     <button wire:click="addToCart({{ $item->id }})"
                                         class="btn btn-sm btn-primary rounded-pill flex-fill"
-                                        @disabled($item->product->stock < 0 || in_array($item->product->id, $this->itemsCart))>
+                                        @disabled($item->product->stock <= 0 || in_array($item->product->id, $this->itemsCart))>
                                         <i class="bi bi-cart-plus"></i>
                                         @if (!in_array($item->product->id, $this->itemsCart))
-                                            Cart
+                                            {{ $item->product->stock <= 0 ? 'Out of Stock' : 'Add to Cart' }}
                                         @else
                                             Already In Cart
                                         @endif
