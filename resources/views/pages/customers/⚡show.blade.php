@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Customer;
+use App\Models\Sale;
 new class extends Component {
     public int $id;
 
@@ -9,12 +10,12 @@ new class extends Component {
     public $orders;
     public $reviews;
     public $walletTransactions;
-
+    public $lastOrder;
     public function mount($id): void
     {
         $this->id = (int) $id;
 
-        $this->customer = Customer::find($id);
+        $this->customer = Customer::findOrFail($id);
         $this->orders = $this->customer->sales;
 
         $this->reviews = [
@@ -32,11 +33,17 @@ new class extends Component {
             ],
         ];
 
+        $this->lastOrder = $this->customer->sales()->with('orderNumber.shipment')->latest()->first();
+        //  dd($this->lastOrder->orderNumber->created_at->format('d M Y'), $this->lastOrder->orderNumber->id, $this->lastOrder->orderNumber->created_at->diffForHumans());
         $this->walletTransactions = $this->customer->wallet->transactions;
     }
     public function getTotalSpentProperty(): float
     {
-        return collect($this->orders)->sum('total_amount');
+        return Sale::where('customer_id', $this->customer->id)
+            ->whereHas('orderNumber.shipment', function ($query) {
+                $query->where('status', 'delivered');
+            })
+            ->sum('total_amount');
     }
 
     public function getTotalOrdersProperty(): int
@@ -118,18 +125,25 @@ new class extends Component {
 
                 <div class="col-md-6 mb-3">
                     <strong>City:</strong><br>
-                    {{ $customer['city'] }}
+                    @if (!empty($customer->addresses->toArray()) && count(array_filter($customer->addresses->toArray())))
+                        @foreach ($customer->addresses as $address)
+                            @if (!empty($address))
+                                {{ $address->city }}<br>
+                            @endif
+                        @endforeach
+                    @else
+                        No address provided
+                    @endif
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <strong>Joined:</strong><br>
                     {{ date('d-F-Y', strtotime($customer['created_at'])) }}
+                    {{ $this->customer->created_at->diffForHumans() }}
+
                 </div>
 
-                <div class="col-md-12 mb-3">
-                    <strong>Address:</strong><br>
-                    {{ $customer['address'] }}
-                </div>
+
 
                 <div class="col-md-6 mb-3">
                     <strong>Status:</strong><br>

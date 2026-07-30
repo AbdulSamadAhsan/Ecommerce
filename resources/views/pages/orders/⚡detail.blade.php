@@ -25,7 +25,7 @@ new class extends Component {
         <h2 class="fw-bold mb-0">Order Details</h2>
 
 
-        <a href="{{ route('order.invoice.report', $order->id) }}" class="btn btn-outline-primary rounded-pill">
+        <a href="{{ route('invoice.download', $order->id) }}" class="btn btn-outline-primary rounded-pill">
             Download Invoice
         </a>
     </div>

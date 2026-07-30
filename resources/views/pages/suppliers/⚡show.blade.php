@@ -9,7 +9,7 @@ new class extends Component {
     public $purchases;
     public $payments;
     public $products;
-
+    public $movements;
     public function mount($id): void
     {
         $this->id = (int) $id;
@@ -23,6 +23,7 @@ new class extends Component {
             'status' => 1,
         ];
 
+        $this->movements = $supplier_data->stockmovements;
         $this->purchases = $supplier_data->purchases;
         $this->payments = $supplier_data->payments;
 
@@ -130,6 +131,58 @@ new class extends Component {
                             <td>{{ number_format($payment['amount'], 2) }}</td>
                             <td>{{ ucfirst(str_replace('_', ' ', $payment['payment_method'])) }}</td>
                             <td>{{ date('d-F-Y', strtotime($payment['created_at'])) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+
+    <div class="card border-0 shadow">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Stock Movements</h5>
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>Before</th>
+                        <th>After</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($movements as $movement)
+                        @php
+                            $shipmentStatus = data_get($movement, 'type', 'pending');
+
+                            $statusBadge = match ($shipmentStatus) {
+                                'purchase' => 'bg-success',
+                                'sale' => 'bg-danger',
+                                'purchase_return' => 'bg-warning',
+                                'shipped' => 'bg-warning',
+                                default => 'bg-primary',
+                            };
+                        @endphp
+                        <tr>
+                            <td>{{ date('d-F-Y', strtotime($movement['created_at'])) }}</td>
+                            <td>{{ $movement->product->name }}</td>
+                            <td>
+                                <span class="badge {{ $statusBadge }}">
+                                    {{ ucwords(str_replace('_', ' ', $movement['type'])) }}
+                                </span>
+                            </td>
+                            <td>{{ $movement['quantity'] }}</td>
+                            <td>{{ $movement['stock_before'] }}</td>
+                            <td>{{ $movement['stock_after'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>

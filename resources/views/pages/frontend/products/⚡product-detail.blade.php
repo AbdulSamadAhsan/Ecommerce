@@ -6,7 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use Illuminate\Support\Facades\Auth;
 new class extends Component {
-    public int $id;
+    public $value;
 
     public int $cartCount = 0;
 
@@ -18,9 +18,9 @@ new class extends Component {
 
     public $customerReviews;
 
-    public function mount($id): void
+    public function mount($value): void
     {
-        $this->id = (int) $id;
+        $this->value = $value;
 
         $reviews = [
             1 => [
@@ -63,7 +63,7 @@ new class extends Component {
             ],
         ];
 
-        $this->product = Product::find($this->id);
+        $this->product = Product::where('sku', $value)->orWhere('id', $value)->firstOrFail();
 
         $this->customerReviews = $this->product->reviews;
 
@@ -121,6 +121,12 @@ new class extends Component {
 
     public function addToCart($product_id): void
     {
+        $product = Product::findOrFail($product_id);
+
+        if ($product->quantity <= 0) {
+            $this->addError('cart', 'Product is out of stock.');
+            return;
+        }
         $cart = $this->getCurrentCart();
 
         if ($cart) {
@@ -132,32 +138,32 @@ new class extends Component {
                     ->Update([
                         'quantity' => $this->quantity,
                     ]);
+                session()->flash('success', 'Product Updated In  cart successfully.');
+            } else {
+                CartItem::create([
+                    'cart_id' => $cart->id,
+                    'product_id' => $product->id,
+                    'quantity' => $this->quantity,
+                    'price' => $product->price_after_discount,
+                ]);
+                session()->flash('success', 'Product added to cart successfully.');
             }
-        }
-
-        $product = Product::findOrFail($product_id);
-
-        if ($product->quantity <= 0) {
-            $this->addError('cart', 'Product is out of stock.');
-            return;
-        }
-
-        if (!$cart) {
+        } else {
             $cart = Cart::create([
                 'ip_address' => request()->ip(),
                 'user_id' => Auth::guard('customer')->check() ? Auth::guard('customer')->id() : null,
             ]);
+
+            CartItem::create([
+                'cart_id' => $cart->id,
+                'product_id' => $product->id,
+                'quantity' => $this->quantity,
+                'price' => $product->price_after_discount,
+            ]);
+            session()->flash('success', 'Product added to cart successfully.');
         }
 
-        CartItem::create([
-            'cart_id' => $cart->id,
-            'product_id' => $product->id,
-            'quantity' => $this->quantity,
-            'price' => $product->price_after_discount,
-        ]);
         $this->refreshCartCount();
-
-        session()->flash('success', 'Product added to cart successfully.');
     }
 
     public function addToWishlist($productId): void
@@ -236,13 +242,9 @@ new class extends Component {
             </h1>
 
             <div class="text-warning mb-3 fs-5">
-                @for ($i = 1; $i <= 5; $i++)
-                    @if ($i <= round($this->averageRating))
-                        <i class="bi bi-star-fill"></i>
-                    @else
-                        <i class="bi bi-star"></i>
-                    @endif
-                @endfor
+                {{ $this->averageRating }} <i class="bi bi-star-fill"></i>
+
+
 
                 <span class="text-muted small ms-2">
                     {{ $this->averageRating }} / 5
@@ -386,17 +388,12 @@ new class extends Component {
                 </div>
 
                 <div class="text-warning fs-5">
-                    @for ($i = 1; $i <= 5; $i++)
-                        @if ($i <= round($this->averageRating))
-                            <i class="bi bi-star-fill"></i>
-                        @else
-                            <i class="bi bi-star"></i>
-                        @endif
-                    @endfor
 
-                    <span class="text-muted small ms-2">
-                        {{ $this->averageRating }}
-                    </span>
+                    {{ $this->averageRating }} <i class="bi bi-star-fill"></i>
+
+
+
+
                 </div>
             </div>
 

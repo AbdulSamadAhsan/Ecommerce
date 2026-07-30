@@ -6,8 +6,9 @@ use App\Models\SalaryPayment;
 use App\Models\Salary;
 use App\Models\ExpenseCategory;
 use App\Models\Expense;
+use App\Models\Attendance;
 use App\Models\Payroll;
-
+use Carbon\Carbon;
 new class extends Component {
     public $employees = [];
     public $salaryPayments = [];
@@ -34,7 +35,7 @@ new class extends Component {
         $this->month = now()->format('Y-m');
         $this->paid_date = now()->format('Y-m-d');
 
-        $this->employees = Employee::with('user')->where('status', 1)->latest()->get();
+        $this->employees = Employee::with('user')->where('status', 'active')->latest()->get();
 
         $this->loadPayments();
     }
@@ -54,6 +55,33 @@ new class extends Component {
     {
         if (in_array($property, ['basic_salary', 'allowances', 'bonus', 'overtime', 'deductions', 'tax'])) {
             $this->calculateNetSalary();
+        }
+        if (in_array($property, ['month', 'employee_id'])) {
+            if ($this->employee_id != null && $this->month != null) {
+                $employee = Employee::with('salaryData')->find($this->employee_id);
+
+                $this->basic_salary = $employee->salaryData->basic_salary ?? 0;
+                $this->allowances = $employee->salaryData->allowance ?? 0;
+                $this->tax = $employee->salaryData->tax_deduction ?? 0;
+
+                $month = $this->month;
+
+                $startOfMonth = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                $endOfMonth = Carbon::createFromFormat('Y-m', $month)->endOfMonth();
+
+                $leaveCount = Attendance::where('employee_id', $this->employee_id)
+                    ->where('status', 'leave')
+                    ->whereBetween('attendance_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+                    ->count();
+                $lateCount = Attendance::where('employee_id', $this->employee_id)
+                    ->where('status', 'leave')
+                    ->whereBetween('attendance_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+                    ->count();
+                $leaveAmount = $leaveCount * 500;
+                $lateAmount = $lateCount * 100;
+                $this->deductions = $leaveAmount + $lateAmount;
+                $this->calculateNetSalary();
+            }
         }
     }
 
@@ -128,7 +156,7 @@ new class extends Component {
             ['id' => $this->editId],
             [
                 'employee_id' => $this->employee_id,
-                'month' => $this->month,
+
                 'salary_id' => $salary->id,
                 'payroll_id' => $payroll->id,
                 'amount' => $this->net_salary,
@@ -164,7 +192,6 @@ new class extends Component {
 
         $this->editId = $payment->id;
         $this->employee_id = $payment->employee_id;
-        $this->month = $payment->month;
 
         $this->basic_salary = $payment->payroll->basic_salary ?? 0;
         $this->allowances = $payment->payroll->allowances ?? 0;
@@ -251,7 +278,7 @@ new class extends Component {
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Month</label>
-                        <input type="month" wire:model="month" class="form-control">
+                        <input type="month" wire:model.live="month" class="form-control">
                         @error('month')
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
@@ -365,7 +392,7 @@ new class extends Component {
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $payment->employee->user->name ?? ($payment->employee->name ?? 'N/A') }}</td>
-                            <td>{{ $payment->month }}</td>
+                            <td>{{ $payment->payroll->month }}</td>
                             <td>Rs {{ number_format($payment->payroll->basic_salary ?? 0, 2) }}</td>
                             <td>Rs {{ number_format($payment->payroll->allowances ?? 0, 2) }}</td>
                             <td>Rs {{ number_format($payment->payroll->bonus ?? 0, 2) }}</td>

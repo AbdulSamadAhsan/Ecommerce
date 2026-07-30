@@ -217,129 +217,7 @@ new class extends Component {
         </div>
     @endif
 
-    <form wire:submit.prevent="save">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0 fw-bold">
-                    {{ $payroll_id ? 'Update Payroll' : 'Create Payroll' }}
-                </h5>
-            </div>
 
-            <div class="card-body">
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Employee</label>
-                        <select wire:model.live="employee_id" class="form-control rounded-pill">
-                            <option value="">Select Employee</option>
-                            @foreach ($employees as $employee)
-                                <option value="{{ $employee->id }}">
-                                    {{ $employee->user->name ?? ($employee->name ?? 'N/A') }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('employee_id')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Payroll No</label>
-                        <input type="text" wire:model="payroll_no" class="form-control rounded-pill">
-                        @error('payroll_no')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Month</label>
-                        <input type="month" wire:model="month" class="form-control rounded-pill">
-                        @error('month')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Basic Salary</label>
-                        <input type="number" wire:model.live="basic_salary" class="form-control rounded-pill">
-                        @error('basic_salary')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Allowances</label>
-                        <input type="number" wire:model.live="allowances" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Bonus</label>
-                        <input type="number" wire:model.live="bonus" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Overtime</label>
-                        <input type="number" wire:model.live="overtime" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Deductions</label>
-                        <input type="number" wire:model.live="deductions" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Tax</label>
-                        <input type="number" wire:model.live="tax" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Net Salary</label>
-                        <input type="number" value="{{ $net_salary }}" class="form-control rounded-pill" readonly>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Paid Date</label>
-                        <input type="date" wire:model="paid_date" class="form-control rounded-pill">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Payment Method</label>
-                        <select wire:model="payment_method" class="form-control rounded-pill">
-                            <option value="cash">Cash</option>
-                            <option value="bank">Bank</option>
-                            <option value="card">Card</option>
-                            <option value="wallet">Wallet</option>
-                            <option value="cheque">Cheque</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Status</label>
-                        <select wire:model="status" class="form-control rounded-pill">
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Remarks</label>
-                        <textarea wire:model="remarks" class="form-control rounded-4"></textarea>
-                    </div>
-
-                </div>
-
-                <button type="submit" class="btn btn-primary rounded-pill">
-                    {{ $payroll_id ? 'Update Payroll' : 'Save Payroll' }}
-                </button>
-
-                <button type="button" wire:click="resetForm" class="btn btn-warning rounded-pill">
-                    Reset
-                </button>
-
-            </div>
-        </div>
-    </form>
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white border-0 py-3">
@@ -415,10 +293,6 @@ new class extends Component {
                                     View
                                 </a>
 
-                                <button wire:click="edit({{ $payroll->id }})"
-                                    class="btn btn-sm btn-info rounded-pill">
-                                    Edit
-                                </button>
 
                                 <button wire:click="delete({{ $payroll->id }})" wire:confirm="Are you sure?"
                                     class="btn btn-sm btn-danger rounded-pill">

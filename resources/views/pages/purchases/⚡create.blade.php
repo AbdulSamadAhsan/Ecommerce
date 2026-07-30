@@ -97,6 +97,18 @@ new class extends Component {
 
             $this->items[$index]['subtotal'] = $qty * $price;
         }
+
+        if ($this->due_amount <= 0 && $this->total_amount > 0) {
+            $this->paid_amount = $this->total_amount;
+            $this->payment_status = 'paid';
+            $this->status = 'completed';
+        } elseif ($this->paid_amount > 0) {
+            $this->payment_status = 'partial';
+            $this->status = 'pending';
+        } else {
+            $this->payment_status = 'unpaid';
+            $this->status = 'pending';
+        }
     }
 
     public function getTotalAmountProperty()
@@ -269,18 +281,6 @@ new class extends Component {
                 'status' => $this->status,
                 'notes' => $this->notes,
             ]);
-
-            foreach ($this->items as $item) {
-                PurchaseItem::create([
-                    'purchase_id' => $purchase->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'purchase_price' => $item['purchase_price'],
-                    'subtotal' => $item['subtotal'],
-                ]);
-
-                Product::where('id', $item['product_id'])->increment('quantity', $item['quantity']);
-            }
         });
 
         session()->flash('success', 'Purchase updated successfully.');
@@ -389,17 +389,34 @@ new class extends Component {
                     <div class="row mb-3 align-items-end">
                         <div class="col-md-4">
                             <label>Product</label>
-                            <select wire:model.live="items.{{ $index }}.product_id" class="form-control">
-                                <option value="">
-                                    {{ $supplier_id ? 'Select Product' : 'Select Supplier First' }}
-                                </option>
+                            @if ($purchase_id)
+                                <input type="text" class="form-control"
+                                    value="{{ optional($products->firstWhere('id', $item['product_id']))->name }}"
+                                    readonly>
 
-                                @foreach ($products as $product)
-                                    <option value="{{ $product->id }}">
-                                        {{ $product->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                                <input type="hidden" wire:model="items.{{ $index }}.product_id">
+                            @else
+                                <select wire:model.live="items.{{ $index }}.product_id" class="form-control">
+                                    <option value="">Select Product</option>
+
+                                    @foreach ($products as $product)
+                                        @php
+                                            $selectedProducts = collect($items)
+                                                ->pluck('product_id')
+                                                ->filter()
+                                                ->toArray();
+
+                                            $disabled =
+                                                in_array($product->id, $selectedProducts) &&
+                                                $items[$index]['product_id'] != $product->id;
+                                        @endphp
+
+                                        <option value="{{ $product->id }}" @disabled($disabled)>
+                                            {{ $product->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
 
                             @error('items.' . $index . '.product_id')
                                 <small class="text-danger">{{ $message }}</small>
@@ -408,14 +425,15 @@ new class extends Component {
 
                         <div class="col-md-2">
                             <label>Quantity</label>
-                            <input type="number" wire:model.live="items.{{ $index }}.quantity"
-                                class="form-control" min="1">
+                            <input type="number" @if ($purchase_id !== null) disabled @endif
+                                wire:model.live="items.{{ $index }}.quantity" class="form-control"
+                                min="1">
                         </div>
 
                         <div class="col-md-2">
                             <label>Price</label>
                             <input type="number" wire:model.live="items.{{ $index }}.purchase_price"
-                                class="form-control" min="0" step="0.01">
+                                class="form-control" min="0" step="0.01" readonly>
                         </div>
 
                         <div class="col-md-2">
@@ -423,18 +441,21 @@ new class extends Component {
                             <input type="number" value="{{ $items[$index]['subtotal'] ?? 0 }}" class="form-control"
                                 readonly>
                         </div>
-
-                        <div class="col-md-2">
-                            <button type="button" wire:click="removeItem({{ $index }})" class="btn btn-danger">
-                                Remove
-                            </button>
-                        </div>
+                        @if ($purchase_id == null)
+                            <div class="col-md-2">
+                                <button type="button" wire:click="removeItem({{ $index }})"
+                                    class="btn btn-danger">
+                                    Remove
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
-
-                <button type="button" wire:click="addItem" class="btn btn-secondary mb-3">
-                    Add Item
-                </button>
+                @if ($purchase_id == null)
+                    <button type="button" wire:click="addItem" class="btn btn-secondary mb-3">
+                        Add Item
+                    </button>
+                @endif
 
                 <div class="row">
                     <div class="col-md-3 mb-3">

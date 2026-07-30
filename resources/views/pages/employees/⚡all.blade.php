@@ -20,8 +20,8 @@ new class extends Component {
             <p class="text-muted mb-0">Manage company employees</p>
         </div>
 
-        <a href="{{ route('employees.create') }}" class="btn btn-primary rounded-pill">
-            Add Employee
+        <a href="{{ route('employees.all') }}" class="btn btn-primary rounded-pill">
+            Employee Report
         </a>
     </div>
 
@@ -34,6 +34,7 @@ new class extends Component {
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Employee Code</th>
                         <th>Department</th>
                         <th>Phone</th>
                         <th>Designation</th>
@@ -47,6 +48,7 @@ new class extends Component {
                         <tr>
                             <td>#{{ $employee->id }}</td>
                             <td>{{ $employee->user->name }}</td>
+                            <td>{{ $employee->employee_code }}</td>
                             <td>{{ $employee->department->name }}</td>
                             <td>{{ $employee->phone }}</td>
                             <td>{{ $employee->designation }}</td>
@@ -58,7 +60,8 @@ new class extends Component {
                             <td>
                                 <a href="{{ route('employees.show', $employee['id']) }}"
                                     class="btn btn-sm btn-info rounded-pill text-white">View</a>
-
+                                <a href="{{ route('employees.edit', $employee['id']) }}"
+                                    class="btn btn-sm btn-info rounded-pill text-white">Edit</a>
                                 <button class="btn btn-sm btn-danger rounded-pill">Delete</button>
                             </td>
                         </tr>

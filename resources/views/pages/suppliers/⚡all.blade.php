@@ -57,6 +57,7 @@ new class extends Component {
                             <td>
                                 <a href="{{ route('suppliers.show', $supplier['id']) }}"
                                     class="btn btn-sm btn-info rounded-pill text-white">View</a>
+                                <a href="{{ route('suppliers.edit', $supplier['id']) }}">Edit</a>
 
                                 <button class="btn btn-sm btn-danger rounded-pill">Delete</button>
                             </td>

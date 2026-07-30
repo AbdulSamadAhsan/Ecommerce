@@ -96,6 +96,9 @@ public function purchasereturnitem()
 {
     return $this->hasMany(PurchaseReturnItem::class);
 }
+public function getProductQtyAttribute(){
+     return $this->purchasereturnitem()->sum("quantity");
+}
 
 public function stockmovement()
 {
@@ -112,6 +115,7 @@ if($quantity_sold > 5){
 public function stocks(){
        return $this->hasOne(Stock::class);
 }
+
 public function getStockAttribute()
 {
     return $this->stocks?->quantity ?? 0;

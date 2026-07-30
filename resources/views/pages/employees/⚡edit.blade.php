@@ -61,6 +61,13 @@ new class extends Component {
     public $educations = [];
     public $departments = [];
     public $institutions = [];
+    public $gender;
+    public $marital_status;
+    public array $maritalStatuses = [
+        'single' => 'Single',
+        'married' => 'Married',
+        'divorced' => 'Divorced',
+    ];
 
     public function mount($id): void
     {
@@ -71,7 +78,7 @@ new class extends Component {
 
         $this->name = $employee->user?->name ?? '';
         $this->email = $employee->user?->email ?? '';
-
+        $this->gender = $employee->gender;
         $this->institution_id = (string) $employee->institution_id;
         $this->education_id = (string) $employee->education_id;
         $this->department_id = (string) $employee->department_id;
@@ -83,7 +90,7 @@ new class extends Component {
         $this->cnic = $employee->cnic;
         $this->oldPhoto = $employee->photo;
         $this->status = (string) $employee->status;
-
+        $this->marital_status = $employee->marital_status;
         $this->father_name = $employee->father_name;
         $this->date_of_birth = optional($employee->date_of_birth)->format('Y-m-d') ?? $employee->date_of_birth;
 
@@ -96,7 +103,7 @@ new class extends Component {
         $this->swift_code = $employee->swift_code;
         $this->is_primary = (string) $employee->is_primary;
         $this->bank_notes = $employee->notes;
-
+        $this->gender = $employee->gender;
         $salary = Salary::where('employee_id', $employee->id)->latest()->first();
 
         if ($salary) {
@@ -137,7 +144,7 @@ new class extends Component {
             'cnic' => ['required', 'min:13', 'max:20', Rule::unique('employees', 'cnic')->ignore($this->employeeId)],
 
             'photo' => 'nullable|image|max:2048',
-            'status' => 'required|boolean',
+            'status' => 'required|in:active',
 
             'father_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date',
@@ -194,78 +201,81 @@ new class extends Component {
         }
 
         $this->calculateSalary();
+        try {
+            DB::transaction(function () {
+                $employee = Employee::findOrFail($this->employeeId);
+                $user = User::findOrFail($this->userId);
 
-        DB::transaction(function () {
-            $employee = Employee::findOrFail($this->employeeId);
-            $user = User::findOrFail($this->userId);
+                $photoPath = $this->oldPhoto;
 
-            $photoPath = $this->oldPhoto;
+                if ($this->photo) {
+                    if ($this->oldPhoto && Storage::disk('public')->exists($this->oldPhoto)) {
+                        Storage::disk('public')->delete($this->oldPhoto);
+                    }
 
-            if ($this->photo) {
-                if ($this->oldPhoto && Storage::disk('public')->exists($this->oldPhoto)) {
-                    Storage::disk('public')->delete($this->oldPhoto);
+                    $fileName = 'employee-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
+
+                    $photoPath = $this->photo->storeAs('employees', $fileName, 'public');
                 }
 
-                $fileName = 'employee-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
+                $userData = [
+                    'name' => $this->name,
+                    'email' => $this->email,
+                ];
 
-                $photoPath = $this->photo->storeAs('employees', $fileName, 'public');
-            }
+                if (!empty($this->password)) {
+                    $userData['password'] = Hash::make($this->password);
+                }
 
-            $userData = [
-                'name' => $this->name,
-                'email' => $this->email,
-            ];
+                $user->update($userData);
+                $genderEm = $this->gender;
+                $employee->update([
+                    'institution_id' => $this->institution_id,
+                    'education_id' => $this->education_id,
+                    'department_id' => $this->department_id,
+                    'phone' => $this->phone,
+                    'designation' => $this->designation,
+                    'joining_date' => $this->joining_date,
+                    'address' => $this->address,
+                    'cnic' => $this->cnic,
+                    'photo' => $photoPath,
+                    'status' => $this->status,
+                    'gender' => $genderEm,
+                    'father_name' => $this->father_name,
+                    'date_of_birth' => $this->date_of_birth,
 
-            if (!empty($this->password)) {
-                $userData['password'] = Hash::make($this->password);
-            }
+                    'bank_name' => $this->bank_name ?: null,
+                    'account_title' => $this->account_title ?: null,
+                    'account_number' => $this->account_number,
+                    'iban' => $this->iban ?: null,
+                    'branch_name' => $this->branch_name ?: null,
+                    'branch_code' => $this->branch_code ?: null,
+                    'swift_code' => $this->swift_code ?: null,
+                    'is_primary' => $this->is_primary,
+                    'notes' => $this->bank_notes ?: null,
+                ]);
 
-            $user->update($userData);
+                Salary::updateOrCreate(
+                    [
+                        'employee_id' => $employee->id,
+                    ],
+                    [
+                        'basic_salary' => $this->salary,
+                        'effective_from' => $this->joining_date,
+                        'allowance' => $this->allowance,
+                        'tax_deduction' => $this->tax_deduction,
+                        'net_salary' => $this->net_salary,
+                        'is_active' => 1,
+                    ],
+                );
+            });
 
-            $employee->update([
-                'institution_id' => $this->institution_id,
-                'education_id' => $this->education_id,
-                'department_id' => $this->department_id,
-                'phone' => $this->phone,
-                'designation' => $this->designation,
-                'joining_date' => $this->joining_date,
-                'address' => $this->address,
-                'cnic' => $this->cnic,
-                'photo' => $photoPath,
-                'status' => $this->status,
+            session()->flash('success', 'Employee updated successfully.');
 
-                'father_name' => $this->father_name,
-                'date_of_birth' => $this->date_of_birth,
-
-                'bank_name' => $this->bank_name ?: null,
-                'account_title' => $this->account_title ?: null,
-                'account_number' => $this->account_number,
-                'iban' => $this->iban ?: null,
-                'branch_name' => $this->branch_name ?: null,
-                'branch_code' => $this->branch_code ?: null,
-                'swift_code' => $this->swift_code ?: null,
-                'is_primary' => $this->is_primary,
-                'notes' => $this->bank_notes ?: null,
-            ]);
-
-            Salary::updateOrCreate(
-                [
-                    'employee_id' => $employee->id,
-                ],
-                [
-                    'basic_salary' => $this->salary,
-                    'effective_from' => $this->joining_date,
-                    'allowance' => $this->allowance,
-                    'tax_deduction' => $this->tax_deduction,
-                    'net_salary' => $this->net_salary,
-                    'is_active' => 1,
-                ],
-            );
-        });
-
-        session()->flash('success', 'Employee updated successfully.');
-
-        return $this->redirectRoute('employees.index', navigate: true);
+            return $this->redirectRoute('employees.index', navigate: true);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
     }
 };
 ?>
@@ -419,6 +429,55 @@ new class extends Component {
                             @enderror
                         </div>
 
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label d-block">
+                                Gender <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input @error('gender') is-invalid @enderror" type="radio"
+                                    id="male" value="male" wire:model="gender">
+
+                                <label class="form-check-label" for="male">
+                                    Male
+                                </label>
+                            </div>
+
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input @error('gender') is-invalid @enderror" type="radio"
+                                    id="female" value="female" wire:model="gender">
+
+                                <label class="form-check-label" for="female">
+                                    Female
+                                </label>
+                            </div>
+
+                            @error('gender')
+                                <div class="invalid-feedback d-block">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label d-block">Marital Status <span
+                                    class="text-danger">*</span></label>
+                            @foreach ($maritalStatuses as $key => $value)
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input @error('marital_status') is-invalid @enderror"
+                                        type="radio" id="{{ $key }}" value="{{ $key }}"
+                                        wire:model.live="marital_status">
+
+                                    <label class="form-check-label" for="male">
+                                        {{ $value }}
+                                    </label>
+                                </div>
+                            @endforeach
+                            @error('marital_status')
+                                <div class="text-danger mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Address</label>
                             <textarea class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Enter address"
@@ -457,7 +516,8 @@ new class extends Component {
                             <label class="form-label">Status</label>
                             <select class="form-select @error('status') is-invalid @enderror"
                                 wire:model.live="status">
-                                <option value="1">Active</option>
+
+                                <option value="active">Active</option>
                                 <option value="0">Inactive</option>
                             </select>
                             @error('status')

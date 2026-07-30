@@ -30,4 +30,8 @@ public function payments(){
 public function purchases(){
     return $this->hasMany(Purchase::class);
 }
+    public function stockmovements(){
+     return $this->hasMany(StockMovement::class);
+
+    }
 }

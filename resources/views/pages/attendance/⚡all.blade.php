@@ -1,10 +1,11 @@
 <?php
-
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Employee;
 use App\Models\Attendance;
-
+use Carbon\Carbon;
+use App\Models\Setting;
 new class extends Component {
     use WithPagination;
 
@@ -41,7 +42,19 @@ new class extends Component {
     public function save()
     {
         $this->validate();
+        $employee = Employee::find($this->employee_id);
 
+        $reportingTime = Carbon::parse($employee->reporting_time);
+        $checkInTime = Carbon::parse($this->check_in);
+
+        if ($checkInTime->lt($reportingTime)) {
+            throw ValidationException::withMessages([
+                'check_in' => 'You cannot check in before your reporting time.',
+            ]);
+        }
+        $setting = \App\Models\Setting;
+        $graceMinutes = $setting->grace_time;
+        dd($employee->reporting_time);
         Attendance::updateOrCreate(
             [
                 'employee_id' => $this->employee_id,
@@ -66,7 +79,7 @@ new class extends Component {
 
         $this->attendance_id = $attendance->id;
         $this->employee_id = $attendance->employee_id;
-        $this->attendance_date = $attendance->attendance_date->format('Y-m-d');
+        $this->attendance_date = Carbon::parse($attendance->attendance_date)->format('Y-m-d');
         $this->check_in = $attendance->check_in;
         $this->check_out = $attendance->check_out;
         $this->status = $attendance->status;
@@ -186,6 +199,10 @@ new class extends Component {
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Check In</label>
                         <input type="time" wire:model="check_in" class="form-control rounded-pill">
+                        @error('check_in')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+
                     </div>
 
                     <div class="col-md-4 mb-3">

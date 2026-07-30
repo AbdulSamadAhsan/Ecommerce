@@ -14,8 +14,9 @@ class TicketMessageSent implements ShouldBroadcastNow
 
     public array $message;
 
-    public function __construct(TicketMessage $message)
+    public function __construct(TicketMessage $message)   
     {
+       
         $this->message = [
             'id' => $message->id,
             'customer_support_ticket_id' => $message->customer_support_ticket_id,
@@ -25,13 +26,22 @@ class TicketMessageSent implements ShouldBroadcastNow
         ];
     }
 
-    public function broadcastOn(): Channel
-    {
-        return new Channel('ticket.' . $this->message['customer_support_ticket_id']);
-    }
+   public function broadcastOn(): array
+{
+     return [
+        new Channel('ticket'),
+    ];
+}
 
-    public function broadcastAs(): string
+        public function broadcastAs(): string
     {
         return 'message.sent';
+    }
+
+       public function broadcastWith(): array
+    {
+        return [
+            'message' => $this->message,
+        ];
     }
 }

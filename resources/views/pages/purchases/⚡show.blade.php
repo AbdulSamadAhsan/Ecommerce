@@ -133,8 +133,8 @@ new class extends Component {
                                     <td>{{ $item->product->name ?? 'N/A' }}</td>
                                     <td>{{ $item->product->warehouse->name ?? 'N/A' }}</td>
                                     <td>{{ $item->quantity }}</td>
-                                    <td>Rs. {{ number_format($item->unit_cost, 2) }}</td>
-                                    <td>Rs. {{ number_format($item->total_cost, 2) }}</td>
+                                    <td>Rs. {{ number_format($item->purchase_price, 2) }}</td>
+                                    <td>Rs. {{ number_format($item->subtotal, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>

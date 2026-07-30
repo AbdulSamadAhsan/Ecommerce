@@ -372,6 +372,9 @@
         }
     </style>
 
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    @livewireStyles
 </head>
 
 <body>
@@ -384,7 +387,7 @@
 
         <div class="brand">
             <i class="bi bi-box-seam"></i>
-            Inventory
+            TechStore
         </div>
 
         @php
@@ -439,7 +442,8 @@
                         <i class="bi bi-plus-circle-fill"></i> Add Product
                     </a>
 
-                    <a href="{{ adminRoute('reviews.index') }}" class="nav-link {{ activeRoute('reviews.*') }}">
+                    <a href="{{ adminRoute('products.review') }}"
+                        class="nav-link {{ activeRoute('products.review') }}">
                         <i class="bi bi-star-fill"></i> Reviews
                     </a>
                 </div>
@@ -577,6 +581,16 @@
                     <a href="{{ adminRoute('employees.create') }}"
                         class="nav-link {{ activeRoute('employees.create') }}">
                         <i class="bi bi-plus-circle-fill"></i> Add Employee
+                    </a>
+
+
+                    <a href="{{ adminRoute('employees.documents.index') }}"
+                        class="nav-link {{ activeRoute('employees.documents.index') }}">
+                        <i class="bi bi-file-earmark-text-fill"></i> Document
+                    </a>
+                    <a href="{{ adminRoute('employees.employee_card') }}"
+                        class="nav-link {{ activeRoute('employees.employee_card') }}">
+                        <i class="bi bi-person-vcard-fill"></i> Card
                     </a>
                 </div>
             </li>
@@ -778,7 +792,7 @@
                     <i class="bi bi-cash-stack"></i> Salaries
                 </a>
             </li>
-
+            {{--
             <li class="nav-item sidebar-dropdown {{ openRoute('transactions.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span><i class="bi bi-arrow-left-right"></i> Transactions</span>
@@ -797,7 +811,7 @@
                     </a>
                 </div>
             </li>
-
+--}}
             <li class="nav-item sidebar-dropdown {{ openRoute('taxes.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span><i class="bi bi-percent"></i> Taxes</span>
@@ -814,6 +828,26 @@
                     </a>
                 </div>
             </li>
+
+
+            <li class="nav-item sidebar-dropdown {{ openRoute('shifts.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-clock-history"></i> Shifts</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('shifts.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('shifts.*') }}">
+                    <a href="{{ adminRoute('shifts.index') }}" class="nav-link {{ activeRoute('shifts.index') }}">
+                        <i class="bi bi-list-ul"></i> All Shifts
+                    </a>
+
+                    <a href="{{ adminRoute('shifts.create') }}"
+                        class="nav-link {{ activeRoute('shifts.create') }}">
+                        <i class="bi bi-plus-circle-fill"></i> Add Shift
+                    </a>
+                </div>
+            </li>
+
 
             <li class="nav-item">
                 <a href="{{ adminRoute('attendances.index') }}"
@@ -864,7 +898,14 @@
                     Sales Returns
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ adminRoute('contact-us.index') }}" class="nav-link {{ activeRoute('contact-us.*') }}">
 
+                    <i class="bi bi-envelope"></i>
+
+                    Contact Messages
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
 
@@ -931,7 +972,7 @@
         </div>
 
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
     <script>
         const sidebar = document.getElementById('sidebar');
@@ -950,7 +991,7 @@
             overlay.classList.remove('active');
         });
     </script>
-    <script>
+    <script defer>
         document.querySelectorAll('.dropdown-toggle-btn')
             .forEach(button => {
 

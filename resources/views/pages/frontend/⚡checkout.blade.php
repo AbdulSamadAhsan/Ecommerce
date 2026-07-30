@@ -839,11 +839,7 @@ new class extends Component {
                             <label class="form-check-label" for="card">Card Payment</label>
                         </div>
 
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" wire:model.live="paymentMethod"
-                                value="bank" id="bank">
-                            <label class="form-check-label" for="bank">Bank Transfer</label>
-                        </div>
+
 
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="radio" wire:model.live="paymentMethod"

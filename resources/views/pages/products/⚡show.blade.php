@@ -238,10 +238,11 @@ new class extends Component {
                             <strong>Selling Price After Discount:</strong><br>
                             {{ number_format($product['price_after_discount'], 2) }}
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Stock:</strong><br>
-                            {{ $product['stock'] }}
+                        <div class="col-md-4">
+                            <strong>Profit Per Unit</strong>
+                            <p>{{ $product['profitperunit'] }}</p>
                         </div>
+
 
                         <div class="col-md-6 mb-3">
                             <strong>Discount:</strong><br>
@@ -262,19 +263,7 @@ new class extends Component {
                             @endif
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <strong>Ratings:</strong><br>
-                            {{ $this->averageRating }}/5
-                            <span class="text-warning">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    @if ($i <= round($this->averageRating))
-                                        <i class="bi bi-star-fill"></i>
-                                    @else
-                                        <i class="bi bi-star"></i>
-                                    @endif
-                                @endfor
-                            </span>
-                        </div>
+
 
                     </div>
 
@@ -320,10 +309,7 @@ new class extends Component {
                     <strong>Warehouse</strong>
                     <p>{{ $product['warehouse'] }}</p>
                 </div>
-                <div class="col-md-4">
-                    <strong>Profit Per Unit</strong>
-                    <p>{{ $product['profitperunit'] }}</p>
-                </div>
+
             </div>
 
         </div>

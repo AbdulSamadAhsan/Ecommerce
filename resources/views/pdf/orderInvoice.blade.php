@@ -144,15 +144,15 @@
                 <td width="25%">#{{ $order->id }}</td>
 
                 <th width="25%">Order Date</th>
-                <td width="25%">{{ $order->created_at?->format('d M Y h:i A') ?? 'N/A' }}</td>
+                <td width="25%">{{ $order->created_at?->format('d F Y') ?? 'N/A' }}</td>
             </tr>
 
             <tr>
-                <th>Order Status</th>
+                <th>Order Time</th>
                 <td>
-                    <span class="badge">
-                        {{ ucfirst($order->status ?? 'N/A') }}
-                    </span>
+
+                    {{ $order->created_at?->format('h:i A') ?? 'N/A' }}
+
                 </td>
 
                 <th>Payment Status</th>
@@ -193,10 +193,8 @@
 
             <tr>
                 <th>Phone</th>
-                <td>{{ $order->customer->phone ?? 'N/A' }}</td>
+                <td colspan="3">{{ $order->customer->phone ?? 'N/A' }}</td>
 
-                <th>City</th>
-                <td>{{ $order->customer->city ?? 'N/A' }}</td>
             </tr>
 
             <tr>
@@ -213,11 +211,10 @@
 
         <table>
             <tr>
-                <th width="25%">Shipment No</th>
-                <td width="25%">{{ $order->shipment->shipment_no ?? 'N/A' }}</td>
 
-                <th width="25%">Tracking No</th>
-                <td width="25%">{{ $order->shipment->tracking_number ?? 'N/A' }}</td>
+
+                <th>Tracking No</th>
+                <td colspan="3">{{ $order->shipment->tracking_number ?? 'N/A' }}</td>
             </tr>
 
             <tr>
@@ -257,35 +254,15 @@
             <table>
                 <tr>
                     <th width="25%">Name</th>
-                    <td width="25%">{{ $order->shipment->deliveryBoy->name ?? 'N/A' }}</td>
+                    <td width="25%">{{ $order->shipment->deliveryBoy->user->name ?? 'N/A' }}</td>
 
                     <th width="25%">Phone</th>
                     <td width="25%">{{ $order->shipment->deliveryBoy->phone ?? 'N/A' }}</td>
                 </tr>
 
-                <tr>
-                    <th>Email</th>
-                    <td>{{ $order->shipment->deliveryBoy->email ?? 'N/A' }}</td>
 
-                    <th>CNIC</th>
-                    <td>{{ $order->shipment->deliveryBoy->cnic ?? 'N/A' }}</td>
-                </tr>
 
-                <tr>
-                    <th>Vehicle Type</th>
-                    <td>{{ $order->shipment->deliveryBoy->vehicle_type ?? 'N/A' }}</td>
 
-                    <th>Vehicle Number</th>
-                    <td>{{ $order->shipment->deliveryBoy->vehicle_number ?? 'N/A' }}</td>
-                </tr>
-
-                <tr>
-                    <th>License Number</th>
-                    <td>{{ $order->shipment->deliveryBoy->license_number ?? 'N/A' }}</td>
-
-                    <th>Status</th>
-                    <td>{{ ucfirst($order->shipment->deliveryBoy->status ?? 'active') }}</td>
-                </tr>
             </table>
         @else
             <table>
@@ -317,7 +294,7 @@
                 @forelse($order->sale->items ?? $order->items ?? [] as $item)
                     @php
                         $qty = $item->quantity ?? ($item->qty ?? 0);
-                        $price = $item->price ?? ($item->sale_price ?? 0);
+                        $price = $item->price ?? ($item->unit_price ?? 0);
                         $subtotal = $qty * $price;
                     @endphp
 
@@ -364,7 +341,7 @@
                 <th>Shipping</th>
                 <td class="text-right">
                     Rs.
-                    {{ number_format(optional($order->sale)->shipping_charge ?? ($order->shipping_charge ?? 0), 2) }}
+                    {{ number_format(optional($order->sale)->shipping_cost ?? ($order->shipping_charge ?? 0), 2) }}
                 </td>
             </tr>
 

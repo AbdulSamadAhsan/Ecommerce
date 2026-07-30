@@ -5,10 +5,20 @@ use App\Models\CustomerSupportTicket;
 
 new class extends Component {
     public CustomerSupportTicket $ticket;
-
+    public $admin_reply;
     public function mount($id)
     {
-        $this->ticket = CustomerSupportTicket::with('customer')->findOrFail($id);
+        $this->ticket = CustomerSupportTicket::with('customer', 'messages')->findOrFail($id);
+
+        $admin_reply = CustomerSupportTicket::with([
+            'customer',
+            'messages' => function ($query) {
+                $query->where('message_by', 'admin')->latest()->limit(1);
+            },
+        ])
+            ->findOrFail($id)
+            ->toArray();
+        $this->admin_reply = $admin_reply['messages'][0]['message'];
     }
 };
 ?>
@@ -48,7 +58,7 @@ new class extends Component {
 
             <p><strong>Admin Reply:</strong></p>
             <div class="border rounded p-3 bg-light">
-                {{ $ticket->admin_reply ?: 'No reply yet.' }}
+                {{ $this->admin_reply ?: 'No reply yet.' }}
             </div>
 
             @if ($ticket->resolved_at)

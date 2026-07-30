@@ -247,7 +247,7 @@ new class extends Component {
 
     <div class="row g-4">
 
-        <div class="col-lg-8">
+        <div class="col-md-8">
             <div class="dashboard-card">
 
                 <div class="mb-4">
@@ -256,13 +256,22 @@ new class extends Component {
                 </div>
 
                 <div class="chart-container">
-                    <canvas id="salesChart"></canvas>
+
+                    <canvas id="salesChart" data-labels='@json($salesLabels)'
+                        data-values='@json($salesData)'>
+                    </canvas>
                 </div>
 
             </div>
         </div>
 
-        <div class="col-lg-4">
+
+        <div class="col-md-4">
+
+
+
+
+
             <div class="dashboard-card">
 
                 <h5 class="fw-bold mb-4">Popular Products</h5>
@@ -372,67 +381,44 @@ new class extends Component {
     </div>
 
 </div>
+<script>
+    function initChart() {
+        console.log(new Date());
+        const canvas = document.getElementById('salesChart');
+        if (!canvas) return;
 
-@script
-    <script>
-        function initializeChart() {
-            const canvas = document.getElementById('salesChart');
+        const labels = JSON.parse(canvas.dataset.labels);
+        const values = JSON.parse(canvas.dataset.values);
 
-            if (!canvas) {
-                return;
-            }
-
-            if (window.salesChartInstance) {
-                window.salesChartInstance.destroy();
-            }
-
-            window.salesChartInstance = new Chart(canvas, {
-                type: 'line',
-
-                data: {
-                    labels: @json($salesLabels),
-
-                    datasets: [{
-                        label: 'Sales',
-                        data: [420, 540, 480, 610, 720, 680, 760],
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37,99,235,0.15)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#2563eb',
-                        borderWidth: 3
-                    }]
-                },
-
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
-
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                }
-            });
+        if (
+            window.salesChart &&
+            typeof window.salesChart.destroy === 'function'
+        ) {
+            window.salesChart.destroy();
         }
 
-        document.addEventListener('livewire:navigated', initializeChart);
-        document.addEventListener('DOMContentLoaded', initializeChart);
+        window.salesChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales',
+                    data: values,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,.15)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
 
-        initializeChart();
-    </script>
-@endscript
+    initChart();
+    document.addEventListener('DOMContentLoaded', initChart);
+    document.addEventListener('livewire:navigated', initChart);
+</script>

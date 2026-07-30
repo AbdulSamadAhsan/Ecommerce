@@ -29,7 +29,7 @@ return new class extends Migration
                     'ordered',
                     'abandoned',
                     'cancelled'
-                ])->default('active')->after('total');
+                ])->default('active');
             }
      //
         });

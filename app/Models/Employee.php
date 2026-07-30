@@ -27,16 +27,44 @@ protected $fillable = [
     "account_title",	
 		"account_number",
 		"iban",
+        "bank_name",
 		"branch_name",	
 		"branch_code",	
 		"swift_code",
 		"is_primary",
+        'gender',
+             'emergency_contact_name',
+                'emergency_contact_number',
+                'emergency_contact_relationship',
+                'employment_type',
+                'probation_period',
+                'reporting_time',
+                'shift',
+               
 ];
 protected $appends = [
     "annual_salary",
-    'age'
+    'age',
+    "employee_code"
+
 ];
 
+public function getEmployeeCodeAttribute(){
+    $name =substr($this->user->name, 0, 3);
+    $designation=$this->designation;
+    $sentence = "John Doe Manager";
+
+$words = explode(' ', $this->designation);
+$code = '';
+
+foreach ($words as $word) {
+    $code .= strtoupper(substr($word, 0, 3)) . '-';
+}
+
+$code = rtrim($code, '-');
+
+return strtoupper($name . '-' . $code."-".$this->id."-".substr($this->gender,0,1));
+}
 public function getAgeAttribute()
 {
     return \Carbon\Carbon::parse($this->date_of_birth)->age;
@@ -71,5 +99,17 @@ public function getAgeAttribute()
 public function payroll()
 {
     return $this->hasMany(Payroll::class);
+}
+public function attendance()
+{
+    return $this->hasMany(Attendance::class);
+}
+public function leave()
+{
+    return $this->hasMany(Leave::class);
+}
+public function documents()
+{
+    return $this->hasMany(EmployeeDocument::class, 'employee_id');
 }
 }

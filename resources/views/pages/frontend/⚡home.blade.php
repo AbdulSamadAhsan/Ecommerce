@@ -449,7 +449,7 @@ new class extends Component {
                                     @endif
                                 </div>
 
-                                <a wire:navigate href="{{ route('product.detail', $product->id) }}"
+                                <a wire:navigate href="{{ route('product.detail', $product->sku) }}"
                                     class="text-decoration-none">
                                     <h5 class="fw-bold text-primary">
                                         View Detail

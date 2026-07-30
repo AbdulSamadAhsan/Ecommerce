@@ -4,15 +4,18 @@ use Livewire\Component;
 use App\Models\CustomerSupportTicket;
 use App\Models\TicketMessage;
 use App\Events\TicketMessageSent;
-
+use Livewire\WithFileUploads;
+use Livewire\Attributes\On;
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
+    use WithFileUploads;
     public string $ticketNo;
     public int $ticketId;
     public string $reply = '';
 
     public $ticket;
     public array $messages = [];
-
+    public $attachment;
+    public $supportImage;
     public function mount($ticketNo): void
     {
         $customer = auth('customer')->user()->customer;
@@ -25,16 +28,10 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
         $this->loadMessages();
     }
 
-    public function getListeners(): array
+    #[On('echo:ticket,.message.sent')]
+    public function messageReceived($event)
     {
-        return [
-            "echo:ticket.{$this->ticketId},.message.sent" => 'messageReceived',
-        ];
-    }
-
-    public function messageReceived($event): void
-    {
-        $this->messages[] = $event['message'];
+        $this->loadMessages();
     }
 
     public function loadMessages(): void
@@ -59,6 +56,7 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                 fn($m) => [
                     'id' => $m->id,
                     'message' => $m->message,
+                    'attachment' => $m->attachment,
                     'message_by' => $m->message_by,
                     'created_at' => $m->created_at->format('Y-m-d h:i A'),
                 ],
@@ -75,11 +73,21 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
         ]);
 
         $customer = auth('customer')->user()->customer;
+        if ($this->attachment) {
+            $extension = $this->attachment->getClientOriginalExtension();
+
+            // jpg, png, pdf, docx...
+            $extension = $this->attachment->getClientOriginalExtension();
+
+            $fileName = time() . '_' . str()->random(10) . '.' . $extension;
+
+            $path = $this->attachment->storeAs('support-tickets', $fileName, 'public');
+            $this->supportImage = $path;
+        }
 
         $message = TicketMessage::create([
             'customer_support_ticket_id' => $this->ticketId,
-            'customer_id' => $customer->id,
-            'employee_id' => null,
+            'attachment' => $this->supportImage,
             'message' => $this->reply,
             'message_by' => 'customer',
             'is_internal' => false,
@@ -92,10 +100,13 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
             'customer_support_ticket_id' => $message->customer_support_ticket_id,
             'message' => $message->message,
             'message_by' => $message->message_by,
+            'attachment' => $message->attachment,
+
             'created_at' => $message->created_at->format('Y-m-d h:i A'),
         ];
 
         event(new TicketMessageSent($message));
+        $this->attachment = null;
     }
 };
 ?>
@@ -155,10 +166,28 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                                 </div>
 
                                 <div>{{ $msg['message'] }}</div>
-
+                                @if (!empty($msg['attachment']))
+                                    @php
+                                        $extension = strtolower(pathinfo($msg['attachment'], PATHINFO_EXTENSION));
+                                    @endphp
+                                    <div class="mt-2">
+                                        <img src="{{ asset('storage/' . $msg['attachment']) }}"
+                                            class="img-fluid rounded border" style="max-width:250px;">
+                                    </div>
+                                    @if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+                                    @else
+                                        <div class="mt-2">
+                                            <a href="{{ asset('storage/' . $msg['attachment']) }}" target="_blank"
+                                                class="btn btn-sm btn-light">
+                                                📎 Download Attachment
+                                            </a>
+                                        </div>
+                                    @endif
+                                @endif
                                 <small
                                     class="{{ $msg['message_by'] === 'customer' ? 'text-white-50' : 'text-muted' }}">
-                                    {{ $msg['created_at'] }}
+                                    {{ date('d-M-Y', strtotime($msg['created_at'])) }} at
+                                    {{ date('h:i a', strtotime($msg['created_at'])) }}
                                 </small>
                             </div>
                         </div>
@@ -175,6 +204,37 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
                     <h4 class="fw-bold mb-3">Send Reply</h4>
 
                     <form wire:submit.prevent="sendReply">
+
+                        <div class="mb-3">
+
+                            <input type="file" wire:model="attachment" class="form-control">
+
+                            @error('attachment')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+
+                            <div wire:loading wire:target="attachment">
+                                Uploading...
+                            </div>
+                            @if ($attachment)
+                                @if (str_starts_with($attachment->getMimeType(), 'image/'))
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Image Preview</label>
+
+                                        <img src="{{ $attachment->temporaryUrl() }}"
+                                            class="img-fluid mt-2 mb-2 rounded border"
+                                            style="max-width:250px; max-height:250px;" alt="Preview">
+                                    </div>
+                                @else
+                                    <div class="alert alert-info">
+                                        <strong>Selected File:</strong>
+                                        {{ $attachment->getClientOriginalName() }}
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+
+
                         <textarea wire:model="reply" rows="4" class="form-control rounded-4 mb-2" placeholder="Type your message..."></textarea>
 
                         @error('reply')

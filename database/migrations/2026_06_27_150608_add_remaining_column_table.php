@@ -11,7 +11,7 @@ return new class extends Migration
         if (Schema::hasTable('sales')) {
             Schema::table('sales', function (Blueprint $table) {
                 if (!Schema::hasColumn('sales', 'payment_method')) {
-                    $table->enum('payment_method', ['cash', 'card', 'bank_transfer', 'jazzcash', 'easypaisa'])->default('cash');
+                    $table->enum('payment_method', ['cash', 'card', 'bank', 'jazzcash', 'easypaisa'])->default('cash');
                 }
 
                 if (!Schema::hasColumn('sales', 'payment_status')) {

@@ -16,7 +16,7 @@ new class extends Component {
     {
         return $this->deliveryboy->shipments
             ->filter(function ($shipment) {
-                return $shipment->status === 'Delivered';
+                return $shipment->status === 'delivered';
             })
             ->sum(function ($shipment) {
                 return $shipment->order?->sale?->shipping_cost ?? 0;

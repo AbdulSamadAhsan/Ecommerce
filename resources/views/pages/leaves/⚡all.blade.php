@@ -6,7 +6,8 @@ use App\Models\Leave;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-
+use Carbon\CarbonPeriod;
+use App\Models\Attendance;
 new class extends Component {
     use WithPagination;
 
@@ -47,7 +48,25 @@ new class extends Component {
             $from = Carbon::parse($this->from_date);
             $to = Carbon::parse($this->to_date);
 
-            $this->days = $to->gte($from) ? $from->diffInDays($to) + 1 : 1;
+            if ($to->lt($from)) {
+                $this->days = 1;
+                return;
+            }
+
+            // Total days (inclusive)
+            $totalDays = $from->diffInDays($to) + 1;
+
+            // Count weekends
+            $weekends = 0;
+
+            foreach (CarbonPeriod::create($from, $to) as $date) {
+                if ($date->isSaturday() || $date->isSunday()) {
+                    $weekends++;
+                }
+            }
+
+            // Working days
+            $this->days = $totalDays - $weekends;
         }
     }
 
@@ -72,9 +91,26 @@ new class extends Component {
         $approvedBy = null;
         $approvedAt = null;
 
-        if (in_array($this->status, ['approved', 'rejected'])) {
+        if (in_array($this->status, ['approved'])) {
             $approvedBy = Auth::id();
             $approvedAt = now();
+            $from = Carbon::parse($this->from_date);
+            $to = Carbon::parse($this->to_date);
+
+            foreach (CarbonPeriod::create($from, $to) as $date) {
+                if (!$date->isSaturday() && !$date->isSunday()) {
+                    $leaveDays = $date->toDateString();
+                    Attendance::updateOrCreate(
+                        [
+                            'employee_id' => $this->employee_id,
+                            'attendance_date' => $leaveDays,
+                        ],
+                        [
+                            'status' => 'leave',
+                        ],
+                    );
+                }
+            }
         }
 
         Leave::updateOrCreate(

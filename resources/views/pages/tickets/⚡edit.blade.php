@@ -4,7 +4,7 @@ use Livewire\Component;
 use App\Models\CustomerSupportTicket;
 use App\Models\TicketMessage;
 use App\Events\TicketMessageSent;
-
+use Livewire\Attributes\On;
 new class extends Component {
     public int $ticketId;
 
@@ -16,7 +16,7 @@ new class extends Component {
 
     public array $messages = [];
 
-    public function mount($id): void
+    public function mount($id)
     {
         $ticket = CustomerSupportTicket::findOrFail($id);
 
@@ -25,20 +25,10 @@ new class extends Component {
         $this->message = $ticket->message;
         $this->priority = $ticket->priority;
         $this->status = $ticket->status;
-
+        if ($ticket->status == 'closed') {
+            return $this->redirect(route('customer-support-tickets.index', $this->ticketId), navigate: true);
+        }
         $this->loadMessages();
-    }
-
-    public function getListeners(): array
-    {
-        return [
-            "echo:ticket.{$this->ticketId},.message.sent" => 'messageReceived',
-        ];
-    }
-
-    public function messageReceived($event): void
-    {
-        $this->messages[] = $event['message'];
     }
 
     public function loadMessages(): void
@@ -52,6 +42,7 @@ new class extends Component {
                 'id' => 'ticket-' . $ticket->id,
                 'message' => $ticket->message,
                 'message_by' => 'customer',
+                'attachment' => $ticket->attachment,
                 'created_at' => $ticket->created_at->format('Y-m-d h:i A'),
             ];
         }
@@ -64,6 +55,7 @@ new class extends Component {
                     'id' => $m->id,
                     'message' => $m->message,
                     'message_by' => $m->message_by,
+                    'attachment' => $m->attachment,
                     'created_at' => $m->created_at->format('Y-m-d h:i A'),
                 ],
             )
@@ -71,7 +63,11 @@ new class extends Component {
 
         $this->messages = array_merge($messages, $chatMessages);
     }
-
+    #[On('echo:ticket,.message.sent')]
+    public function messageReceived($event)
+    {
+        $this->loadMessages();
+    }
     public function sendAdminReply(): void
     {
         $this->validate([
@@ -82,8 +78,7 @@ new class extends Component {
 
         $message = TicketMessage::create([
             'customer_support_ticket_id' => $this->ticketId,
-            'customer_id' => $ticket->customer_id,
-            'employee_id' => auth()->id(),
+
             'message' => $this->admin_reply,
             'message_by' => 'admin',
             'is_internal' => false,
@@ -95,11 +90,29 @@ new class extends Component {
             'id' => $message->id,
             'customer_support_ticket_id' => $message->customer_support_ticket_id,
             'message' => $message->message,
+            'attachment' => $message->attachment,
             'message_by' => $message->message_by,
             'created_at' => $message->created_at->format('Y-m-d h:i A'),
         ];
 
         event(new TicketMessageSent($message));
+    }
+    public function updateTicket()
+    {
+        $ticket = CustomerSupportTicket::findOrFail($this->ticketId);
+
+        if ($ticket->status === $this->status) {
+            session()->flash('error', 'The ticket is already in this status.');
+            return;
+        }
+
+        $ticket->update([
+            'status' => $this->status,
+        ]);
+
+        session()->flash('success', 'Ticket status updated successfully.');
+
+        return $this->redirect(route('customer-support-tickets.edit', $this->ticketId), navigate: true);
     }
 };
 ?>
@@ -118,10 +131,15 @@ new class extends Component {
 
         <div class="card-body">
             <form wire:submit.prevent="updateTicket">
+                @if (session('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
                 <div class="mb-3">
                     <label class="form-label">Subject</label>
-                    <input type="text" wire:model.live="subject" class="form-control">
+                    <input type="text" wire:model.live="subject" class="form-control" disabled>
                     @error('subject')
                         <small class="text-danger">{{ $message }}</small>
                     @enderror
@@ -129,7 +147,7 @@ new class extends Component {
 
                 <div class="mb-3">
                     <label class="form-label">Customer Message</label>
-                    <textarea wire:model.live="message" rows="4" class="form-control"></textarea>
+                    <textarea wire:model.live="message" rows="4" class="form-control" disabled></textarea>
                     @error('message')
                         <small class="text-danger">{{ $message }}</small>
                     @enderror
@@ -138,7 +156,7 @@ new class extends Component {
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Priority</label>
-                        <select wire:model.live="priority" class="form-select">
+                        <select wire:model.live="priority" class="form-select" disabled>
                             <option value="low">Low</option>
                             <option value="medium">Medium</option>
                             <option value="high">High</option>
@@ -150,7 +168,7 @@ new class extends Component {
                         <label class="form-label">Status</label>
                         <select wire:model.live="status" class="form-select">
                             <option value="open">Open</option>
-                            <option value="pending">Pending</option>
+                            <option value="in_progress">Pending</option>
                             <option value="resolved">Resolved</option>
                             <option value="closed">Closed</option>
                         </select>
@@ -180,6 +198,14 @@ new class extends Component {
                     <div class="d-inline-block p-3 rounded-4 shadow-sm
                         {{ $msg['message_by'] === 'admin' ? 'bg-warning' : 'bg-light' }}"
                         style="max-width:75%;">
+                        @if ($msg['attachment'] != null && $msg['message_by'] == 'customer')
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $msg['attachment']) }}" class="img-fluid rounded border"
+                                    style="max-width:250px;">
+                            </div>
+                        @endif
+
+
 
                         <div class="fw-bold mb-1">
                             {{ $msg['message_by'] === 'admin' ? 'Support Team' : 'Customer' }}

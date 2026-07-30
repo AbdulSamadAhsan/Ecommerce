@@ -16,7 +16,7 @@ new class extends Component {
 
         $this->inventory = $this->warehouse->products;
 
-        $this->movements = [['date' => '2026-06-18', 'product' => 'MacBook Pro M3', 'type' => 'IN', 'qty' => 10], ['date' => '2026-06-19', 'product' => 'Wireless Mouse', 'type' => 'OUT', 'qty' => 5]];
+        $this->movements = $this->warehouse->stockmovements;
     }
 
     public function getTotalStockProperty(): int
@@ -105,6 +105,7 @@ new class extends Component {
                 <thead>
                     <tr>
                         <th>Product</th>
+                        <th>Supplier</th>
                         <th>SKU</th>
                         <th>Stock</th>
                         <th>Value</th>
@@ -115,6 +116,7 @@ new class extends Component {
                     @foreach ($inventory as $item)
                         <tr>
                             <td>{{ $item['name'] }}</td>
+                            <td>{{ $item->supplier->user->name }}</td>
                             <td>{{ $item['sku'] }}</td>
                             <td>{{ $item['stock'] }}</td>
                             <td>{{ number_format($item['price_after_discount'], 2) }}</td>
@@ -136,22 +138,39 @@ new class extends Component {
                     <tr>
                         <th>Date</th>
                         <th>Product</th>
+                        <th>Supplier</th>
                         <th>Type</th>
                         <th>Qty</th>
+                        <th>Before</th>
+                        <th>After</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach ($movements as $movement)
+                        @php
+                            $shipmentStatus = data_get($movement, 'type', 'pending');
+
+                            $statusBadge = match ($shipmentStatus) {
+                                'purchase' => 'bg-success',
+                                'sale' => 'bg-danger',
+                                'purchase_return' => 'bg-warning',
+                                'shipped' => 'bg-warning',
+                                default => 'bg-primary',
+                            };
+                        @endphp
                         <tr>
-                            <td>{{ $movement['date'] }}</td>
-                            <td>{{ $movement['product'] }}</td>
+                            <td>{{ date('d-F-Y', strtotime($movement['created_at'])) }}</td>
+                            <td>{{ $movement->product->name }}</td>
+                            <td>{{ $movement->product->supplier->user->name }}</td>
                             <td>
-                                <span class="badge {{ $movement['type'] === 'IN' ? 'bg-success' : 'bg-danger' }}">
-                                    {{ $movement['type'] }}
+                                <span class="badge {{ $statusBadge }}">
+                                    {{ ucwords(str_replace('_', ' ', $movement['type'])) }}
                                 </span>
                             </td>
-                            <td>{{ $movement['qty'] }}</td>
+                            <td>{{ $movement['quantity'] }}</td>
+                            <td>{{ $movement['stock_before'] }}</td>
+                            <td>{{ $movement['stock_after'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>

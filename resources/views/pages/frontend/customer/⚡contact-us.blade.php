@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\ContactUs;
 new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends Component {
     public string $name = '';
     public string $email = '';
@@ -17,6 +17,14 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
             'phone' => 'nullable|min:11',
             'subject' => 'required|min:3',
             'message' => 'required|min:10',
+        ]);
+        ContactUs::create([
+            'name' => $this->name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'subject' => $this->subject,
+            'message' => $this->message,
+            'status' => 'unread',
         ]);
 
         session()->flash('success', 'Thank you! Your message has been submitted successfully.');

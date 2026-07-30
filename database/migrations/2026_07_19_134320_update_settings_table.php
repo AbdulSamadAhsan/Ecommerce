@@ -11,17 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sales_returns', function (Blueprint $table) {
-         $table->enum('status', [
-        'approved',
-        'declined'
-    ]);
-        });
-        Schema::table('purchase_returns', function (Blueprint $table) {
-         $table->enum('status', [
-        'approved',
-        'declined'
-    ]);
+        Schema::table('settings', function (Blueprint $table) {
+            $table->decimal("late_penalty")->after("cancellation_window");
+            $table->decimal("referral_bonus")->after("late_penalty");
+
         });
     }
 
@@ -30,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('settings', function (Blueprint $table) {
+            //
+        });
     }
 };

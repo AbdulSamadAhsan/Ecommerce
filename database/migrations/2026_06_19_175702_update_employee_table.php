@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('employees', function (Blueprint $table) {
           $table->string("father_name")->after('department_id');
           $table->date("date_of_birth")->after("father_name");
+              
         });
     }
 

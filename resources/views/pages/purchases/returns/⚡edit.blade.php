@@ -4,6 +4,7 @@ use Livewire\Component;
 use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
 use Illuminate\Support\Facades\DB;
+use App\Models\PurchaseReturnPayment;
 
 new class extends Component {
     public int $id;
@@ -73,7 +74,13 @@ new class extends Component {
 
         DB::transaction(function () {
             $return = PurchaseReturn::findOrFail($this->id);
+
             if ($this->status == 'approved') {
+                PurchaseReturnPayment::create([
+                    'purchase_return_id' => $return->id,
+                    'amount' => $return->total_amount,
+                    'supplier_id' => $return->purchase->supplier->id,
+                ]);
                 foreach ($return->Items as $item) {
                     $product = $item->product;
                     $newquantity = (float) $product->quantity - (float) $item->quantity;

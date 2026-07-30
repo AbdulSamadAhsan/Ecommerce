@@ -114,11 +114,12 @@ new class extends Component {
                                     class="btn btn-sm btn-info text-white rounded-pill">
                                     View
                                 </a>
-
-                                <a href="{{ route('customer-support-tickets.edit', $ticket['id']) }}"
-                                    class="btn btn-sm btn-warning rounded-pill">
-                                    Reply/Edit
-                                </a>
+                                @if ($ticket['status'] != 'closed')
+                                    <a href="{{ route('customer-support-tickets.edit', $ticket['id']) }}"
+                                        class="btn btn-sm btn-warning rounded-pill">
+                                        Reply/Edit
+                                    </a>
+                                @endif
 
                                 <button wire:click="delete({{ $ticket['id'] }})" wire:confirm="Are you sure?"
                                     class="btn btn-sm btn-danger rounded-pill">

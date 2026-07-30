@@ -36,14 +36,10 @@ new class extends Component {
         'opening_balance.numeric' => 'Opening balance must be a number.',
     ];
 
-    public function updated($property)
-    {
-        $this->validateOnly($property);
-    }
-
     public function save()
     {
         $this->validate();
+
         $role = Role::where('name', 'Supplier')->first();
         $user = User::create([
             'name' => $this->name,
@@ -246,8 +242,7 @@ new class extends Component {
 
                     <div class="d-flex justify-content-end">
 
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save"
-                            @disabled($errors->has('company_name') || empty($company_name))>
+                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save">
 
                             <span wire:loading.remove wire:target="save">
                                 Save Supplier
