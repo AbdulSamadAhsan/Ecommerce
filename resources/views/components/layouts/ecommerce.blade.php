@@ -109,6 +109,11 @@
                             Contact Us
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('career') }}" class="nav-link fw-semibold">
+                            Career
+                        </a>
+                    </li>
 
 
                 </ul>

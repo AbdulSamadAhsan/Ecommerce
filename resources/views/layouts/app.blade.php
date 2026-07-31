@@ -907,6 +907,15 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ adminRoute('job_postings.index') }}"
+                    class="nav-link {{ activeRoute('job_postings.*') }}">
+
+                    <i class="bi bi-briefcase-fill"></i>
+
+                    Job Postings
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
 
                     <i class="bi bi-gear"></i>

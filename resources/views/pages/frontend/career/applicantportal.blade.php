@@ -1,0 +1,1147 @@
+<?php
+
+namespace App\Livewire;
+
+use Livewire\Component;
+use Livewire\WithPagination;
+
+new class extends Component {
+    use WithPagination;
+
+    public $activeTab = 'dashboard';
+    public $search = '';
+    public $filterStatus = '';
+    public $filterType = '';
+
+    // Modal State Variables (No redirects needed)
+    public $selectedApplicationId = null;
+    public $selectedInterviewId = null;
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'filterStatus' => ['except' => ''],
+        'filterType' => ['except' => ''],
+    ];
+
+    // Statistics
+    public function getStatsProperty()
+    {
+        return [
+            'total_applications' => 12,
+            'pending' => 5,
+            'interview' => 3,
+            'rejected' => 2,
+            'offered' => 2,
+            'saved_jobs' => 8,
+            'upcoming_interviews' => 3,
+            'total_interviews' => 8,
+            'completed_interviews' => 4,
+        ];
+    }
+
+    // Recent Applications
+    public function getRecentApplicationsProperty()
+    {
+        return [
+            [
+                'id' => 1,
+                'job_title' => 'Senior Laravel Developer',
+                'company' => 'Tech Solutions Inc.',
+                'status' => 'interview',
+                'applied_date' => '2024-01-15',
+                'location' => 'Karachi',
+                'type' => 'Full Time',
+                'has_interview' => true,
+                'interview_date' => '2024-02-15',
+                'interview_time' => '10:00 AM',
+            ],
+            [
+                'id' => 2,
+                'job_title' => 'Frontend Developer',
+                'company' => 'Digital Innovations',
+                'status' => 'interview',
+                'applied_date' => '2024-01-12',
+                'location' => 'Lahore',
+                'type' => 'Full Time',
+                'has_interview' => true,
+                'interview_date' => '2024-02-16',
+                'interview_time' => '02:30 PM',
+            ],
+            [
+                'id' => 3,
+                'job_title' => 'UI/UX Designer',
+                'company' => 'Creative Agency',
+                'status' => 'offered',
+                'applied_date' => '2024-01-10',
+                'location' => 'Islamabad',
+                'type' => 'Contract',
+                'has_interview' => false,
+            ],
+            [
+                'id' => 4,
+                'job_title' => 'DevOps Engineer',
+                'company' => 'Cloud Systems',
+                'status' => 'rejected',
+                'applied_date' => '2024-01-08',
+                'location' => 'Remote',
+                'type' => 'Full Time',
+                'has_interview' => false,
+            ],
+        ];
+    }
+
+    // Upcoming Interviews
+    public function getUpcomingInterviewsProperty()
+    {
+        return [
+            [
+                'id' => 1,
+                'job_title' => 'Senior Laravel Developer',
+                'company' => 'Tech Solutions Inc.',
+                'interviewer' => 'Sarah Ahmed',
+                'date' => '2024-02-15',
+                'time' => '10:00 AM',
+                'type' => 'Technical',
+                'mode' => 'Video Call',
+                'status' => 'scheduled',
+                'meeting_link' => 'https://meet.google.com/abc-defg-hij',
+            ],
+            [
+                'id' => 2,
+                'job_title' => 'Frontend Developer',
+                'company' => 'Digital Innovations',
+                'interviewer' => 'Ali Khan',
+                'date' => '2024-02-16',
+                'time' => '02:30 PM',
+                'type' => 'HR',
+                'mode' => 'In-person',
+                'status' => 'scheduled',
+                'meeting_link' => null,
+            ],
+            [
+                'id' => 3,
+                'job_title' => 'UI/UX Designer',
+                'company' => 'Creative Agency',
+                'interviewer' => 'Zara Malik',
+                'date' => '2024-02-18',
+                'time' => '11:00 AM',
+                'type' => 'Portfolio Review',
+                'mode' => 'Video Call',
+                'status' => 'pending_confirmation',
+                'meeting_link' => 'https://meet.google.com/xyz-uvwx-yza',
+            ],
+        ];
+    }
+
+    // Saved Jobs
+    public function getSavedJobsProperty()
+    {
+        return [
+            [
+                'id' => 1,
+                'title' => 'Full Stack Developer',
+                'company' => 'Tech Startup',
+                'location' => 'Karachi',
+                'type' => 'Full Time',
+                'salary' => '150,000 - 200,000',
+                'posted_date' => '2024-01-18',
+            ],
+            [
+                'id' => 2,
+                'title' => 'Mobile App Developer',
+                'company' => 'App Solutions',
+                'location' => 'Lahore',
+                'type' => 'Full Time',
+                'salary' => '120,000 - 160,000',
+                'posted_date' => '2024-01-16',
+            ],
+        ];
+    }
+
+    public function switchTab($tab)
+    {
+        $this->activeTab = $tab;
+    }
+
+    // -------- MODAL METHODS (NO REDIRECT) --------
+    public function showApplication($id)
+    {
+        $this->selectedApplicationId = $id;
+    }
+
+    public function showInterview($id)
+    {
+        $this->selectedInterviewId = $id;
+    }
+
+    public function closeModal()
+    {
+        $this->selectedApplicationId = null;
+        $this->selectedInterviewId = null;
+    }
+    // --------------------------------------------
+
+    public function applyJob($id)
+    {
+        return redirect()->route('applicant.apply', $id);
+    }
+
+    public function removeSavedJob($id)
+    {
+        session()->flash('success', 'Job removed from saved list.');
+    }
+
+    public function joinMeeting($link)
+    {
+        if ($link) {
+            return redirect()->away($link);
+        }
+        session()->flash('error', 'Meeting link not available yet.');
+    }
+
+    public function rendering($view): void
+    {
+        $view->layout('components.layouts.ecommerce', [
+            'cartCount' => 0,
+        ]);
+    }
+};
+
+?>
+<div>
+    {{-- ===========================
+         HEADER - RESPONSIVE
+    ============================ --}}
+    <div class="py-3 py-md-4 mb-4 shadow-sm">
+        <div class="container">
+            {{-- Flex container: Stacks on mobile, row on tablets/desktops --}}
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3 gap-lg-2">
+
+                {{-- Left Side: Title & Subtitle --}}
+                <div class="text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
+                    <h4 class=" mb-0 fw-bold fs-4 fs-md-3 fs-lg-2">
+                        Applicant Portal
+                    </h4>
+                    {{-- Mobile subtitle: hidden on extra small screens (optional, removes clutter) --}}
+                    <small class="text-white-50 fw-light mt-1 d-none d-sm-block">
+                        Manage your job applications & interviews
+                    </small>
+                </div>
+
+                {{-- Right Side: Buttons --}}
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <button type="button" wire:click="goBack"
+                        class="btn btn-light btn-sm rounded-pill px-3 px-md-4 fw-medium shadow-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </button>
+                    <button type="button" wire:click="$emit('logout')"
+                        class="btn btn-light btn-sm rounded-pill px-3 px-md-4 fw-medium shadow-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        {{-- ===========================
+             SUCCESS/ERROR MESSAGES
+        ============================ --}}
+        @if (session()->has('success'))
+            <div class="alert alert-success rounded-4 shadow-sm">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                    <div class="me-3 mb-2 mb-sm-0">
+                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Success!</h5>
+                        <p class="mb-0">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session()->has('error'))
+            <div class="alert alert-danger rounded-4 shadow-sm">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                    <div class="me-3 mb-2 mb-sm-0">
+                        <i class="bi bi-exclamation-circle-fill fs-2 text-danger"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Error!</h5>
+                        <p class="mb-0">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ===========================
+             NAVIGATION TABS - RESPONSIVE
+             Removed 'nav-fill' so they wrap naturally on mobile
+        ============================ --}}
+        <div class="mb-4">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body p-2 p-md-3">
+                    <ul class="nav nav-pills flex-nowrap overflow-auto pb-1 pb-md-0"
+                        style="-webkit-overflow-scrolling: touch;">
+                        <li class="nav-item flex-shrink-0">
+                            <button wire:click="switchTab('dashboard')"
+                                class="nav-link {{ $activeTab === 'dashboard' ? 'active' : '' }} rounded-pill me-1">
+                                <i class="bi bi-speedometer2 me-1"></i>
+                                <span class="d-none d-sm-inline">Dashboard</span>
+                            </button>
+                        </li>
+                        <li class="nav-item flex-shrink-0">
+                            <button wire:click="switchTab('applications')"
+                                class="nav-link {{ $activeTab === 'applications' ? 'active' : '' }} rounded-pill me-1">
+                                <i class="bi bi-briefcase me-1"></i>
+                                <span class="d-none d-sm-inline">Applications</span>
+                            </button>
+                        </li>
+                        <li class="nav-item flex-shrink-0">
+                            <button wire:click="switchTab('interviews')"
+                                class="nav-link {{ $activeTab === 'interviews' ? 'active' : '' }} rounded-pill me-1">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                <span class="d-none d-sm-inline">Interviews</span>
+                                <span class="badge bg-danger ms-1">{{ $this->stats['upcoming_interviews'] }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item flex-shrink-0">
+                            <button wire:click="switchTab('saved')"
+                                class="nav-link {{ $activeTab === 'saved' ? 'active' : '' }} rounded-pill me-1">
+                                <i class="bi bi-bookmark me-1"></i>
+                                <span class="d-none d-sm-inline">Saved Jobs</span>
+                            </button>
+                        </li>
+                        <li class="nav-item flex-shrink-0">
+                            <button wire:click="switchTab('profile')"
+                                class="nav-link {{ $activeTab === 'profile' ? 'active' : '' }} rounded-pill">
+                                <i class="bi bi-person me-1"></i>
+                                <span class="d-none d-sm-inline">Profile</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===========================
+             DASHBOARD TAB CONTENT
+        ============================ --}}
+        @if ($activeTab === 'dashboard')
+            {{-- Stats Cards - 2 per row on mobile, 4 on desktop --}}
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow rounded-4 h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1 small">Total Apps</h6>
+                                    <h3 class="fw-bold mb-0 fs-4">{{ $this->stats['total_applications'] }}</h3>
+                                </div>
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 p-md-3">
+                                    <i class="bi bi-briefcase fs-5 text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow rounded-4 h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1 small">Upcoming</h6>
+                                    <h3 class="fw-bold mb-0 fs-4">{{ $this->stats['upcoming_interviews'] }}</h3>
+                                </div>
+                                <div class="bg-info bg-opacity-10 rounded-circle p-2 p-md-3">
+                                    <i class="bi bi-clock-history fs-5 text-info"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="#" wire:click.prevent="switchTab('interviews')"
+                                    class="text-decoration-none small">
+                                    View all <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow rounded-4 h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1 small">Total Int.</h6>
+                                    <h3 class="fw-bold mb-0 fs-4">{{ $this->stats['total_interviews'] }}</h3>
+                                </div>
+                                <div class="bg-success bg-opacity-10 rounded-circle p-2 p-md-3">
+                                    <i class="bi bi-calendar-check fs-5 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow rounded-4 h-100">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1 small">Saved</h6>
+                                    <h3 class="fw-bold mb-0 fs-4">{{ $this->stats['saved_jobs'] }}</h3>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-2 p-md-3">
+                                    <i class="bi bi-bookmark fs-5 text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Upcoming Interviews Quick View --}}
+            <div class="card border-0 shadow rounded-4 mb-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                            <i class="bi bi-calendar-event text-primary me-2"></i>
+                            Upcoming Interviews
+                        </h5>
+                        <button wire:click="switchTab('interviews')" class="btn btn-link text-decoration-none small">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 ps-md-4">Job Title</th>
+                                    <th class="d-none d-md-table-cell">Company</th>
+                                    <th>Date & Time</th>
+                                    <th class="d-none d-lg-table-cell">Type</th>
+                                    <th>Status</th>
+                                    <th class="pe-3 pe-md-4 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($this->upcomingInterviews as $interview)
+                                    <tr>
+                                        <td class="ps-3 ps-md-4 fw-semibold small">{{ $interview['job_title'] }}</td>
+                                        <td class="d-none d-md-table-cell">{{ $interview['company'] }}</td>
+                                        <td>
+                                            <div class="small">
+                                                {{ \Carbon\Carbon::parse($interview['date'])->format('M d, Y') }}</div>
+                                            <small class="text-muted">{{ $interview['time'] }}</small>
+                                        </td>
+                                        <td class="d-none d-lg-table-cell">
+                                            <span class="badge bg-secondary small">{{ $interview['type'] }}</span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                class="badge bg-{{ $interview['status'] === 'scheduled' ? 'success' : 'warning' }} rounded-pill small">
+                                                {{ $interview['status'] === 'scheduled' ? 'Confirmed' : 'Pending' }}
+                                            </span>
+                                        </td>
+                                        <td class="pe-3 pe-md-4 text-end">
+                                            <div class="d-flex justify-content-end gap-1 gap-md-2">
+                                                @if ($interview['meeting_link'])
+                                                    <button
+                                                        wire:click="joinMeeting('{{ $interview['meeting_link'] }}')"
+                                                        class="btn btn-sm btn-primary rounded-pill px-2 px-md-3">
+                                                        <i class="bi bi-camera-video"></i>
+                                                    </button>
+                                                @endif
+                                                {{-- OPENS MODAL WITHOUT REDIRECT --}}
+                                                <button wire:click="showInterview({{ $interview['id'] }})"
+                                                    class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3">
+                                                    Details
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <i class="bi bi-calendar-check fs-2 d-block mb-2"></i>
+                                            No upcoming interviews
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Recent Applications --}}
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 fs-6 fs-md-5">Recent Applications</h5>
+                        <button wire:click="switchTab('applications')"
+                            class="btn btn-link text-decoration-none small">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 ps-md-4">Job Title</th>
+                                    <th class="d-none d-sm-table-cell">Company</th>
+                                    <th class="d-none d-md-table-cell">Location</th>
+                                    <th>Applied</th>
+                                    <th>Status</th>
+                                    <th class="pe-3 pe-md-4 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($this->recentApplications as $application)
+                                    <tr>
+                                        <td class="ps-3 ps-md-4 fw-semibold small">{{ $application['job_title'] }}
+                                        </td>
+                                        <td class="d-none d-sm-table-cell">{{ $application['company'] }}</td>
+                                        <td class="d-none d-md-table-cell">{{ $application['location'] }}</td>
+                                        <td class="small">
+                                            {{ \Carbon\Carbon::parse($application['applied_date'])->diffForHumans() }}
+                                        </td>
+                                        <td>
+                                            @php
+                                                $statusColors = [
+                                                    'pending' => 'warning',
+                                                    'interview' => 'info',
+                                                    'offered' => 'success',
+                                                    'rejected' => 'danger',
+                                                ];
+                                            @endphp
+                                            <span
+                                                class="badge bg-{{ $statusColors[$application['status']] ?? 'secondary' }} rounded-pill small">
+                                                {{ ucfirst($application['status']) }}
+                                            </span>
+                                        </td>
+                                        <td class="pe-3 pe-md-4 text-end">
+                                            {{-- OPENS MODAL WITHOUT REDIRECT --}}
+                                            <button wire:click="showApplication({{ $application['id'] }})"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            No applications found
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ===========================
+             APPLICATIONS TAB CONTENT - RESPONSIVE
+        ============================ --}}
+        @if ($activeTab === 'applications')
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-header bg-white border-0 p-3 p-md-4">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">All Applications</h5>
+                        </div>
+                        <div class="col-8 col-md-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input wire:model.live="search" type="text" class="form-control border-start-0"
+                                    placeholder="Search...">
+                            </div>
+                        </div>
+                        <div class="col-4 col-md-4">
+                            <select wire:model.live="filterStatus" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="interview">Interview</option>
+                                <option value="offered">Offered</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 ps-md-4">Job Title</th>
+                                    <th class="d-none d-sm-table-cell">Company</th>
+                                    <th class="d-none d-md-table-cell">Location</th>
+                                    <th class="d-none d-lg-table-cell">Type</th>
+                                    <th>Applied</th>
+                                    <th>Status</th>
+                                    <th class="pe-3 pe-md-4 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($this->recentApplications as $application)
+                                    <tr>
+                                        <td class="ps-3 ps-md-4 fw-semibold small">{{ $application['job_title'] }}
+                                        </td>
+                                        <td class="d-none d-sm-table-cell">{{ $application['company'] }}</td>
+                                        <td class="d-none d-md-table-cell">{{ $application['location'] }}</td>
+                                        <td class="d-none d-lg-table-cell">
+                                            <span class="badge bg-secondary small">{{ $application['type'] }}</span>
+                                        </td>
+                                        <td class="small">{{ $application['applied_date'] }}</td>
+                                        <td>
+                                            @php
+                                                $statusColors = [
+                                                    'pending' => 'warning',
+                                                    'interview' => 'info',
+                                                    'offered' => 'success',
+                                                    'rejected' => 'danger',
+                                                ];
+                                            @endphp
+                                            <span
+                                                class="badge bg-{{ $statusColors[$application['status']] ?? 'secondary' }} rounded-pill small">
+                                                {{ ucfirst($application['status']) }}
+                                            </span>
+                                        </td>
+                                        <td class="pe-3 pe-md-4 text-end">
+                                            {{-- OPENS MODAL WITHOUT REDIRECT --}}
+                                            <button wire:click="showApplication({{ $application['id'] }})"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            No applications found
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ===========================
+             INTERVIEWS TAB CONTENT - RESPONSIVE
+        ============================ --}}
+        @if ($activeTab === 'interviews')
+            <div class="row g-3">
+                {{-- Interview Stats --}}
+                <div class="col-12">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow rounded-4">
+                                <div class="card-body p-2 p-md-3 text-center">
+                                    <h6 class="text-muted mb-1 small">Upcoming</h6>
+                                    <h4 class="fw-bold text-info mb-0 fs-5">{{ $this->stats['upcoming_interviews'] }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow rounded-4">
+                                <div class="card-body p-2 p-md-3 text-center">
+                                    <h6 class="text-muted mb-1 small">Completed</h6>
+                                    <h4 class="fw-bold text-success mb-0 fs-5">
+                                        {{ $this->stats['completed_interviews'] }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow rounded-4">
+                                <div class="card-body p-2 p-md-3 text-center">
+                                    <h6 class="text-muted mb-1 small">Total</h6>
+                                    <h4 class="fw-bold text-primary mb-0 fs-5">{{ $this->stats['total_interviews'] }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow rounded-4">
+                                <div class="card-body p-2 p-md-3 text-center">
+                                    <h6 class="text-muted mb-1 small">Pending</h6>
+                                    <h4 class="fw-bold text-warning mb-0 fs-5">1</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Upcoming Interviews List --}}
+                <div class="col-12">
+                    <div class="card border-0 shadow rounded-4">
+                        <div class="card-header bg-white border-0 p-3 p-md-4">
+                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                                <i class="bi bi-clock-history text-info me-2"></i>
+                                Upcoming Interviews
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-3 ps-md-4">Job Title</th>
+                                            <th class="d-none d-md-table-cell">Company</th>
+                                            <th class="d-none d-lg-table-cell">Interviewer</th>
+                                            <th>Date & Time</th>
+                                            <th class="d-none d-xl-table-cell">Mode</th>
+                                            <th>Status</th>
+                                            <th class="pe-3 pe-md-4 text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($this->upcomingInterviews as $interview)
+                                            <tr>
+                                                <td class="ps-3 ps-md-4 fw-semibold small">
+                                                    {{ $interview['job_title'] }}</td>
+                                                <td class="d-none d-md-table-cell">{{ $interview['company'] }}</td>
+                                                <td class="d-none d-lg-table-cell small">
+                                                    {{ $interview['interviewer'] }}</td>
+                                                <td>
+                                                    <div class="small">
+                                                        {{ \Carbon\Carbon::parse($interview['date'])->format('M d, Y') }}
+                                                    </div>
+                                                    <small class="text-muted">{{ $interview['time'] }}</small>
+                                                </td>
+                                                <td class="d-none d-xl-table-cell">
+                                                    <span class="badge bg-light text-dark small">
+                                                        <i
+                                                            class="bi bi-{{ $interview['mode'] === 'Video Call' ? 'camera-video' : ($interview['mode'] === 'In-person' ? 'building' : 'telephone') }} me-1"></i>
+                                                        {{ $interview['mode'] }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge bg-{{ $interview['status'] === 'scheduled' ? 'success' : 'warning' }} rounded-pill small">
+                                                        {{ $interview['status'] === 'scheduled' ? 'Confirmed' : 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td class="pe-3 pe-md-4 text-end">
+                                                    <div class="d-flex justify-content-end gap-1">
+                                                        @if ($interview['meeting_link'])
+                                                            <button
+                                                                wire:click="joinMeeting('{{ $interview['meeting_link'] }}')"
+                                                                class="btn btn-sm btn-primary rounded-pill px-2 px-md-3">
+                                                                <i class="bi bi-camera-video"></i>
+                                                            </button>
+                                                        @endif
+                                                        {{-- OPENS MODAL WITHOUT REDIRECT --}}
+                                                        <button wire:click="showInterview({{ $interview['id'] }})"
+                                                            class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
+                                                            Details
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="text-center py-4 text-muted">
+                                                    <i class="bi bi-calendar-check fs-2 d-block mb-2"></i>
+                                                    No upcoming interviews scheduled
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Interview Preparation Tips --}}
+                <div class="col-12">
+                    <div class="card border-0 shadow rounded-4">
+                        <div class="card-header bg-white border-0 p-3 p-md-4">
+                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Interview Preparation Tips
+                            </h5>
+                        </div>
+                        <div class="card-body p-3 p-md-4">
+                            <div class="row g-3">
+                                <div class="col-6 col-md-3">
+                                    <div class="text-center p-2 bg-light rounded-4 h-100">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-inline-block mb-1">
+                                            <i class="bi bi-search fs-5 text-primary"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-0 small">Research</h6>
+                                        <small class="text-muted d-none d-sm-block">Company info</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-center p-2 bg-light rounded-4 h-100">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 d-inline-block mb-1">
+                                            <i class="bi bi-clipboard-check fs-5 text-success"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-0 small">Prepare</h6>
+                                        <small class="text-muted d-none d-sm-block">Common Qs</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-center p-2 bg-light rounded-4 h-100">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 d-inline-block mb-1">
+                                            <i class="bi bi-laptop fs-5 text-info"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-0 small">Tech Setup</h6>
+                                        <small class="text-muted d-none d-sm-block">Test equipment</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-center p-2 bg-light rounded-4 h-100">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle p-2 d-inline-block mb-1">
+                                            <i class="bi bi-question-circle fs-5 text-warning"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-0 small">Ask Qs</h6>
+                                        <small class="text-muted d-none d-sm-block">Your questions</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ===========================
+             SAVED JOBS TAB CONTENT - RESPONSIVE
+        ============================ --}}
+        @if ($activeTab === 'saved')
+            <div class="row g-3">
+                @forelse ($this->savedJobs as $job)
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow rounded-4 h-100">
+                            <div class="card-body p-3 p-md-4">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="fw-bold mb-1 fs-6">{{ $job['title'] }}</h5>
+                                        <p class="text-muted mb-0 small">
+                                            <i class="bi bi-building me-1"></i>{{ $job['company'] }}
+                                        </p>
+                                    </div>
+                                    <button wire:click="removeSavedJob({{ $job['id'] }})"
+                                        class="btn btn-sm btn-outline-danger rounded-pill px-2">
+                                        <i class="bi bi-bookmark-fill"></i>
+                                    </button>
+                                </div>
+                                <div class="mb-3 d-flex flex-wrap gap-1">
+                                    <span class="badge bg-secondary small">{{ $job['type'] }}</span>
+                                    <span class="badge bg-light text-dark small">{{ $job['location'] }}</span>
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block small">Salary</small>
+                                        <p class="fw-semibold mb-0 small">PKR {{ $job['salary'] }}</p>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted d-block small">Posted</small>
+                                        <p class="mb-0 small">
+                                            {{ \Carbon\Carbon::parse($job['posted_date'])->diffForHumans() }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button wire:click="applyJob({{ $job['id'] }})"
+                                        class="btn btn-primary w-100 rounded-pill small">
+                                        <i class="bi bi-send me-2"></i>Apply Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-12">
+                        <div class="card border-0 shadow rounded-4">
+                            <div class="card-body p-4 text-center">
+                                <i class="bi bi-bookmark fs-1 text-muted d-block mb-3"></i>
+                                <h5 class="fw-bold fs-6">No Saved Jobs</h5>
+                                <p class="text-muted small">Start saving jobs you're interested in.</p>
+                                <a href="{{ route('applicant.jobs') }}" class="btn btn-primary rounded-pill small">
+                                    Browse Jobs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+        @endif
+
+        {{-- ===========================
+             PROFILE TAB CONTENT - RESPONSIVE
+        ============================ --}}
+        @if ($activeTab === 'profile')
+            <div class="row g-3">
+                {{-- Profile Overview --}}
+                <div class="col-md-4">
+                    <div class="card border-0 shadow rounded-4">
+                        <div class="card-body p-3 p-md-4 text-center">
+                            <div class="position-relative d-inline-block mb-3">
+                                <img src="https://ui-avatars.com/api/?name=John+Doe&size=100&background=0D6EFD&color=fff"
+                                    alt="Profile" class="rounded-circle"
+                                    style="width: 80px; height: 80px; object-fit: cover;">
+                                <button
+                                    class="btn btn-primary btn-sm rounded-circle position-absolute bottom-0 end-0 p-1">
+                                    <i class="bi bi-camera small"></i>
+                                </button>
+                            </div>
+                            <h5 class="fw-bold fs-6">John Doe</h5>
+                            <p class="text-muted small">Senior Laravel Developer</p>
+                            <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                <span class="badge bg-primary rounded-pill small">5+ Years</span>
+                                <span class="badge bg-success rounded-pill small">Available</span>
+                            </div>
+                            <hr>
+                            <div class="row g-1 text-start">
+                                <div class="col-6">
+                                    <small class="text-muted d-block small">Applications</small>
+                                    <strong class="small">{{ $this->stats['total_applications'] }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block small">Interviews</small>
+                                    <strong class="small">{{ $this->stats['interview'] }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block small">Offers</small>
+                                    <strong class="small">{{ $this->stats['offered'] }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block small">Saved</small>
+                                    <strong class="small">{{ $this->stats['saved_jobs'] }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Profile Details --}}
+                <div class="col-md-8">
+                    <div class="card border-0 shadow rounded-4">
+                        <div class="card-header bg-white border-0 p-3 p-md-4">
+                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">Profile Details</h5>
+                        </div>
+                        <div class="card-body p-3 p-md-4">
+                            <form wire:submit.prevent="updateProfile">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Full Name</label>
+                                        <input type="text" class="form-control form-control-sm" value="John Doe">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Email</label>
+                                        <input type="email" class="form-control form-control-sm"
+                                            value="john@example.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Phone</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            value="+92 300 1234567">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Location</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            value="Karachi, Pakistan">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Current Company</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            value="Tech Solutions Inc.">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Current Designation</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            value="Senior Developer">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Total Experience</label>
+                                        <input type="text" class="form-control form-control-sm" value="5 Years">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Expected Salary</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            value="PKR 250,000">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold small">About</label>
+                                        <textarea rows="2" class="form-control form-control-sm">Experienced Laravel developer with 5+ years of experience...</textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit"
+                                            class="btn btn-primary rounded-pill px-4 px-md-5 small w-100 w-md-auto">
+                                            <i class="bi bi-save me-2"></i>Update Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+
+    {{-- ===============================================
+         APPLICATION DETAIL MODAL (NO REDIRECT)
+    =============================================== --}}
+    @if (!is_null($this->selectedApplicationId))
+        @php
+            $app = collect($this->recentApplications)->firstWhere('id', $this->selectedApplicationId);
+        @endphp
+        @if ($app)
+            <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1" role="dialog"
+                wire:ignore.self>
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content shadow rounded-4 border-0">
+                        <div class="modal-header border-0 p-4">
+                            <div>
+                                <h5 class="fw-bold mb-1">{{ $app['job_title'] }}</h5>
+                                <p class="text-muted mb-0 small"><i
+                                        class="bi bi-building me-1"></i>{{ $app['company'] }}</p>
+                            </div>
+                            <button type="button" class="btn-close" wire:click="closeModal"></button>
+                        </div>
+                        <div class="modal-body p-4 pt-0">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Location</small>
+                                    <strong class="small">{{ $app['location'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Type</small>
+                                    <strong class="small">{{ $app['type'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Applied Date</small>
+                                    <strong class="small">{{ $app['applied_date'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Status</small>
+                                    @php
+                                        $statusColors = [
+                                            'pending' => 'warning',
+                                            'interview' => 'info',
+                                            'offered' => 'success',
+                                            'rejected' => 'danger',
+                                        ];
+                                    @endphp
+                                    <span
+                                        class="badge bg-{{ $statusColors[$app['status']] ?? 'secondary' }} rounded-pill small">
+                                        {{ ucfirst($app['status']) }}
+                                    </span>
+                                </div>
+                                @if ($app['has_interview'] ?? false)
+                                    <div class="col-12 mt-3 pt-3 border-top">
+                                        <h6 class="fw-bold small text-info"><i
+                                                class="bi bi-calendar-event me-1"></i>Interview Scheduled</h6>
+                                        <div class="small">
+                                            {{ \Carbon\Carbon::parse($app['interview_date'])->format('M d, Y') }} at
+                                            {{ $app['interview_time'] }}</div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 p-4 pt-0 justify-content-center justify-content-md-end">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4 small"
+                                wire:click="closeModal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
+
+    {{-- ===============================================
+         INTERVIEW DETAIL MODAL (NO REDIRECT)
+    =============================================== --}}
+    @if (!is_null($this->selectedInterviewId))
+        @php
+            $int = collect($this->upcomingInterviews)->firstWhere('id', $this->selectedInterviewId);
+        @endphp
+        @if ($int)
+            <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1" role="dialog"
+                wire:ignore.self>
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content shadow rounded-4 border-0">
+                        <div class="modal-header border-0 p-4">
+                            <div>
+                                <h5 class="fw-bold mb-1">{{ $int['job_title'] }}</h5>
+                                <p class="text-muted mb-0 small"><i
+                                        class="bi bi-building me-1"></i>{{ $int['company'] }}</p>
+                            </div>
+                            <button type="button" class="btn-close" wire:click="closeModal"></button>
+                        </div>
+                        <div class="modal-body p-4 pt-0">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Interviewer</small>
+                                    <strong class="small">{{ $int['interviewer'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Date & Time</small>
+                                    <strong class="small">{{ \Carbon\Carbon::parse($int['date'])->format('M d, Y') }}
+                                        at {{ $int['time'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Type</small>
+                                    <strong class="small">{{ $int['type'] }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Mode</small>
+                                    <span class="badge bg-light text-dark small">
+                                        <i
+                                            class="bi bi-{{ $int['mode'] === 'Video Call' ? 'camera-video' : ($int['mode'] === 'In-person' ? 'building' : 'telephone') }} me-1"></i>
+                                        {{ $int['mode'] }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Status</small>
+                                    <span
+                                        class="badge bg-{{ $int['status'] === 'scheduled' ? 'success' : 'warning' }} rounded-pill small">
+                                        {{ $int['status'] === 'scheduled' ? 'Confirmed' : 'Pending' }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Meeting Link</small>
+                                    @if ($int['meeting_link'])
+                                        <a href="{{ $int['meeting_link'] }}" target="_blank"
+                                            class="text-decoration-none small">Click to Join</a>
+                                    @else
+                                        <span class="text-muted small">Not available</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 p-4 pt-0 justify-content-center justify-content-md-end">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4 small"
+                                wire:click="closeModal">Close</button>
+                            @if ($int['meeting_link'])
+                                <button type="button" class="btn btn-primary rounded-pill px-4 small"
+                                    wire:click="joinMeeting('{{ $int['meeting_link'] }}')">
+                                    <i class="bi bi-camera-video me-1"></i> Join Meeting
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+</div>

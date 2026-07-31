@@ -271,6 +271,14 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
       
 
 });
+Route::prefix("job_postings")->name("job_postings.")->group(function(){
+   Route::livewire('/', 'pages::job_postings.all')
+        ->name('index');
+        Route::livewire('/create', 'pages::job_postings.create')
+        ->name('create');
+           Route::livewire('/{id}/edit', 'pages::job_postings.edit')
+        ->name('edit');
+});
 Route::livewire("shifts","pages::shifts.all")->name("shifts.index");
 Route::livewire("shifts/create","pages::shifts.create")->name("shifts.create");
 Route::livewire("shifts/{id}/edit","pages::shifts.edit")->name("shifts.edit");
@@ -316,7 +324,15 @@ Route::livewire('/settings', 'pages::settings.index')->name('settings.index');
 
  Route::livewire('/customer/ai', 'pages::customer.ai')
     ->name('customer.ai.chatbot');
-
+//applicantportal.blade
+ Route::livewire('/career', 'pages::frontend.career.index')
+    ->name('career');
+     Route::livewire('/jobdetail', 'pages::frontend.career.jobdetail')
+    ->name('jobdetail');
+      Route::livewire('/applicantportal', 'pages::frontend.career.applicantportal')
+    ->name('applicantportal');
+      Route::livewire('/applicantauth', 'pages::frontend.career.auth')
+    ->name('applicantauth');
  Route::get('/invoice/{order}', InvoiceController::class)
     ->name("invoice.download");
 
