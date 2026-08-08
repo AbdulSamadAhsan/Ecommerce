@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /* Run the migrations.
+  
     
     public function up(): void
     {
@@ -21,10 +21,7 @@ return new class extends Migration
  
 
 
-    $table->foreignId('product_serial_id')
-        ->nullable()
-        ->constrained()
-        ->nullOnDelete();
+
 
     $table->enum('warranty_type', [
         'manufacturer',
@@ -54,7 +51,7 @@ return new class extends Migration
       
         });
     }
-*/
+
     /**
      * Reverse the migrations.
      */

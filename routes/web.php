@@ -278,6 +278,8 @@ Route::prefix("job_postings")->name("job_postings.")->group(function(){
         ->name('create');
            Route::livewire('/{id}/edit', 'pages::job_postings.edit')
         ->name('edit');
+                 Route::livewire('/{id}', 'pages::job_postings.show')
+        ->name('edit');
 });
 Route::livewire("shifts","pages::shifts.all")->name("shifts.index");
 Route::livewire("shifts/create","pages::shifts.create")->name("shifts.create");

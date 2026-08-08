@@ -69,8 +69,6 @@ new class extends Component {
 
             'closing_date' => ['required', 'date', 'after_or_equal:today'],
 
-            'year_experience' => ['required', 'numeric', 'min:0'],
-
             'is_active' => ['required', 'boolean'],
         ];
     }
@@ -97,7 +95,7 @@ new class extends Component {
     public function save()
     {
         $this->validate();
-        dd('');
+        dd('djdk');
         JobPosting::create([
             'department_id' => $this->department_id,
 
@@ -124,8 +122,6 @@ new class extends Component {
             'work_mode' => $this->work_mode,
 
             'closing_date' => $this->closing_date,
-
-            'year_experience' => $this->year_experience,
 
             'is_active' => $this->is_active,
         ]);
