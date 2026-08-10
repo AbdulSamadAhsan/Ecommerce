@@ -26,7 +26,7 @@ return new class extends Migration
 
     $table->string('phone');
 
-    $table->string('resume');
+    $table->string('password');
 
     $table->string('last_education');
     $table->string('month_of_exprience');

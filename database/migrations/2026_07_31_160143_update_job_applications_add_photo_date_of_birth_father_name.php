@@ -16,6 +16,7 @@ return new class extends Migration
                    $table->string("father_name")->after("full_name");
                    $table->string("photo")->after("father_name");
                      $table->date("date_of_birth")->after("father_name");
+                    $table->string("password"); 
 
         });
     }
