@@ -12,14 +12,14 @@ new class extends Component {
     {
         $this->id = (int) $id;
 
-        $job = JobPosting::with(['department', 'createdBy'])->findOrFail($this->id);
+        $job = JobPosting::with(['department', 'creator'])->findOrFail($this->id);
 
         $this->jobPosting = [
             'id' => $job->id,
 
             'department' => $job->department?->name ?? 'No Department',
 
-            'created_by' => $job->createdBy?->name ?? 'Unknown',
+            'created_by' => $job->creator?->name ?? 'Unknown',
 
             'job_title' => $job->job_title,
 

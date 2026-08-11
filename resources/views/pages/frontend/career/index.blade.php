@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\Component;
-
+use App\Models\JobPosting;
 new class extends Component {
     public string $search = '';
     public $openFaq = 1;
@@ -52,7 +52,9 @@ new class extends Component {
                 'salary' => 'PKR 90,000',
             ],
         ];
-
+        $this->jobs = JobPosting::with(['creator', 'department'])
+            ->get()
+            ->toArray();
         $this->benefits = ['Competitive Salary', 'Medical Insurance', 'Annual Bonus', 'Paid Leave', 'Learning Budget', 'Flexible Working Hours'];
 
         $this->hiringProcess = ['Application', 'HR Screening', 'Technical Interview', 'Final Interview', 'Offer Letter'];
@@ -72,7 +74,12 @@ new class extends Component {
             ],
         ];
     }
-
+    public function applyJob($job_id)
+    {
+        return $this->redirectRoute('jobdetail', [
+            'id' => $job_id,
+        ]);
+    }
     public function getFilteredJobsProperty()
     {
         if ($this->search == '') {
@@ -470,11 +477,6 @@ new class extends Component {
 
                         <div class="department-card p-4 text-center">
 
-                            <div class="department-icon mb-3">
-
-                                <i class="bi {{ $department['icon'] }}"></i>
-
-                            </div>
 
                             <h5 class="fw-bold">
 
@@ -489,11 +491,6 @@ new class extends Component {
 
                             </p>
 
-                            <button class="btn btn-outline-primary rounded-pill">
-
-                                View Jobs
-
-                            </button>
 
                         </div>
 
@@ -543,7 +540,7 @@ CURRENT OPENINGS
 
                                 <span class="badge bg-primary job-badge">
 
-                                    {{ $job['type'] }}
+                                    {{ $job['employment_type'] }}
 
                                 </span>
 
@@ -557,7 +554,7 @@ CURRENT OPENINGS
 
                             <h4 class="fw-bold">
 
-                                {{ $job['title'] }}
+                                {{ $job['job_title'] }}
 
                             </h4>
 
@@ -567,23 +564,16 @@ CURRENT OPENINGS
 
                                     <i class="bi bi-building me-2"></i>
 
-                                    {{ $job['department'] }}
+                                    {{ $job['department']['name'] }}
 
                                 </div>
 
-                                <div class="mb-2">
-
-                                    <i class="bi bi-geo-alt me-2"></i>
-
-                                    {{ $job['location'] }}
-
-                                </div>
 
                                 <div class="mb-2">
 
                                     <i class="bi bi-briefcase me-2"></i>
 
-                                    {{ $job['experience'] }}
+                                    {{ $job['min_experience'] }}
 
                                 </div>
 
@@ -591,13 +581,14 @@ CURRENT OPENINGS
 
                             <div class="salary mt-4">
 
-                                {{ $job['salary'] }}
+                                {{ $job['minimum_salary'] }} -
+                                {{ $job['maximum_salary'] }}
 
                             </div>
 
                             <div class="mt-4 d-grid">
 
-                                <button class="btn btn-primary apply-btn">
+                                <button class="btn btn-primary apply-btn" wire:click="applyJob({{ $job['id'] }})">
 
                                     <i class="bi bi-send me-2"></i>
 

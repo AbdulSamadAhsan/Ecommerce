@@ -95,7 +95,7 @@ new class extends Component {
     public function save()
     {
         $this->validate();
-        dd('djdk');
+
         JobPosting::create([
             'department_id' => $this->department_id,
 

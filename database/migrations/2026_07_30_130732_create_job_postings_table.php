@@ -35,7 +35,7 @@ $table->foreignId('department_id')->constrained();
     $table->decimal('minimum_salary',10,2)->nullable();
 
     $table->decimal('maximum_salary',10,2)->nullable();
-
+    $table->string("min_experience");
     $table->enum('employment_type',[
         'permanent',
         'part-time',

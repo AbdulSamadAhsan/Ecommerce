@@ -279,7 +279,7 @@ Route::prefix("job_postings")->name("job_postings.")->group(function(){
            Route::livewire('/{id}/edit', 'pages::job_postings.edit')
         ->name('edit');
                  Route::livewire('/{id}', 'pages::job_postings.show')
-        ->name('edit');
+        ->name('show');
 });
 Route::livewire("shifts","pages::shifts.all")->name("shifts.index");
 Route::livewire("shifts/create","pages::shifts.create")->name("shifts.create");
@@ -329,8 +329,10 @@ Route::livewire('/settings', 'pages::settings.index')->name('settings.index');
 //applicantportal.blade
  Route::livewire('/career', 'pages::frontend.career.index')
     ->name('career');
-     Route::livewire('/jobdetail', 'pages::frontend.career.jobdetail')
-    ->name('jobdetail');
+     Route::livewire(
+    '/jobdetail/{id}',
+    'pages::frontend.career.jobdetail'
+)->name('jobdetail');
       Route::livewire('/applicantportal', 'pages::frontend.career.applicantportal')
     ->name('applicantportal');
       Route::livewire('/applicantauth', 'pages::frontend.career.auth')

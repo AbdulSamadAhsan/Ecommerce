@@ -2,7 +2,7 @@
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-
+use Carbon\Carbon;
 new class extends Component {
     use WithFileUploads;
 
@@ -11,17 +11,93 @@ new class extends Component {
     | Job Information
     |--------------------------------------------------------------------------
     */
+    function calculateTotalExperience(array $experiences): array
+    {
+        $periods = collect($experiences)
+            ->filter(function ($experience) {
+                return !empty($experience['from']) && !empty($experience['to']);
+            })
+            ->map(function ($experience) {
+                return [
+                    'from' => Carbon::parse($experience['from'])->startOfDay(),
+                    'to' => Carbon::parse($experience['to'])->startOfDay(),
+                ];
+            })
+            ->sortBy('from')
+            ->values();
 
+        if ($periods->isEmpty()) {
+            return [
+                'years' => 0,
+                'months' => 0,
+                'days' => 0,
+                'formatted' => '0 Years',
+            ];
+        }
+
+        // Merge overlapping periods
+        $merged = [];
+
+        foreach ($periods as $period) {
+            if (empty($merged)) {
+                $merged[] = $period;
+                continue;
+            }
+
+            $lastIndex = count($merged) - 1;
+            $last = $merged[$lastIndex];
+
+            // Overlap
+            if ($period['from']->lte($last['to'])) {
+                // Extend the existing period
+                if ($period['to']->gt($last['to'])) {
+                    $merged[$lastIndex]['to'] = $period['to'];
+                }
+            } else {
+                // Separate period
+                $merged[] = $period;
+            }
+        }
+
+        /*
+         * Calculate total days.
+         *
+         * round() is important because Carbon can return
+         * floating-point values in some date calculations.
+         */
+        $totalDays = 0;
+
+        foreach ($merged as $period) {
+            $totalDays += round($period['from']->diffInDays($period['to']));
+        }
+
+        $totalDays = (int) round($totalDays);
+
+        /*
+         * Convert total days to years/months/days.
+         */
+        $base = Carbon::create(2000, 1, 1);
+        $end = $base->copy()->addDays($totalDays);
+
+        $difference = $base->diff($end);
+
+        return [
+            'years' => $difference->y,
+            'months' => $difference->m,
+            'days' => $difference->d,
+
+            'formatted' => "{$difference->y} Years " . "{$difference->m} Months " . "{$difference->d} Days",
+        ];
+    }
     public array $job = [
-        'title' => 'Senior Laravel Developer',
+        'job_title' => 'Senior Laravel Developer',
 
         'department' => 'Engineering',
-
-        'location' => 'Karachi',
 
         'employment_type' => 'Full Time',
 
         'experience' => '3+ Years',
+        'id' => '',
     ];
 
     /*
@@ -134,7 +210,7 @@ new class extends Component {
     |--------------------------------------------------------------------------
     */
 
-    public $resume;
+    public $photo;
 
     public $coverLetter;
 
@@ -146,8 +222,9 @@ new class extends Component {
     |--------------------------------------------------------------------------
     */
 
-    public function mount(): void
+    public function mount($id): void
     {
+        $id = (int) $id;
         $this->educations[] = [
             'degree' => '',
 
@@ -168,6 +245,17 @@ new class extends Component {
             'to' => '',
 
             'responsibilities' => '',
+        ];
+        $jobData = \App\Models\JobPosting::findOrFail($id);
+        $this->job = [
+            'job_title' => $jobData->job_title,
+            'employment_type' => $jobData->employment_type,
+            'department' => $jobData->department->name,
+            'experience' => $jobData->min_experience,
+            'id' => $id,
+            'responsibilities' => $jobData->responsibilities,
+            'requirements' => $jobData->requirements,
+            'benefits' => $jobData->benefits,
         ];
     }
 
@@ -240,13 +328,9 @@ new class extends Component {
 
             'form.phone' => ['required'],
 
-            'form.country' => ['required'],
-
-            'form.city' => ['required'],
-
             'form.address' => ['required'],
 
-            'resume' => ['required'],
+            'photo' => ['required'],
 
             'form.declaration' => ['accepted'],
         ];
@@ -270,7 +354,9 @@ new class extends Component {
     public function save(): void
     {
         $this->validate();
+        $totalExperience = $this->calculateTotalExperience($this->experiences);
 
+        dd($totalExperience);
         session()->flash(
             'success',
 
@@ -306,6 +392,20 @@ new class extends Component {
         </div>
     @endif
 
+    @if (session()->has('error'))
+        <div class="alert alert-success rounded-4 shadow-sm">
+            <div class="d-flex">
+                <div class="me-3">
+                    <i class="bi bi-x-circle-fill fs-2 text-danger"></i>
+                </div>
+                <div>
+
+                    <p class="mb-0">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <form wire:submit="save">
         {{-- ===========================
              JOB SUMMARY
@@ -314,16 +414,9 @@ new class extends Component {
             <div class="card border-0 shadow rounded-4">
                 <div class="card-body p-5">
                     <span class="badge bg-primary rounded-pill mb-3">APPLY FOR POSITION</span>
-                    <h2 class="fw-bold">{{ $job['title'] }}</h2>
+                    <h2 class="fw-bold">{{ $job['job_title'] }} ({{ $job['department'] }}) </h2>
                     <div class="row mt-4">
-                        <div class="col-md-3">
-                            <small class="text-muted">Department</small>
-                            <h6 class="fw-semibold">{{ $job['department'] }}</h6>
-                        </div>
-                        <div class="col-md-3">
-                            <small class="text-muted">Location</small>
-                            <h6 class="fw-semibold">{{ $job['location'] }}</h6>
-                        </div>
+
                         <div class="col-md-3">
                             <small class="text-muted">Employment Type</small>
                             <h6 class="fw-semibold">{{ $job['employment_type'] }}</h6>
@@ -332,6 +425,93 @@ new class extends Component {
                             <small class="text-muted">Experience</small>
                             <h6 class="fw-semibold">{{ $job['experience'] }}</h6>
                         </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Work Mode</small>
+                            <h6 class="fw-semibold">{{ $job['experience'] }}</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Average Salary</small>
+                            <h6 class="fw-semibold">{{ $job['experience'] }}</h6>
+                        </div>
+                        {{-- Responsibilities --}}
+                        <div class="card border-0 shadow mb-4">
+
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 fw-bold">
+                                    Responsibilities
+                                </h5>
+                            </div>
+
+                            <div class="card-body">
+
+                                @if ($job['responsibilities'])
+                                    <div>
+                                        {!! nl2br(e($job['responsibilities'])) !!}
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">
+                                        No responsibilities provided.
+                                    </p>
+                                @endif
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- Requirements --}}
+                        <div class="card border-0 shadow mb-4">
+
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 fw-bold">
+                                    Requirements
+                                </h5>
+                            </div>
+
+                            <div class="card-body">
+
+                                @if ($job['requirements'])
+                                    <div>
+                                        {!! nl2br(e($job['requirements'])) !!}
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">
+                                        No requirements provided.
+                                    </p>
+                                @endif
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- Benefits --}}
+                        <div class="card border-0 shadow mb-4">
+
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 fw-bold">
+                                    Benefits
+                                </h5>
+                            </div>
+
+                            <div class="card-body">
+
+                                @if ($job['benefits'])
+                                    <div>
+                                        {!! nl2br(e($job['benefits'])) !!}
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">
+                                        No benefits provided.
+                                    </p>
+                                @endif
+
+                            </div>
+
+                        </div>
+
+
+
                     </div>
                 </div>
             </div>
@@ -408,34 +588,9 @@ new class extends Component {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Country <span class="text-danger">*</span></label>
-                            <input wire:model.live="form.country"
-                                class="form-control @error('form.country') is-invalid @enderror"
-                                placeholder="Enter your country">
-                            @error('form.country')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Province / State</label>
-                            <input wire:model.live="form.province" class="form-control"
-                                placeholder="Enter your province/state">
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
-                            <input wire:model.live="form.city"
-                                class="form-control @error('form.city') is-invalid @enderror"
-                                placeholder="Enter your city">
-                            @error('form.city')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Postal Code</label>
-                            <input wire:model.live="form.postal_code" class="form-control"
-                                placeholder="Enter postal code">
-                        </div>
+
+
+
                         <div class="col-12">
                             <label class="form-label fw-semibold">Current Address <span
                                     class="text-danger">*</span></label>
@@ -460,26 +615,9 @@ new class extends Component {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Current Company</label>
-                            <input wire:model.live="form.current_company" class="form-control"
-                                placeholder="Enter your current company">
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Current Designation</label>
-                            <input wire:model.live="form.current_designation" class="form-control"
-                                placeholder="Enter your current designation">
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Total Experience (Years)</label>
-                            <input wire:model.live="form.total_experience" class="form-control"
-                                placeholder="e.g., 5">
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Relevant Experience (Years)</label>
-                            <input wire:model.live="form.relevant_experience" class="form-control"
-                                placeholder="e.g., 3">
-                        </div>
+
+
+
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-semibold">Current Salary (PKR)</label>
                             <input wire:model.live="form.current_salary" class="form-control"
@@ -658,22 +796,22 @@ new class extends Component {
                     <small class="text-muted">Upload your supporting documents</small>
                 </div>
                 <div class="card-body">
-                    {{-- Resume --}}
+                    {{-- photo --}}
                     <div class="mb-5">
-                        <label class="form-label fw-semibold">Resume <span class="text-danger">*</span></label>
-                        <input type="file" wire:model="resume"
-                            class="form-control @error('resume') is-invalid @enderror" accept=".pdf,.doc,.docx">
-                        @error('resume')
+                        <label class="form-label fw-semibold">Photo <span class="text-danger">*</span></label>
+                        <input type="file" wire:model="photo"
+                            class="form-control @error('photo') is-invalid @enderror" accept=".png,.jpeg,.jpg">
+                        @error('photo')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <div wire:loading wire:target="resume" class="small text-primary mt-2">
-                            <i class="bi bi-spinner bi-spin me-1"></i> Uploading resume...
+                        <div wire:loading wire:target="photo" class="small text-primary mt-2">
+                            <i class="bi bi-spinner bi-spin me-1"></i> Uploading photo...
                         </div>
-                        @if ($resume)
+                        @if ($photo)
                             <div class="alert alert-success mt-3 mb-0">
                                 <i class="bi bi-check-circle-fill me-2"></i>
-                                {{ $resume->getClientOriginalName() }}
-                                ({{ number_format($resume->getSize() / 1024, 2) }} KB)
+                                {{ $photo->getClientOriginalName() }}
+                                ({{ number_format($photo->getSize() / 1024, 2) }} KB)
                             </div>
                         @endif
                     </div>
@@ -722,7 +860,7 @@ new class extends Component {
                     <div class="alert alert-info rounded-4 mt-4">
                         <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Upload Guidelines</h6>
                         <ul class="mb-0">
-                            <li>Resume must be PDF, DOC or DOCX format</li>
+                            <li>photo must be PDF, DOC or DOCX format</li>
                             <li>Maximum file size: 5 MB per file</li>
                             <li>Certificates can be PDF or image files (JPG, JPEG, PNG)</li>
                             <li>Upload clear and readable documents</li>
@@ -772,16 +910,9 @@ new class extends Component {
 
                     {{-- Availability --}}
                     <div class="row">
+
                         <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Are you willing to relocate?</label>
-                            <select wire:model.live="form.relocate" class="form-select">
-                                <option value="">Select</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label fw-semibold">Are you legally authorized to work?</label>
+                            <label class="form-label fw-semibold">Can You Work At Night Shift?</label>
                             <select wire:model.live="form.authorized" class="form-select">
                                 <option value="">Select</option>
                                 <option value="Yes">Yes</option>
@@ -791,11 +922,7 @@ new class extends Component {
                     </div>
 
                     {{-- Optional Comments --}}
-                    <div>
-                        <label class="form-label fw-semibold">Additional Comments (Optional)</label>
-                        <textarea rows="4" wire:model.live="form.comments" class="form-control"
-                            placeholder="Anything else you'd like to share?"></textarea>
-                    </div>
+
                 </div>
             </div>
         </section>
