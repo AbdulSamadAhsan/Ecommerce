@@ -20,6 +20,14 @@ export default defineConfig({
             },
         }),
     ],
+
+    css: {
+        preprocessorOptions: {
+            scss: {
+                silenceDeprecations: ['import'],
+            },
+        },
+    },
     resolve: {
         alias: {
             vue: 'vue/dist/vue.esm-bundler.js',

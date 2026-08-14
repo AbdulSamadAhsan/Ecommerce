@@ -3,6 +3,17 @@
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\File;
+use Spatie\Browsershot\Browsershot;
+use App\Models\JobApplication;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\CandidateEducation;
+use App\Models\CandidateDocument;
+use App\Models\CandidateWork;
+use App\Models\CandidatePortfolio;
+use Illuminate\Support\Facades\DB;
 new class extends Component {
     use WithFileUploads;
 
@@ -78,24 +89,18 @@ new class extends Component {
          */
         $base = Carbon::create(2000, 1, 1);
         $end = $base->copy()->addDays($totalDays);
-
         $difference = $base->diff($end);
-
         return [
             'years' => $difference->y,
             'months' => $difference->m,
             'days' => $difference->d,
-
             'formatted' => "{$difference->y} Years " . "{$difference->m} Months " . "{$difference->d} Days",
         ];
     }
     public array $job = [
         'job_title' => 'Senior Laravel Developer',
-
         'department' => 'Engineering',
-
         'employment_type' => 'Full Time',
-
         'experience' => '3+ Years',
         'id' => '',
     ];
@@ -108,16 +113,12 @@ new class extends Component {
 
     public array $form = [
         'full_name' => '',
-
         'email' => '',
-
         'phone' => '',
-
         'cnic' => '',
-
         'dob' => '',
-
-        'gender' => 'Male',
+        'father_name' => '',
+        'gender' => 'female',
 
         /*
         |--------------------------------------------------------------------------
@@ -203,7 +204,7 @@ new class extends Component {
     */
 
     public array $experiences = [];
-
+    public array $documents = [];
     /*
     |--------------------------------------------------------------------------
     | Uploads
@@ -227,54 +228,59 @@ new class extends Component {
         $id = (int) $id;
         $this->educations[] = [
             'degree' => '',
-
             'institute' => '',
-
             'year' => '',
-
             'grade' => '',
+            'type' => '',
+            'yearstart' => '',
+            'yearend' => '',
         ];
 
         $this->experiences[] = [
             'company' => '',
-
             'designation' => '',
-
             'from' => '',
-
             'to' => '',
-
             'responsibilities' => '',
         ];
         $jobData = \App\Models\JobPosting::findOrFail($id);
         $this->job = [
             'job_title' => $jobData->job_title,
-            'employment_type' => $jobData->employment_type,
+            'employment_type' => str()->headline($jobData->employment_type),
             'department' => $jobData->department->name,
             'experience' => $jobData->min_experience,
             'id' => $id,
             'responsibilities' => $jobData->responsibilities,
             'requirements' => $jobData->requirements,
             'benefits' => $jobData->benefits,
+            'work_mode' => ucfirst($jobData->work_mode),
+            'avg_salary' => round(((int) $jobData->minimum_salary + (int) $jobData->maximum_salary) / 2),
         ];
     }
-
+    public function updated($property)
+    {
+        if (str_contains($property, 'form.full_name')) {
+            $this->form['linkedin'] = 'https://www.linkedin.com/in/' . str()->slug($this->form['full_name']);
+        }
+        if (str_contains($property, 'form.notice_period')) {
+            $this->form['available_from'] = Carbon::today()->addMonths((int) $this->form['notice_period'])->format('Y-m-d');
+        }
+    }
     /*
     |--------------------------------------------------------------------------
     | Education
     |--------------------------------------------------------------------------
     */
-
     public function addEducation(): void
     {
         $this->educations[] = [
             'degree' => '',
-
             'institute' => '',
-
             'year' => '',
-
             'grade' => '',
+            'type' => '',
+            'yearstart' => '',
+            'yearend' => '',
         ];
     }
 
@@ -323,16 +329,32 @@ new class extends Component {
     {
         return [
             'form.full_name' => ['required', 'string', 'max:255'],
-
             'form.email' => ['required', 'email'],
-
             'form.phone' => ['required'],
-
             'form.address' => ['required'],
-
             'photo' => ['required'],
-
             'form.declaration' => ['accepted'],
+            'educations.*.degree' => ['required'],
+            'educations.*.type' => ['required'],
+            'educations.*.yearstart' => ['required'],
+        ];
+    }
+    protected function messages(): array
+    {
+        return [
+            'form.full_name.required' => 'Please enter your full name.',
+            'form.email.required' => 'Please enter your email address.',
+            'form.email.email' => 'Please enter a valid email address.',
+            'form.phone.required' => 'Please enter your phone number.',
+            'form.address.required' => 'Please enter your current address.',
+            'photo.required' => 'Please upload your photo.',
+            'form.declaration.accepted' => 'Please accept the declaration before submitting.', // Education
+            'educations.*.degree.required' => 'Please enter your degree.',
+            'educations.*.institute.required' => 'Please enter your institute name.',
+            'educations.*.type.required' => 'Please select the institute type.',
+            'educations.*.yearstart.required' => 'Please select the start date.',
+            'educations.*.yearend.required' => 'Please select the end date.',
+            'educations.*.yearend.after_or_equal' => 'The end date must be after or equal to the start date.',
         ];
     }
 
@@ -341,6 +363,10 @@ new class extends Component {
     | Submit
     |--------------------------------------------------------------------------
     */
+    public function removePhoto()
+    {
+        $this->photo = null;
+    }
     public function goBack()
     {
         return redirect()->back();
@@ -351,12 +377,234 @@ new class extends Component {
             'cartCount' => 0,
         ]);
     }
+    public function grade($percentage, $insurance_type)
+    {
+        if ($insurance_type == 'university') {
+            if ($percentage >= 85 && $percentage <= 100) {
+                $grade = 4.0;
+            } elseif ($percentage >= 80) {
+                $grade = 3.67;
+            } elseif ($percentage >= 75) {
+                $grade = 3.33;
+            } elseif ($percentage >= 70) {
+                $grade = 3.0;
+            } elseif ($percentage >= 65) {
+                $grade = 2.67;
+            } elseif ($percentage >= 61) {
+                $grade = 2.33;
+            } elseif ($percentage >= 58) {
+                $grade = 2.0;
+            } elseif ($percentage >= 55) {
+                $grade = 1.67;
+            } elseif ($percentage >= 50) {
+                $grade = 1.0;
+            } else {
+                $grade = 0.0;
+            }
+        } else {
+            $grade = $percentage;
+        }
+        return $grade;
+    }
     public function save(): void
     {
         $this->validate();
         $totalExperience = $this->calculateTotalExperience($this->experiences);
+        if ($this->photo) {
+            $fileName = 'candidate-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
+            $photoPath = $this->photo->storeAs('candidate', $fileName, 'public');
+            //   dd($this->photo->getSize());
+            /* dd([
+                'name' => $this->photo->getClientOriginalName(),
+                'extension' => $this->photo->getClientOriginalExtension(),
+                'mime_type' => $this->photo->getMimeType(),
+                'size' => $this->photo->getSize(),
+            ]);*/
+        }
+        // $this->photo->getSize();
+        $experience_in_year = $totalExperience['years'];
 
-        dd($totalExperience);
+        if ($experience_in_year < $this->job['experience']) {
+            session()->flash('error', 'You Are Not Qualified');
+            return;
+        }
+        $jobId = $this->job['id'];
+        $bio = 'I am' . $this->form['full_name'] . ' ';
+        $count = JobApplication::where('cnic', $this->form['cnic'])
+            ->where('job_posting_id', $jobId)
+
+            ->count();
+        if ($count > 0) {
+            session()->flash('error', 'You Have Already Applied');
+            return;
+        }
+        DB::transaction(function () use ($jobId, $fileName, $totalExperience) {
+            $lasteducation = end($this->educations);
+            $lastexperience = end($this->experiences);
+
+            $application = JobApplication::create([
+                'job_posting_id' => $jobId,
+                'full_name' => $this->form['full_name'],
+                'father_name' => $this->form['father_name'],
+                'email' => $this->form['email'],
+                'phone' => $this->form['phone'],
+                'password' => Hash::make('123456789'),
+                'date_of_birth' => $this->form['dob'],
+                'cnic' => $this->form['cnic'],
+                'address' => $this->form['address'],
+                'last_education' => $lasteducation['degree'],
+                'last_institute' => $lasteducation['institute'],
+                'current_company' => $lastexperience['company'],
+                'current_salary' => $this->form['current_salary'],
+                'expected_salary' => $this->form['expected_salary'],
+                'notice_period' => $this->form['notice_period'],
+                'gender' => $this->form['gender'],
+                'available_from' => $this->form['available_from'],
+                'bio' => $this->form['about_yourself'],
+                'photo' => $fileName,
+                'linkedin' => $this->form['linkedin'],
+                'month_of_exprience' => $totalExperience['years'] * 12,
+            ]);
+
+            foreach ($this->educations as $candidateeducation) {
+                $degree = $candidateeducation['degree'];
+                $institute = $candidateeducation['institute'];
+                $grade = $candidateeducation['grade'];
+                $insurance_type = $candidateeducation['type'];
+                $yearstart = $candidateeducation['yearstart'];
+                $yearend = $candidateeducation['yearend'];
+
+                $pdf = Pdf::loadView('pdf.education_certificate', [
+                    'candidate' => $this->form['full_name'],
+                    'gender' => $this->form['gender'],
+                    'institute' => $institute,
+                    'education' => $degree,
+                    'endyear' => $yearend,
+                    'yearstart' => $yearstart,
+                    'grade' => $this->grade($grade, $insurance_type),
+                    'father_name' => $this->form['father_name'],
+                    'applicannt_photo' => $application->photo,
+                    'insurance_type' => $insurance_type,
+                ]);
+
+                $fileName = 'education-' . str()->slug($this->form['full_name']) . time() . $degree . '.pdf';
+
+                $path = 'documents/' . str()->slug($this->form['full_name']) . '/' . $fileName;
+
+                Storage::disk('public')->put($path, $pdf->output());
+
+                $fullPath = Storage::disk('public')->path($path);
+
+                $size = filesize($fullPath);
+
+                $mimeType = mime_content_type($fullPath);
+                $this->documents[] = [
+                    'job_application_id' => $application->id,
+                    'document_type' => 'degree',
+                    'file_name' => $degree . ' Certificate',
+                    'file_size' => $size,
+                    'file_path' => 'storage/' . $path,
+                    'mime_type' => $mimeType,
+                ];
+
+                CandidateEducation::create([
+                    'job_application_id' => $application->id,
+                    'degree_name' => $degree,
+                    'grade' => $this->grade($grade, $insurance_type),
+                    'institute' => $institute,
+                    'institute_type' => $insurance_type,
+                    'graduate_end_year' => $yearend,
+                    'graduate_start_year' => $yearstart,
+                    'certificate_path' => $path,
+                ]);
+            }
+
+            foreach ($this->experiences as $candidate_exp) {
+                $from = Carbon::parse($candidate_exp['from']);
+                $to = Carbon::parse($candidate_exp['to']);
+                $difference = $from->diff($to);
+                $year = $difference->y;
+                $month_of_experience = $year * 12;
+                $experience = "{$difference->y} years, {$difference->m} months";
+                $pdf = Pdf::loadView('pdf.experience_letter', [
+                    'candidate' => $this->form['full_name'],
+                    'gender' => $this->form['gender'],
+                    'date_of_birth' => $this->form['dob'],
+                    'company_name' => $candidate_exp['company'],
+                    'from' => $from,
+                    'to' => $to,
+                    'designation' => $candidate_exp['designation'],
+                    'experience' => $experience,
+                    'father_name' => $this->form['father_name'],
+                    'applicannt_photo' => $application->photo,
+                ]);
+                $letter_name = 'experience_letter-' . str()->slug($this->form['full_name']) . time() . $degree . '.pdf';
+
+                $path = 'documents/' . str()->slug($this->form['full_name']) . '/' . $letter_name;
+
+                Storage::disk('public')->put($path, $pdf->output());
+
+                $fullPath = Storage::disk('public')->path($path);
+
+                $size = filesize($fullPath);
+                CandidateWork::create([
+                    'job_application_id' => $application->id,
+                    'company' => $candidate_exp['company'],
+                    'start_date' => $from,
+                    'end_date' => $to,
+                    'designation' => $candidate_exp['designation'],
+                    'month_of_experience' => $month_of_experience,
+                ]);
+                $mimeType = mime_content_type($fullPath);
+                $this->documents[] = [
+                    'job_application_id' => $application->id,
+                    'document_type' => 'experience_letter',
+                    'file_name' => 'Experience Letter',
+                    'file_size' => $size,
+                    'file_path' => 'storage/' . $path,
+                    'mime_type' => $mimeType,
+                ];
+            }
+            $name = str()->slug($this->form['full_name']);
+            $html = view('candidate.card', [
+                'name' => $this->form['full_name'],
+                'father_name' => $this->form['father_name'],
+                'gender' => $this->form['gender'],
+                'date_of_birth' => $this->form['dob'],
+                'expiry_date' => Carbon::today()->addYears(5)->format('Y-m-d'),
+                'issue_date' => Carbon::today()->format('Y-m-d'),
+                'address' => $this->form['address'],
+                'applicannt_photo' => $application->photo,
+                'cnic' => $this->form['cnic'],
+            ])->render();
+
+            $relativePath = 'documents/' . str()->slug($this->form['full_name']) . "/candidate-cnic-{$name}.png";
+
+            Browsershot::html($html)
+                ->windowSize(1000, 1000)
+                ->deviceScaleFactor(2)
+                ->save(Storage::disk('public')->path($relativePath));
+            $size = Storage::disk('public')->size($relativePath);
+            $mimeType = Storage::disk('public')->mimeType($relativePath);
+            $this->documents[] = [
+                'job_application_id' => $application->id,
+                'document_type' => 'national_id',
+                'file_name' => 'CNIC',
+                'file_size' => $size,
+                'file_path' => 'storage/' . $relativePath,
+                'mime_type' => $mimeType,
+            ];
+        });
+        foreach ($this->documents as $document) {
+            CandidateDocument::create([
+                'job_application_id' => $document['job_application_id'],
+                'document_type' => $document['document_type'],
+                'file_name' => $document['file_name'],
+                'file_size' => $document['file_size'],
+                'file_path' => $document['file_path'],
+                'mime_type' => $document['mime_type'],
+            ]);
+        }
         session()->flash(
             'success',
 
@@ -427,11 +675,11 @@ new class extends Component {
                         </div>
                         <div class="col-md-3">
                             <small class="text-muted">Work Mode</small>
-                            <h6 class="fw-semibold">{{ $job['experience'] }}</h6>
+                            <h6 class="fw-semibold">{{ $job['work_mode'] }}</h6>
                         </div>
                         <div class="col-md-3">
                             <small class="text-muted">Average Salary</small>
-                            <h6 class="fw-semibold">{{ $job['experience'] }}</h6>
+                            <h6 class="fw-semibold">{{ $job['avg_salary'] }}</h6>
                         </div>
                         {{-- Responsibilities --}}
                         <div class="card border-0 shadow mb-4">
@@ -536,6 +784,16 @@ new class extends Component {
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-semibold">Father Name <span class="text-danger">*</span></label>
+                            <input wire:model.live="form.father_name"
+                                class="form-control @error('form.father_name') is-invalid @enderror"
+                                placeholder="Enter your father name">
+                            @error('form.father_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-semibold">Email Address <span
                                     class="text-danger">*</span></label>
@@ -568,9 +826,9 @@ new class extends Component {
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-semibold">Gender</label>
                             <select wire:model.live="form.gender" class="form-select">
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                     </div>
@@ -657,11 +915,12 @@ new class extends Component {
                     </button>
                 </div>
                 <div class="card-body">
+
                     @foreach ($educations as $index => $education)
                         <div wire:key="education-{{ $index }}" class="border rounded-4 p-4 bg-light mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="fw-semibold mb-0">Education #{{ $loop->iteration }}</h5>
-                                @if (count($educations) > 1)
+                                @if (count($educations) > 1 && $index > 0)
                                     <button type="button" wire:click="removeEducation({{ $index }})"
                                         class="btn btn-outline-danger btn-sm rounded-pill">
                                         <i class="bi bi-trash"></i> Remove
@@ -669,21 +928,51 @@ new class extends Component {
                                 @endif
                             </div>
                             <div class="row">
+                                @error('educations.' . $index . '.degree')
+                                    <span class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                                @error('educations.' . $index . '.type')
+                                    <span class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label fw-semibold">Degree</label>
                                     <input type="text" wire:model.live="educations.{{ $index }}.degree"
                                         class="form-control" placeholder="e.g., BSCS">
                                 </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-semibold">Institute Type</label>
+                                    <select wire:model.live="educations.{{ $index }}.type"
+                                        class="form-control">
+                                        <option>Select Institute Type</option>
+                                        <option value="school">School</option>
+                                        <option value="college">College</option>
+                                        <option value="university">University</option>
+                                    </select>
+                                </div>
+
+
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label fw-semibold">Institute</label>
                                     <input type="text" wire:model.live="educations.{{ $index }}.institute"
                                         class="form-control" placeholder="e.g., University Name">
                                 </div>
                                 <div class="col-md-6 mb-4">
-                                    <label class="form-label fw-semibold">Year</label>
-                                    <input type="text" wire:model.live="educations.{{ $index }}.year"
+                                    <label class="form-label fw-semibold">Start</label>
+                                    <input type="date" wire:model.live="educations.{{ $index }}.yearstart"
                                         class="form-control" placeholder="e.g., 2020-2024">
                                 </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-semibold">End</label>
+                                    <input type="date" wire:model.live="educations.{{ $index }}.yearend"
+                                        class="form-control" placeholder="e.g., 2020-2024">
+                                </div>
+
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label fw-semibold">Grade</label>
                                     <input type="text" wire:model.live="educations.{{ $index }}.grade"
@@ -715,7 +1004,7 @@ new class extends Component {
                         <div wire:key="experience-{{ $index }}" class="border rounded-4 p-4 bg-light mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="fw-semibold mb-0">Experience #{{ $loop->iteration }}</h5>
-                                @if (count($experiences) > 1)
+                                @if (count($experiences) > 1 && $index > 0)
                                     <button type="button" wire:click="removeExperience({{ $index }})"
                                         class="btn btn-outline-danger btn-sm rounded-pill">
                                         <i class="bi bi-trash"></i> Remove
@@ -766,17 +1055,9 @@ new class extends Component {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-semibold">Portfolio Website</label>
-                            <input type="url" wire:model.live="form.portfolio" class="form-control"
-                                placeholder="https://example.com">
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-semibold">GitHub</label>
-                            <input type="url" wire:model.live="form.github" class="form-control"
-                                placeholder="https://github.com/username">
-                        </div>
-                        <div class="col-md-4 mb-4">
+
+
+                        <div class="col-md-12 mb-4">
                             <label class="form-label fw-semibold">LinkedIn</label>
                             <input type="url" wire:model.live="form.linkedin" class="form-control"
                                 placeholder="https://linkedin.com/in/username">
@@ -808,6 +1089,14 @@ new class extends Component {
                             <i class="bi bi-spinner bi-spin me-1"></i> Uploading photo...
                         </div>
                         @if ($photo)
+                            <div class="mt-3">
+                                <img src="{{ $photo->temporaryUrl() }}" alt="Preview" class="img-thumbnail"
+                                    style="width: 200px; height: 200px; object-fit: cover;">
+                                <button type="button" wire:click="removePhoto" class="btn btn-danger btn-sm mt-2">
+                                    Remove
+                                </button>
+
+                            </div>
                             <div class="alert alert-success mt-3 mb-0">
                                 <i class="bi bi-check-circle-fill me-2"></i>
                                 {{ $photo->getClientOriginalName() }}
@@ -816,45 +1105,8 @@ new class extends Component {
                         @endif
                     </div>
 
-                    {{-- Cover Letter --}}
-                    <div class="mb-5">
-                        <label class="form-label fw-semibold">Cover Letter</label>
-                        <input type="file" wire:model="coverLetter" class="form-control"
-                            accept=".pdf,.doc,.docx">
-                        <div wire:loading wire:target="coverLetter" class="small text-primary mt-2">
-                            <i class="bi bi-spinner bi-spin me-1"></i> Uploading cover letter...
-                        </div>
-                        @if ($coverLetter)
-                            <div class="alert alert-success mt-3 mb-0">
-                                <i class="bi bi-check-circle-fill me-2"></i>
-                                {{ $coverLetter->getClientOriginalName() }}
-                                ({{ number_format($coverLetter->getSize() / 1024, 2) }} KB)
-                            </div>
-                        @endif
-                    </div>
 
-                    {{-- Certificates --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Certificates</label>
-                        <input type="file" wire:model="certificates" multiple class="form-control"
-                            accept=".pdf,.jpg,.jpeg,.png">
-                        <div wire:loading wire:target="certificates" class="small text-primary mt-2">
-                            <i class="bi bi-spinner bi-spin me-1"></i> Uploading certificates...
-                        </div>
-                    </div>
 
-                    @if (count($certificates))
-                        <div class="border rounded-4 p-3 bg-light">
-                            <h6 class="fw-bold mb-3">Selected Certificates</h6>
-                            @foreach ($certificates as $certificate)
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-file-earmark-check text-success me-2"></i>
-                                    {{ $certificate->getClientOriginalName() }}
-                                    ({{ number_format($certificate->getSize() / 1024, 2) }} KB)
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
 
                     {{-- Upload Guidelines --}}
                     <div class="alert alert-info rounded-4 mt-4">

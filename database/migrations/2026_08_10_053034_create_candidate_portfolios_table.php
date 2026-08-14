@@ -16,8 +16,7 @@ return new class extends Migration
                 $table->foreignId('job_application_id')
                 ->constrained()
                 ->cascadeOnDelete();
-                 $table->string('portfolio_website');
-            $table->string('github');
+          
             $table->string('linkedin');
             $table->timestamps();
         });

@@ -29,7 +29,7 @@ new class extends Component {
 
     public $closing_date = '';
 
-    public $year_experience = '';
+    public $year_experience = '1';
 
     public $is_active = 1;
 
@@ -124,6 +124,7 @@ new class extends Component {
             'closing_date' => $this->closing_date,
 
             'is_active' => $this->is_active,
+            'min_experience' => $this->year_experience,
         ]);
 
         $this->reset(['department_id', 'job_title', 'description', 'responsibilities', 'requirements', 'benefits', 'minimum_salary', 'maximum_salary', 'year_experience']);

@@ -16,10 +16,13 @@ return new class extends Migration
              $table->foreignId('job_application_id')
                 ->constrained()
                 ->cascadeOnDelete();
-            $table->string('graduate_year');
+            $table->date('graduate_start_year');
+                 $table->date('graduate_end_year');
             $table->decimal("grade");
             $table->string('degree_name')->nullable()->default(null);
+                   $table->string('institute_type')->nullable()->default(null);
              $table->string('institute')->nullable()->default(null);
+             $table->text('certificate_path')->nullable()->default(null);
             $table->timestamps();
         });
     }

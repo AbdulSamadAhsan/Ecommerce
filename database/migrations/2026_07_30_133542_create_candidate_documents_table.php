@@ -51,7 +51,7 @@ return new class extends Migration
                 Other
             */
 
-            $table->string('title');
+         
 
             $table->string('file_name');
 

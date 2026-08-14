@@ -20,6 +20,7 @@ return new class extends Migration
 
     $table->text('address')->nullable();
     $table->decimal('opening_balance',15,2)->default(0);
+        $table->decimal('credit_limit',15,2)->default(0);
     $table->boolean('status')->default(true);
     $table->timestamps();
     $table->softDeletes();
