@@ -545,7 +545,7 @@ new class extends Component {
                 Storage::disk('public')->put($path, $pdf->output());
 
                 $fullPath = Storage::disk('public')->path($path);
-
+                $mimeType = mime_content_type($fullPath);
                 $size = filesize($fullPath);
                 CandidateWork::create([
                     'job_application_id' => $application->id,
@@ -555,7 +555,7 @@ new class extends Component {
                     'designation' => $candidate_exp['designation'],
                     'month_of_experience' => $month_of_experience,
                 ]);
-                $mimeType = mime_content_type($fullPath);
+
                 $this->documents[] = [
                     'job_application_id' => $application->id,
                     'document_type' => 'experience_letter',
@@ -594,7 +594,44 @@ new class extends Component {
                 'file_path' => 'storage/' . $relativePath,
                 'mime_type' => $mimeType,
             ];
+
+            $data = [
+                'candidate' => $application->full_name,
+                'email' => $application->email,
+                'phone' => $application->phone,
+                'linkedin' => $application->linkedin,
+                'photo' => $application->photo,
+                'experiences' => $application->works,
+                'educations' => $application->educations,
+                'personal_details' => [
+                    'father_name' => $application->father_name,
+                    'dob' => date('d F Y', strtotime($application->date_of_birth)),
+                    'gender' => $application->gender,
+                    'cnic' => $application->cnic,
+                    'address' => $application->address,
+                ],
+            ];
+
+            $pdf = Pdf::loadView('pdf.resume', $data)->setPaper('a4', 'portrait');
+
+            $fileName = 'resume-' . str()->slug($application->full_name) . time() . '.pdf';
+            $path = 'documents/' . str()->slug($application->full_name) . '/' . $fileName;
+
+            Storage::disk('public')->put($path, $pdf->output());
+
+            $fullPath = Storage::disk('public')->path($path);
+            $mimeType = mime_content_type($fullPath);
+            $size = filesize($fullPath);
+            $this->documents[] = [
+                'job_application_id' => $application->id,
+                'document_type' => 'resume',
+                'file_name' => 'Resume',
+                'file_size' => $size,
+                'file_path' => 'storage/' . $path,
+                'mime_type' => $mimeType,
+            ];
         });
+
         foreach ($this->documents as $document) {
             CandidateDocument::create([
                 'job_application_id' => $document['job_application_id'],
@@ -605,6 +642,8 @@ new class extends Component {
                 'mime_type' => $document['mime_type'],
             ]);
         }
+
+        $this->reset(['form', 'educations', 'experiences', 'documents', 'photo', 'coverLetter', 'certificates']);
         session()->flash(
             'success',
 
