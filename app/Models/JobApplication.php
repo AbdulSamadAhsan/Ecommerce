@@ -21,5 +21,11 @@ class JobApplication extends Model
 {
     return $this->hasMany(CandidateEducation::class, 'job_application_id');
 }
+public function jobPosting()
+{
+    return $this->belongsTo(JobPosting::class, 'job_posting_id');
+}
+
+
 
 }

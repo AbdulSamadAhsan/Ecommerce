@@ -116,7 +116,7 @@ new class extends Component {
 
         $this->departments = Department::where('status', 1)->get();
         $this->institutions = Institution::latest()->get();
-        $this->educations = Education::where('institution_id', $this->institution_id)->get();
+        $this->educations = Education::get();
 
         $this->calculateSalary();
     }

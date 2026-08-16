@@ -15,8 +15,5 @@ class Education extends Model
         'status',
     ];
 
-    public function institution()
-    {
-        return $this->belongsTo(Institution::class);
-    }
+  
 }

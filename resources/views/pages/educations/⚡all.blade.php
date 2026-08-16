@@ -8,7 +8,7 @@ new class extends Component {
 
     public function getEducationsProperty()
     {
-        return Education::with('institution')->when($this->search, fn($q) => $q->where('degree', 'like', '%' . $this->search . '%')->orWhere('field_of_study', 'like', '%' . $this->search . '%'))->latest()->get();
+        return Education::when($this->search, fn($q) => $q->where('degree', 'like', '%' . $this->search . '%')->orWhere('field_of_study', 'like', '%' . $this->search . '%'))->latest()->get();
     }
 
     public function delete($id): void
@@ -47,7 +47,7 @@ new class extends Component {
                         <th>ID</th>
                         <th>Degree</th>
                         <th>Short Code</th>
-                        <th>Institution</th>
+
 
                         <th>Status</th>
                         <th>Action</th>
@@ -60,7 +60,6 @@ new class extends Component {
                             <td>#{{ $education->id }}</td>
                             <td>{{ $education->name }}</td>
                             <td>{{ $education->short_code }}</td>
-                            <td>{{ $education->institution?->name ?? 'N/A' }}</td>
 
                             <td>
                                 <span class="badge {{ $education->status ? 'bg-success' : 'bg-danger' }}">

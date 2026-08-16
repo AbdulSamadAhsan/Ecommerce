@@ -23,13 +23,7 @@ return new class extends Migration
 
     Schema::create('educations', function (Blueprint $table) {
         $table->id();
-
-        $table->foreignId('institution_id')
-            ->constrained()
-            ->cascadeOnDelete();
-
         $table->string('name');
-        
         $table->string('status');
         $table->string('short_code')->unique();
         $table->timestamps();

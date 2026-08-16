@@ -7,12 +7,13 @@ new class extends Component {
     public int $id;
 
     public array $jobPosting = [];
-
+    public array $jobApplications = [];
     public function mount($id): void
     {
         $this->id = (int) $id;
 
-        $job = JobPosting::with(['department', 'creator'])->findOrFail($this->id);
+        $job = JobPosting::with(['department:name,id', 'creator', 'applications:id,job_posting_id,father_name,full_name,cnic,created_at,status'])->findOrFail($this->id);
+        $this->jobApplications = $job->applications->toArray();
 
         $this->jobPosting = [
             'id' => $job->id,
@@ -491,5 +492,64 @@ new class extends Component {
         </div>
 
     </div>
+
+    <div class="card border-0 shadow mb-4">
+
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                Applicants
+            </h5>
+        </div>
+
+        <div class="card-body table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Father Name</th>
+                        <th>Cnic</th>
+                        <th>Applied Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                @foreach ($this->jobApplications as $key => $application)
+                    <tr>
+                        <td>
+                            {{ $key + 1 }}
+                        </td>
+                        <td>
+                            {{ $application['full_name'] }}
+                        </td>
+                        <td>
+                            {{ $application['father_name'] }}
+                        </td>
+                        <td>
+                            {{ $application['cnic'] }}
+                        </td>
+                        <td>
+                            {{ date('d-M-Y', strtotime($application['created_at'])) }}
+                        </td>
+                        <td>
+
+                            <a href="{{ route('job_applications.show', $application['id']) }}"
+                                class="btn btn-sm btn-primary rounded-pill">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                @endforeach
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
 
 </div>

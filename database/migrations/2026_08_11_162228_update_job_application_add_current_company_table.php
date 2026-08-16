@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::table('job_applications', function (Blueprint $table) {
               //
-          $table->decimal("current_salary");
-             $table->string("current_company");
+       
                 $table->decimal("notice_period");
                   $table->text("bio")->nullable();
                     $table->text("reason_to_join")->nullable();

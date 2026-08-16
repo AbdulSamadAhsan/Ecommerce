@@ -281,6 +281,12 @@ Route::prefix("job_postings")->name("job_postings.")->group(function(){
                  Route::livewire('/{id}', 'pages::job_postings.show')
         ->name('show');
 });
+
+Route::prefix("job_applications")->name("job_applications.")->group(function(){
+    Route::livewire("/","pages::job_application.all")->name("index");
+    Route::livewire("/{id}/edit","pages::job_application.edit")->name("edit");
+      Route::livewire("/{id}","pages::job_application.show")->name("show");
+});
 Route::livewire("shifts","pages::shifts.all")->name("shifts.index");
 Route::livewire("shifts/create","pages::shifts.create")->name("shifts.create");
 Route::livewire("shifts/{id}/edit","pages::shifts.edit")->name("shifts.edit");

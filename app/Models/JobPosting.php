@@ -15,4 +15,12 @@ class JobPosting extends Model
 {
     return $this->belongsTo(User::class, 'created_by');
 }
+public function applications()
+{
+    return $this->hasMany(
+        JobApplication::class,
+        'job_posting_id'
+    );
+}
+
 }

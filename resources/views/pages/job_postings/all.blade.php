@@ -59,10 +59,10 @@ new class extends Component {
                         <th>Job Title</th>
                         <th>Department</th>
                         <th>Vacancies</th>
-                        <th>Employment</th>
+
                         <th>Work Mode</th>
-                        <th>Salary</th>
-                        <th>Closing Date</th>
+
+
                         <th>Status</th>
                         <th width="170">Action</th>
                     </tr>
@@ -87,11 +87,7 @@ new class extends Component {
                                 {{ $job['vacancies'] }}
                             </td>
 
-                            <td>
-                                <span class="badge bg-info">
-                                    {{ ucwords(str_replace('_', ' ', $job['employment_type'])) }}
-                                </span>
-                            </td>
+
 
                             <td>
                                 <span class="badge bg-secondary">
@@ -99,22 +95,9 @@ new class extends Component {
                                 </span>
                             </td>
 
-                            <td>
 
-                                @if ($job['minimum_salary'] || $job['maximum_salary'])
-                                    {{ number_format($job['minimum_salary']) }}
-                                    -
 
-                                    {{ number_format($job['maximum_salary']) }}
-                                @else
-                                    -
-                                @endif
 
-                            </td>
-
-                            <td>
-                                {{ $job['closing_date'] }}
-                            </td>
 
                             <td>
                                 <span class="badge {{ $job['is_active'] ? 'bg-success' : 'bg-danger' }}">
@@ -134,9 +117,7 @@ new class extends Component {
                                     View
                                 </a>
 
-                                <button class="btn btn-sm btn-danger rounded-pill">
-                                    Delete
-                                </button>
+
 
                             </td>
 

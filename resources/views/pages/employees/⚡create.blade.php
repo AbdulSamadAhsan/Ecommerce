@@ -82,7 +82,7 @@ new class extends Component {
     {
         $this->departments = Department::where('status', 1)->get();
         $this->institutions = Institution::get();
-        $this->educations = [];
+        $this->educations = Education::get();
     }
 
     protected function rules()
@@ -122,13 +122,6 @@ new class extends Component {
             'is_primary' => 'nullable|boolean',
             'bank_notes' => 'nullable|string',
         ];
-    }
-
-    public function updatedInstitutionId($value)
-    {
-        $this->education_id = '';
-
-        $this->educations = Education::where('institution_id', $value)->get();
     }
 
     public function updated($property)

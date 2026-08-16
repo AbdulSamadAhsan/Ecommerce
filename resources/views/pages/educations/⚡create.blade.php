@@ -13,11 +13,6 @@ new class extends Component {
 
     public $institutions = [];
 
-    public function mount(): void
-    {
-        $this->institutions = Institution::where('status', 1)->get();
-    }
-
     public function save(): void
     {
         $this->validate([
@@ -29,7 +24,6 @@ new class extends Component {
         ]);
 
         Education::create([
-            'institution_id' => $this->institution_id,
             'name' => $this->degree,
             'short_code' => $this->short_code,
 
@@ -50,20 +44,7 @@ new class extends Component {
 
     <div class="card-body">
         <form wire:submit.prevent="save">
-            <div class="mb-3">
-                <label class="form-label">Institution</label>
-                <select wire:model.live="institution_id" class="form-select">
-                    <option value="">Select Institution</option>
-                    @foreach ($institutions as $institution)
-                        <option value="{{ $institution->id }}">
-                            {{ $institution->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('institution_id')
-                    <small class="text-danger">{{ $message }}</small>
-                @enderror
-            </div>
+
 
             <div class="mb-3">
                 <label class="form-label">Degree Name</label>

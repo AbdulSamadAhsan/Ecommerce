@@ -916,6 +916,15 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ adminRoute('job_applications.index') }}"
+                    class="nav-link {{ activeRoute('job_applications.*') }}">
+
+                    <i class="bi bi-file-earmark-person-fill"></i>
+
+                    Job Applications
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
 
                     <i class="bi bi-gear"></i>

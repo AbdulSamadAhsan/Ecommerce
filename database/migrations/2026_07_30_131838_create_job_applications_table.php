@@ -18,23 +18,10 @@ return new class extends Migration
         ->constrained()
         ->cascadeOnDelete();
 
-    $table->string('full_name');
-
-    
-
-    $table->string('email');
-
-    $table->string('phone');
-
-    $table->string('password');
 
     $table->string('last_education');
-    $table->string('month_of_exprience');
-
-    $table->decimal('expected_salary',10,2)->nullable();
-
     $table->date('available_from')->nullable();
-
+    $table->decimal('expected_salary',10,2)->nullable();
     $table->enum('status',[
         'pending',
         'shortlisted',
