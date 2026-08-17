@@ -29,6 +29,18 @@ new class extends Component {
     public $educationDescription = '';
     public $educationCurrentlyStudying = false;
 
+    // Work Experience Form Variables
+    public $showExperienceForm = false;
+    public $editingExperienceId = null;
+    public $experienceCompany = '';
+    public $experienceTitle = '';
+    public $experienceLocation = '';
+    public $experienceStartDate = '';
+    public $experienceEndDate = '';
+    public $experienceDescription = '';
+    public $experienceCurrentlyWorking = false;
+    public $experienceEmploymentType = 'full_time';
+
     protected $queryString = [
         'search' => ['except' => ''],
         'filterStatus' => ['except' => ''],
@@ -199,12 +211,53 @@ new class extends Component {
         ];
     }
 
+    // Work Experience Data
+    public function getExperiencesProperty()
+    {
+        return [
+            [
+                'id' => 1,
+                'company' => 'Tech Solutions Inc.',
+                'title' => 'Senior Laravel Developer',
+                'location' => 'Karachi, Pakistan',
+                'start_date' => '2022-07-01',
+                'end_date' => null,
+                'description' => 'Leading a team of 5 developers building enterprise applications using Laravel and Vue.js. Implemented CI/CD pipelines and improved code quality by 40%.',
+                'currently_working' => true,
+                'employment_type' => 'full_time',
+            ],
+            [
+                'id' => 2,
+                'company' => 'Digital Innovations',
+                'title' => 'Full Stack Developer',
+                'location' => 'Lahore, Pakistan',
+                'start_date' => '2020-01-15',
+                'end_date' => '2022-06-30',
+                'description' => 'Developed and maintained multiple web applications using React, Node.js, and MySQL. Reduced loading time by 60% through optimization.',
+                'currently_working' => false,
+                'employment_type' => 'full_time',
+            ],
+            [
+                'id' => 3,
+                'company' => 'Freelance',
+                'title' => 'Web Developer',
+                'location' => 'Remote',
+                'start_date' => '2019-06-01',
+                'end_date' => '2019-12-31',
+                'description' => 'Worked on various freelance projects including e-commerce websites and CMS development.',
+                'currently_working' => false,
+                'employment_type' => 'freelance',
+            ],
+        ];
+    }
+
     public function switchTab($tab)
     {
         $this->activeTab = $tab;
-        // Reset education form when switching to profile tab
+        // Reset forms when switching tabs
         if ($tab === 'profile') {
             $this->resetEducationForm();
+            $this->resetExperienceForm();
         }
     }
 
@@ -284,8 +337,6 @@ new class extends Component {
             $this->educationEndDate = null;
         }
 
-        // Here you would normally save to database
-        // For demo, we'll just show a success message
         session()->flash('success', $this->editingEducationId ? 'Education updated successfully!' : 'Education added successfully!');
 
         $this->resetEducationForm();
@@ -294,7 +345,6 @@ new class extends Component {
 
     public function deleteEducation($id)
     {
-        // Here you would normally delete from database
         session()->flash('success', 'Education entry removed successfully!');
     }
 
@@ -302,6 +352,81 @@ new class extends Component {
     {
         $this->resetEducationForm();
         $this->showEducationForm = false;
+    }
+
+    // -------- WORK EXPERIENCE MANAGEMENT METHODS --------
+    public function resetExperienceForm()
+    {
+        $this->experienceCompany = '';
+        $this->experienceTitle = '';
+        $this->experienceLocation = '';
+        $this->experienceStartDate = '';
+        $this->experienceEndDate = '';
+        $this->experienceDescription = '';
+        $this->experienceCurrentlyWorking = false;
+        $this->experienceEmploymentType = 'full_time';
+        $this->editingExperienceId = null;
+        $this->showExperienceForm = false;
+    }
+
+    public function openExperienceForm()
+    {
+        $this->resetExperienceForm();
+        $this->showExperienceForm = true;
+    }
+
+    public function editExperience($id)
+    {
+        $experiences = $this->experiences;
+        $experience = collect($experiences)->firstWhere('id', $id);
+
+        if ($experience) {
+            $this->editingExperienceId = $experience['id'];
+            $this->experienceCompany = $experience['company'];
+            $this->experienceTitle = $experience['title'];
+            $this->experienceLocation = $experience['location'];
+            $this->experienceStartDate = $experience['start_date'];
+            $this->experienceEndDate = $experience['end_date'];
+            $this->experienceDescription = $experience['description'];
+            $this->experienceCurrentlyWorking = $experience['currently_working'];
+            $this->experienceEmploymentType = $experience['employment_type'];
+            $this->showExperienceForm = true;
+        }
+    }
+
+    public function saveExperience()
+    {
+        $this->validate([
+            'experienceCompany' => 'required|string|max:255',
+            'experienceTitle' => 'required|string|max:255',
+            'experienceLocation' => 'required|string|max:255',
+            'experienceStartDate' => 'required|date',
+            'experienceEndDate' => 'nullable|date|after:experienceStartDate',
+            'experienceDescription' => 'nullable|string',
+            'experienceCurrentlyWorking' => 'boolean',
+            'experienceEmploymentType' => 'required|in:full_time,part_time,contract,freelance,internship',
+        ]);
+
+        // If currently working, clear end date
+        if ($this->experienceCurrentlyWorking) {
+            $this->experienceEndDate = null;
+        }
+
+        session()->flash('success', $this->editingExperienceId ? 'Experience updated successfully!' : 'Experience added successfully!');
+
+        $this->resetExperienceForm();
+        $this->showExperienceForm = false;
+    }
+
+    public function deleteExperience($id)
+    {
+        session()->flash('success', 'Experience entry removed successfully!');
+    }
+
+    public function cancelExperienceForm()
+    {
+        $this->resetExperienceForm();
+        $this->showExperienceForm = false;
     }
 
     public function applyJob($id)
@@ -337,21 +462,15 @@ new class extends Component {
     ============================ --}}
     <div class="py-3 py-md-4 mb-4 shadow-sm">
         <div class="container">
-            {{-- Flex container: Stacks on mobile, row on tablets/desktops --}}
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3 gap-lg-2">
-
-                {{-- Left Side: Title & Subtitle --}}
                 <div class="text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
-                    <h4 class=" mb-0 fw-bold fs-4 fs-md-3 fs-lg-2">
+                    <h4 class="mb-0 fw-bold fs-4 fs-md-3 fs-lg-2">
                         Applicant Portal
                     </h4>
-                    {{-- Mobile subtitle: hidden on extra small screens (optional, removes clutter) --}}
                     <small class="text-white-50 fw-light mt-1 d-none d-sm-block">
                         Manage your job applications & interviews
                     </small>
                 </div>
-
-                {{-- Right Side: Buttons --}}
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                     <button type="button" wire:click="goBack"
                         class="btn btn-light btn-sm rounded-pill px-3 px-md-4 fw-medium shadow-sm">
@@ -362,15 +481,12 @@ new class extends Component {
                         <i class="bi bi-box-arrow-right me-1"></i> Logout
                     </button>
                 </div>
-
             </div>
         </div>
     </div>
 
     <div class="container pb-5">
-        {{-- ===========================
-             SUCCESS/ERROR MESSAGES
-        ============================ --}}
+        {{-- Success/Error Messages --}}
         @if (session()->has('success'))
             <div class="alert alert-success rounded-4 shadow-sm">
                 <div class="d-flex flex-column flex-sm-row align-items-sm-center">
@@ -399,10 +515,7 @@ new class extends Component {
             </div>
         @endif
 
-        {{-- ===========================
-             NAVIGATION TABS - RESPONSIVE
-             Removed 'nav-fill' so they wrap naturally on mobile
-        ============================ --}}
+        {{-- Navigation Tabs --}}
         <div class="mb-4">
             <div class="card border-0 shadow rounded-4">
                 <div class="card-body p-2 p-md-3">
@@ -449,11 +562,9 @@ new class extends Component {
             </div>
         </div>
 
-        {{-- ===========================
-             DASHBOARD TAB CONTENT
-        ============================ --}}
+        {{-- DASHBOARD TAB CONTENT --}}
         @if ($activeTab === 'dashboard')
-            {{-- Stats Cards - 2 per row on mobile, 4 on desktop --}}
+            {{-- Stats Cards --}}
             <div class="row g-3 mb-4">
                 <div class="col-6 col-md-3">
                     <div class="card border-0 shadow rounded-4 h-100">
@@ -577,7 +688,6 @@ new class extends Component {
                                                         <i class="bi bi-camera-video"></i>
                                                     </button>
                                                 @endif
-                                                {{-- OPENS MODAL WITHOUT REDIRECT --}}
                                                 <button wire:click="showInterview({{ $interview['id'] }})"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3">
                                                     Details
@@ -648,7 +758,6 @@ new class extends Component {
                                             </span>
                                         </td>
                                         <td class="pe-3 pe-md-4 text-end">
-                                            {{-- OPENS MODAL WITHOUT REDIRECT --}}
                                             <button wire:click="showApplication({{ $application['id'] }})"
                                                 class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
                                                 View
@@ -670,9 +779,7 @@ new class extends Component {
             </div>
         @endif
 
-        {{-- ===========================
-             APPLICATIONS TAB CONTENT - RESPONSIVE
-        ============================ --}}
+        {{-- APPLICATIONS TAB CONTENT --}}
         @if ($activeTab === 'applications')
             <div class="card border-0 shadow rounded-4">
                 <div class="card-header bg-white border-0 p-3 p-md-4">
@@ -740,7 +847,6 @@ new class extends Component {
                                             </span>
                                         </td>
                                         <td class="pe-3 pe-md-4 text-end">
-                                            {{-- OPENS MODAL WITHOUT REDIRECT --}}
                                             <button wire:click="showApplication({{ $application['id'] }})"
                                                 class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
                                                 View
@@ -762,12 +868,9 @@ new class extends Component {
             </div>
         @endif
 
-        {{-- ===========================
-             INTERVIEWS TAB CONTENT - RESPONSIVE
-        ============================ --}}
+        {{-- INTERVIEWS TAB CONTENT --}}
         @if ($activeTab === 'interviews')
             <div class="row g-3">
-                {{-- Interview Stats --}}
                 <div class="col-12">
                     <div class="row g-3">
                         <div class="col-6 col-md-3">
@@ -808,7 +911,6 @@ new class extends Component {
                     </div>
                 </div>
 
-                {{-- Upcoming Interviews List --}}
                 <div class="col-12">
                     <div class="card border-0 shadow rounded-4">
                         <div class="card-header bg-white border-0 p-3 p-md-4">
@@ -867,7 +969,6 @@ new class extends Component {
                                                                 <i class="bi bi-camera-video"></i>
                                                             </button>
                                                         @endif
-                                                        {{-- OPENS MODAL WITHOUT REDIRECT --}}
                                                         <button wire:click="showInterview({{ $interview['id'] }})"
                                                             class="btn btn-sm btn-outline-primary rounded-pill px-2 px-md-3 small">
                                                             Details
@@ -890,7 +991,6 @@ new class extends Component {
                     </div>
                 </div>
 
-                {{-- Interview Preparation Tips --}}
                 <div class="col-12">
                     <div class="card border-0 shadow rounded-4">
                         <div class="card-header bg-white border-0 p-3 p-md-4">
@@ -944,9 +1044,7 @@ new class extends Component {
             </div>
         @endif
 
-        {{-- ===========================
-             SAVED JOBS TAB CONTENT - RESPONSIVE
-        ============================ --}}
+        {{-- SAVED JOBS TAB CONTENT --}}
         @if ($activeTab === 'saved')
             <div class="row g-3">
                 @forelse ($this->savedJobs as $job)
@@ -1006,9 +1104,7 @@ new class extends Component {
             </div>
         @endif
 
-        {{-- ===========================
-             PROFILE TAB CONTENT - WITH EDUCATION
-        ============================ --}}
+        {{-- PROFILE TAB CONTENT - WITH EDUCATION & WORK EXPERIENCE --}}
         @if ($activeTab === 'profile')
             <div class="row g-3">
                 {{-- Profile Overview --}}
@@ -1053,7 +1149,7 @@ new class extends Component {
                     </div>
                 </div>
 
-                {{-- Profile Details & Education --}}
+                {{-- Profile Details & Education & Experience --}}
                 <div class="col-md-8">
                     {{-- Profile Details --}}
                     <div class="card border-0 shadow rounded-4 mb-3">
@@ -1113,6 +1209,196 @@ new class extends Component {
                                     </div>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    {{-- Work Experience Section --}}
+                    <div class="card border-0 shadow rounded-4 mb-3">
+                        <div class="card-header bg-white border-0 p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                                    <i class="bi bi-briefcase text-primary me-2"></i>
+                                    Work Experience
+                                </h5>
+                                @if (!$showExperienceForm)
+                                    <button wire:click="openExperienceForm"
+                                        class="btn btn-primary btn-sm rounded-pill px-3">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Experience
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="card-body p-3 p-md-4">
+                            {{-- Experience Form --}}
+                            @if ($showExperienceForm)
+                                <div class="bg-light p-3 p-md-4 rounded-4 mb-4">
+                                    <h6 class="fw-bold mb-3">
+                                        {{ $editingExperienceId ? 'Edit Experience' : 'Add New Experience' }}
+                                    </h6>
+                                    <form wire:submit.prevent="saveExperience">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Company *</label>
+                                                <input type="text" wire:model="experienceCompany"
+                                                    class="form-control form-control-sm @error('experienceCompany') is-invalid @enderror"
+                                                    placeholder="Company name">
+                                                @error('experienceCompany')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Job Title *</label>
+                                                <input type="text" wire:model="experienceTitle"
+                                                    class="form-control form-control-sm @error('experienceTitle') is-invalid @enderror"
+                                                    placeholder="e.g. Senior Developer">
+                                                @error('experienceTitle')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Location *</label>
+                                                <input type="text" wire:model="experienceLocation"
+                                                    class="form-control form-control-sm @error('experienceLocation') is-invalid @enderror"
+                                                    placeholder="City, Country">
+                                                @error('experienceLocation')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Employment Type *</label>
+                                                <select wire:model="experienceEmploymentType"
+                                                    class="form-select form-select-sm @error('experienceEmploymentType') is-invalid @enderror">
+                                                    <option value="full_time">Full Time</option>
+                                                    <option value="part_time">Part Time</option>
+                                                    <option value="contract">Contract</option>
+                                                    <option value="freelance">Freelance</option>
+                                                    <option value="internship">Internship</option>
+                                                </select>
+                                                @error('experienceEmploymentType')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Start Date *</label>
+                                                <input type="date" wire:model="experienceStartDate"
+                                                    class="form-control form-control-sm @error('experienceStartDate') is-invalid @enderror">
+                                                @error('experienceStartDate')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">End Date</label>
+                                                <input type="date" wire:model="experienceEndDate"
+                                                    class="form-control form-control-sm @error('experienceEndDate') is-invalid @enderror"
+                                                    {{ $experienceCurrentlyWorking ? 'disabled' : '' }}>
+                                                @error('experienceEndDate')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-check">
+                                                    <input type="checkbox" wire:model="experienceCurrentlyWorking"
+                                                        class="form-check-input" id="currentlyWorking">
+                                                    <label class="form-check-label small" for="currentlyWorking">
+                                                        I am currently working here
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold small">Description</label>
+                                                <textarea wire:model="experienceDescription" class="form-control form-control-sm" rows="3"
+                                                    placeholder="Describe your responsibilities and achievements..."></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <button type="submit"
+                                                        class="btn btn-primary rounded-pill px-4 small">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        {{ $editingExperienceId ? 'Update' : 'Save' }}
+                                                    </button>
+                                                    <button type="button" wire:click="cancelExperienceForm"
+                                                        class="btn btn-secondary rounded-pill px-4 small">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
+
+                            {{-- Experience List --}}
+                            @if (count($this->experiences) > 0)
+                                <div class="row g-3">
+                                    @foreach ($this->experiences as $experience)
+                                        <div class="col-12">
+                                            <div
+                                                class="d-flex justify-content-between align-items-start p-3 bg-light rounded-4">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                        <h6 class="fw-bold mb-0">{{ $experience['title'] }}</h6>
+                                                        @if ($experience['currently_working'])
+                                                            <span
+                                                                class="badge bg-success rounded-pill small">Current</span>
+                                                        @endif
+                                                        @php
+                                                            $employmentTypeLabels = [
+                                                                'full_time' => 'Full Time',
+                                                                'part_time' => 'Part Time',
+                                                                'contract' => 'Contract',
+                                                                'freelance' => 'Freelance',
+                                                                'internship' => 'Internship',
+                                                            ];
+                                                        @endphp
+                                                        <span class="badge bg-secondary rounded-pill small">
+                                                            {{ $employmentTypeLabels[$experience['employment_type']] ?? $experience['employment_type'] }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mb-1 small">
+                                                        <i
+                                                            class="bi bi-building me-1"></i>{{ $experience['company'] }}
+                                                        <span class="text-muted">·
+                                                            {{ $experience['location'] }}</span>
+                                                    </p>
+                                                    <div class="d-flex flex-wrap gap-2 mb-1">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-calendar me-1"></i>
+                                                            {{ \Carbon\Carbon::parse($experience['start_date'])->format('M Y') }}
+                                                            @if ($experience['end_date'])
+                                                                -
+                                                                {{ \Carbon\Carbon::parse($experience['end_date'])->format('M Y') }}
+                                                            @else
+                                                                - Present
+                                                            @endif
+                                                        </small>
+                                                    </div>
+                                                    @if ($experience['description'])
+                                                        <p class="mb-0 small text-muted">
+                                                            {{ $experience['description'] }}</p>
+                                                    @endif
+                                                </div>
+                                                <div class="d-flex gap-1 flex-shrink-0 ms-2">
+                                                    <button wire:click="editExperience({{ $experience['id'] }})"
+                                                        class="btn btn-sm btn-outline-primary rounded-pill px-2">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button wire:click="deleteExperience({{ $experience['id'] }})"
+                                                        wire:confirm="Are you sure you want to delete this experience entry?"
+                                                        class="btn btn-sm btn-outline-danger rounded-pill px-2">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="bi bi-briefcase fs-1 text-muted d-block mb-2"></i>
+                                    <p class="text-muted mb-0 small">No work experience added yet.</p>
+                                    <p class="text-muted small">Click "Add Experience" to get started.</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -1299,10 +1585,7 @@ new class extends Component {
         @endif
     </div>
 
-
-    {{-- ===============================================
-         APPLICATION DETAIL MODAL (NO REDIRECT)
-    =============================================== --}}
+    {{-- APPLICATION DETAIL MODAL --}}
     @if (!is_null($this->selectedApplicationId))
         @php
             $app = collect($this->recentApplications)->firstWhere('id', $this->selectedApplicationId);
@@ -1370,10 +1653,7 @@ new class extends Component {
         @endif
     @endif
 
-
-    {{-- ===============================================
-         INTERVIEW DETAIL MODAL (NO REDIRECT)
-    =============================================== --}}
+    {{-- INTERVIEW DETAIL MODAL --}}
     @if (!is_null($this->selectedInterviewId))
         @php
             $int = collect($this->upcomingInterviews)->firstWhere('id', $this->selectedInterviewId);
@@ -1399,7 +1679,8 @@ new class extends Component {
                                 </div>
                                 <div class="col-md-6">
                                     <small class="text-muted d-block">Date & Time</small>
-                                    <strong class="small">{{ \Carbon\Carbon::parse($int['date'])->format('M d, Y') }}
+                                    <strong
+                                        class="small">{{ \Carbon\Carbon::parse($int['date'])->format('M d, Y') }}
                                         at {{ $int['time'] }}</strong>
                                 </div>
                                 <div class="col-md-6">
