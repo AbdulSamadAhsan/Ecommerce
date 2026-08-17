@@ -17,6 +17,18 @@ new class extends Component {
     public $selectedApplicationId = null;
     public $selectedInterviewId = null;
 
+    // Education Form Variables
+    public $showEducationForm = false;
+    public $editingEducationId = null;
+    public $educationInstitution = '';
+    public $educationDegree = '';
+    public $educationField = '';
+    public $educationStartDate = '';
+    public $educationEndDate = '';
+    public $educationGrade = '';
+    public $educationDescription = '';
+    public $educationCurrentlyStudying = false;
+
     protected $queryString = [
         'search' => ['except' => ''],
         'filterStatus' => ['except' => ''],
@@ -158,9 +170,42 @@ new class extends Component {
         ];
     }
 
+    // Education Data
+    public function getEducationsProperty()
+    {
+        return [
+            [
+                'id' => 1,
+                'institution' => 'University of Karachi',
+                'degree' => 'Bachelor of Science',
+                'field' => 'Computer Science',
+                'start_date' => '2018-09-01',
+                'end_date' => '2022-06-30',
+                'grade' => '3.8 GPA',
+                'description' => 'Focused on software development and algorithms.',
+                'currently_studying' => false,
+            ],
+            [
+                'id' => 2,
+                'institution' => 'Stanford University',
+                'degree' => 'Master of Science',
+                'field' => 'Artificial Intelligence',
+                'start_date' => '2023-09-01',
+                'end_date' => null,
+                'grade' => null,
+                'description' => 'Research in machine learning and neural networks.',
+                'currently_studying' => true,
+            ],
+        ];
+    }
+
     public function switchTab($tab)
     {
         $this->activeTab = $tab;
+        // Reset education form when switching to profile tab
+        if ($tab === 'profile') {
+            $this->resetEducationForm();
+        }
     }
 
     // -------- MODAL METHODS (NO REDIRECT) --------
@@ -180,6 +225,84 @@ new class extends Component {
         $this->selectedInterviewId = null;
     }
     // --------------------------------------------
+
+    // -------- EDUCATION MANAGEMENT METHODS --------
+    public function resetEducationForm()
+    {
+        $this->educationInstitution = '';
+        $this->educationDegree = '';
+        $this->educationField = '';
+        $this->educationStartDate = '';
+        $this->educationEndDate = '';
+        $this->educationGrade = '';
+        $this->educationDescription = '';
+        $this->educationCurrentlyStudying = false;
+        $this->editingEducationId = null;
+        $this->showEducationForm = false;
+    }
+
+    public function openEducationForm()
+    {
+        $this->resetEducationForm();
+        $this->showEducationForm = true;
+    }
+
+    public function editEducation($id)
+    {
+        $educations = $this->educations;
+        $education = collect($educations)->firstWhere('id', $id);
+
+        if ($education) {
+            $this->editingEducationId = $education['id'];
+            $this->educationInstitution = $education['institution'];
+            $this->educationDegree = $education['degree'];
+            $this->educationField = $education['field'];
+            $this->educationStartDate = $education['start_date'];
+            $this->educationEndDate = $education['end_date'];
+            $this->educationGrade = $education['grade'];
+            $this->educationDescription = $education['description'];
+            $this->educationCurrentlyStudying = $education['currently_studying'];
+            $this->showEducationForm = true;
+        }
+    }
+
+    public function saveEducation()
+    {
+        $this->validate([
+            'educationInstitution' => 'required|string|max:255',
+            'educationDegree' => 'required|string|max:255',
+            'educationField' => 'required|string|max:255',
+            'educationStartDate' => 'required|date',
+            'educationEndDate' => 'nullable|date|after:educationStartDate',
+            'educationGrade' => 'nullable|string|max:50',
+            'educationDescription' => 'nullable|string',
+            'educationCurrentlyStudying' => 'boolean',
+        ]);
+
+        // If currently studying, clear end date
+        if ($this->educationCurrentlyStudying) {
+            $this->educationEndDate = null;
+        }
+
+        // Here you would normally save to database
+        // For demo, we'll just show a success message
+        session()->flash('success', $this->editingEducationId ? 'Education updated successfully!' : 'Education added successfully!');
+
+        $this->resetEducationForm();
+        $this->showEducationForm = false;
+    }
+
+    public function deleteEducation($id)
+    {
+        // Here you would normally delete from database
+        session()->flash('success', 'Education entry removed successfully!');
+    }
+
+    public function cancelEducationForm()
+    {
+        $this->resetEducationForm();
+        $this->showEducationForm = false;
+    }
 
     public function applyJob($id)
     {
@@ -884,7 +1007,7 @@ new class extends Component {
         @endif
 
         {{-- ===========================
-             PROFILE TAB CONTENT - RESPONSIVE
+             PROFILE TAB CONTENT - WITH EDUCATION
         ============================ --}}
         @if ($activeTab === 'profile')
             <div class="row g-3">
@@ -930,9 +1053,10 @@ new class extends Component {
                     </div>
                 </div>
 
-                {{-- Profile Details --}}
+                {{-- Profile Details & Education --}}
                 <div class="col-md-8">
-                    <div class="card border-0 shadow rounded-4">
+                    {{-- Profile Details --}}
+                    <div class="card border-0 shadow rounded-4 mb-3">
                         <div class="card-header bg-white border-0 p-3 p-md-4">
                             <h5 class="fw-bold mb-0 fs-6 fs-md-5">Profile Details</h5>
                         </div>
@@ -989,6 +1113,185 @@ new class extends Component {
                                     </div>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    {{-- Education Section --}}
+                    <div class="card border-0 shadow rounded-4">
+                        <div class="card-header bg-white border-0 p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                                    <i class="bi bi-mortarboard text-primary me-2"></i>
+                                    Education
+                                </h5>
+                                @if (!$showEducationForm)
+                                    <button wire:click="openEducationForm"
+                                        class="btn btn-primary btn-sm rounded-pill px-3">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Education
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="card-body p-3 p-md-4">
+                            {{-- Education Form --}}
+                            @if ($showEducationForm)
+                                <div class="bg-light p-3 p-md-4 rounded-4 mb-4">
+                                    <h6 class="fw-bold mb-3">
+                                        {{ $editingEducationId ? 'Edit Education' : 'Add New Education' }}
+                                    </h6>
+                                    <form wire:submit.prevent="saveEducation">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Institution *</label>
+                                                <input type="text" wire:model="educationInstitution"
+                                                    class="form-control form-control-sm @error('educationInstitution') is-invalid @enderror"
+                                                    placeholder="University name">
+                                                @error('educationInstitution')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Degree *</label>
+                                                <input type="text" wire:model="educationDegree"
+                                                    class="form-control form-control-sm @error('educationDegree') is-invalid @enderror"
+                                                    placeholder="e.g. Bachelor of Science">
+                                                @error('educationDegree')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Field of Study *</label>
+                                                <input type="text" wire:model="educationField"
+                                                    class="form-control form-control-sm @error('educationField') is-invalid @enderror"
+                                                    placeholder="e.g. Computer Science">
+                                                @error('educationField')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Grade (Optional)</label>
+                                                <input type="text" wire:model="educationGrade"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="e.g. 3.8 GPA or A+">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">Start Date *</label>
+                                                <input type="date" wire:model="educationStartDate"
+                                                    class="form-control form-control-sm @error('educationStartDate') is-invalid @enderror">
+                                                @error('educationStartDate')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small">End Date</label>
+                                                <input type="date" wire:model="educationEndDate"
+                                                    class="form-control form-control-sm @error('educationEndDate') is-invalid @enderror"
+                                                    {{ $educationCurrentlyStudying ? 'disabled' : '' }}>
+                                                @error('educationEndDate')
+                                                    <div class="invalid-feedback small">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-check">
+                                                    <input type="checkbox" wire:model="educationCurrentlyStudying"
+                                                        class="form-check-input" id="currentlyStudying">
+                                                    <label class="form-check-label small" for="currentlyStudying">
+                                                        I am currently studying here
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold small">Description
+                                                    (Optional)</label>
+                                                <textarea wire:model="educationDescription" class="form-control form-control-sm" rows="2"
+                                                    placeholder="Brief description of your studies"></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <button type="submit"
+                                                        class="btn btn-primary rounded-pill px-4 small">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        {{ $editingEducationId ? 'Update' : 'Save' }}
+                                                    </button>
+                                                    <button type="button" wire:click="cancelEducationForm"
+                                                        class="btn btn-secondary rounded-pill px-4 small">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
+
+                            {{-- Education List --}}
+                            @if (count($this->educations) > 0)
+                                <div class="row g-3">
+                                    @foreach ($this->educations as $education)
+                                        <div class="col-12">
+                                            <div
+                                                class="d-flex justify-content-between align-items-start p-3 bg-light rounded-4">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                        <h6 class="fw-bold mb-0">{{ $education['degree'] }}</h6>
+                                                        @if ($education['currently_studying'])
+                                                            <span
+                                                                class="badge bg-success rounded-pill small">Current</span>
+                                                        @endif
+                                                    </div>
+                                                    <p class="mb-1 small">
+                                                        <i
+                                                            class="bi bi-building me-1"></i>{{ $education['institution'] }}
+                                                        @if ($education['field'])
+                                                            <span class="text-muted">·
+                                                                {{ $education['field'] }}</span>
+                                                        @endif
+                                                    </p>
+                                                    <div class="d-flex flex-wrap gap-2 mb-1">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-calendar me-1"></i>
+                                                            {{ \Carbon\Carbon::parse($education['start_date'])->format('M Y') }}
+                                                            @if ($education['end_date'])
+                                                                -
+                                                                {{ \Carbon\Carbon::parse($education['end_date'])->format('M Y') }}
+                                                            @else
+                                                                - Present
+                                                            @endif
+                                                        </small>
+                                                        @if ($education['grade'])
+                                                            <small class="text-muted">
+                                                                <i
+                                                                    class="bi bi-star me-1"></i>{{ $education['grade'] }}
+                                                            </small>
+                                                        @endif
+                                                    </div>
+                                                    @if ($education['description'])
+                                                        <p class="mb-0 small text-muted">
+                                                            {{ $education['description'] }}</p>
+                                                    @endif
+                                                </div>
+                                                <div class="d-flex gap-1 flex-shrink-0 ms-2">
+                                                    <button wire:click="editEducation({{ $education['id'] }})"
+                                                        class="btn btn-sm btn-outline-primary rounded-pill px-2">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button wire:click="deleteEducation({{ $education['id'] }})"
+                                                        wire:confirm="Are you sure you want to delete this education entry?"
+                                                        class="btn btn-sm btn-outline-danger rounded-pill px-2">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="bi bi-mortarboard fs-1 text-muted d-block mb-2"></i>
+                                    <p class="text-muted mb-0 small">No education entries added yet.</p>
+                                    <p class="text-muted small">Click "Add Education" to get started.</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

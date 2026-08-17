@@ -271,7 +271,7 @@ Route::prefix('payrolls')->name('payrolls.')->group(function () {
       
 
 });
-Route::prefix("job_postings")->name("job_postings.")->group(function(){
+Route::prefix("job_postings")->name("jobs.")->group(function(){
    Route::livewire('/', 'pages::job_postings.all')
         ->name('index');
         Route::livewire('/create', 'pages::job_postings.create')
@@ -282,10 +282,22 @@ Route::prefix("job_postings")->name("job_postings.")->group(function(){
         ->name('show');
 });
 
-Route::prefix("job_applications")->name("job_applications.")->group(function(){
-    Route::livewire("/","pages::job_application.all")->name("index");
-    Route::livewire("/{id}/edit","pages::job_application.edit")->name("edit");
-      Route::livewire("/{id}","pages::job_application.show")->name("show");
+Route::prefix("job_interview")->name("jobs.")->group(function(){
+    Route::livewire("/","pages::interviews.all")->name("interview.index");
+});
+Route::prefix("job_applicants")->name("jobs.")->group(function(){
+    Route::livewire("/","pages::applicants.all")->name("applicants.index");
+    Route::livewire("/{id}","pages::applicants.show")->name("applicants.show");
+});
+Route::prefix("job_interview")->name("jobs.")->group(function(){
+    Route::livewire("/","pages::interviews.all")->name("interviews.index");
+    Route::livewire("/{id}/edit","pages::interviews.edit")->name("interviews.edit");
+    Route::livewire("/{id}","pages::interviews.show")->name("interviews.show");
+});
+Route::prefix("job_applications")->name("jobs.")->group(function(){
+    Route::livewire("/","pages::job_application.all")->name("applications.index");
+    Route::livewire("/{id}/edit","pages::job_application.edit")->name("applications.edit");
+      Route::livewire("/{id}","pages::job_application.show")->name("applications.show");
 });
 Route::livewire("shifts","pages::shifts.all")->name("shifts.index");
 Route::livewire("shifts/create","pages::shifts.create")->name("shifts.create");

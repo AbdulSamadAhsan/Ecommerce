@@ -17,7 +17,6 @@ return new class extends Migration
         ->constrained()
         ->cascadeOnDelete();
 
-    $table->unsignedTinyInteger('technical_score');
 
     $table->unsignedTinyInteger('communication_score');
 

@@ -12,8 +12,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\CandidateEducation;
 use App\Models\CandidateDocument;
 use App\Models\CandidateWork;
+use App\Models\Applicant;
 use App\Models\CandidatePortfolio;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationSend;
 new class extends Component {
     use WithFileUploads;
 
@@ -104,6 +107,11 @@ new class extends Component {
         'experience' => '3+ Years',
         'id' => '',
     ];
+    public array $maritalStatuses = [
+        'single' => 'Single',
+        'married' => 'Married',
+        'divorced' => 'Divorced',
+    ];
 
     /*
     |--------------------------------------------------------------------------
@@ -119,7 +127,8 @@ new class extends Component {
         'dob' => '',
         'father_name' => '',
         'gender' => 'female',
-
+        'password' => '',
+        'martial_status' => 'single',
         /*
         |--------------------------------------------------------------------------
         | Address
@@ -127,13 +136,9 @@ new class extends Component {
         */
 
         'country' => '',
-
         'province' => '',
-
         'city' => '',
-
         'postal_code' => '',
-
         'address' => '',
 
         /*
@@ -143,19 +148,12 @@ new class extends Component {
         */
 
         'current_company' => '',
-
         'current_designation' => '',
-
         'total_experience' => '',
-
         'relevant_experience' => '',
-
         'current_salary' => '',
-
         'expected_salary' => '',
-
         'notice_period' => '',
-
         'available_from' => '',
 
         /*
@@ -165,9 +163,7 @@ new class extends Component {
         */
 
         'portfolio' => '',
-
         'github' => '',
-
         'linkedin' => '',
 
         /*
@@ -177,7 +173,6 @@ new class extends Component {
         */
 
         'why_join_us' => '',
-
         'about_yourself' => '',
 
         /*
@@ -301,13 +296,9 @@ new class extends Component {
     {
         $this->experiences[] = [
             'company' => '',
-
             'designation' => '',
-
             'from' => '',
-
             'to' => '',
-
             'responsibilities' => '',
         ];
     }
@@ -406,21 +397,15 @@ new class extends Component {
         }
         return $grade;
     }
-    public function save(): void
+    public function save()
     {
+        set_time_limit(600);
+        ini_set('max_execution_time', '600');
+        ini_set('memory_limit', '512M');
+
         $this->validate();
         $totalExperience = $this->calculateTotalExperience($this->experiences);
-        if ($this->photo) {
-            $fileName = 'candidate-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
-            $photoPath = $this->photo->storeAs('candidate', $fileName, 'public');
-            //   dd($this->photo->getSize());
-            /* dd([
-                'name' => $this->photo->getClientOriginalName(),
-                'extension' => $this->photo->getClientOriginalExtension(),
-                'mime_type' => $this->photo->getMimeType(),
-                'size' => $this->photo->getSize(),
-            ]);*/
-        }
+
         // $this->photo->getSize();
         $experience_in_year = $totalExperience['years'];
 
@@ -430,20 +415,18 @@ new class extends Component {
         }
         $jobId = $this->job['id'];
         $bio = 'I am' . $this->form['full_name'] . ' ';
-        $count = JobApplication::where('cnic', $this->form['cnic'])
-            ->where('job_posting_id', $jobId)
 
-            ->count();
-        if ($count > 0) {
-            session()->flash('error', 'You Have Already Applied');
-            return;
-        }
-        DB::transaction(function () use ($jobId, $fileName, $totalExperience) {
-            $lasteducation = end($this->educations);
-            $lastexperience = end($this->experiences);
+        $applicant = Applicant::where('email', $this->form['email'])->first();
 
-            $application = JobApplication::create([
-                'job_posting_id' => $jobId,
+        if ($applicant) {
+            $applicant_id = $applicant->id;
+            $fileName = $applicant->photo;
+        } else {
+            if ($this->photo) {
+                $fileName = 'candidate-' . time() . '-' . Str::random(8) . '.' . $this->photo->getClientOriginalExtension();
+                $photoPath = $this->photo->storeAs('candidate', $fileName, 'public');
+            }
+            $applicant = Applicant::create([
                 'full_name' => $this->form['full_name'],
                 'father_name' => $this->form['father_name'],
                 'email' => $this->form['email'],
@@ -452,17 +435,38 @@ new class extends Component {
                 'date_of_birth' => $this->form['dob'],
                 'cnic' => $this->form['cnic'],
                 'address' => $this->form['address'],
+                'gender' => $this->form['gender'],
+                'bio' => $this->form['about_yourself'],
+                'martial_status' => $this->form['martial_status'],
+                'photo' => $fileName,
+
+                'linkedin' => $this->form['linkedin'],
+            ]);
+            $applicant_id = $applicant->id;
+        }
+
+        $count = JobApplication::where('applicant_id', $applicant_id)
+            ->where('job_posting_id', $jobId)
+
+            ->count();
+        if ($count > 0) {
+            session()->flash('error', 'You Have Already Applied');
+            return;
+        }
+        $applicationData = DB::transaction(function () use ($jobId, $fileName, $totalExperience, $applicant) {
+            $lasteducation = end($this->educations);
+            $lastexperience = end($this->experiences);
+
+            $application = JobApplication::create([
+                'applicant_id' => $applicant->id,
+                'job_posting_id' => $jobId,
                 'last_education' => $lasteducation['degree'],
                 'last_institute' => $lasteducation['institute'],
                 'current_company' => $lastexperience['company'],
                 'current_salary' => $this->form['current_salary'],
                 'expected_salary' => $this->form['expected_salary'],
                 'notice_period' => $this->form['notice_period'],
-                'gender' => $this->form['gender'],
                 'available_from' => $this->form['available_from'],
-                'bio' => $this->form['about_yourself'],
-                'photo' => $fileName,
-                'linkedin' => $this->form['linkedin'],
                 'month_of_exprience' => $totalExperience['years'] * 12,
             ]);
 
@@ -483,7 +487,7 @@ new class extends Component {
                     'yearstart' => $yearstart,
                     'grade' => $this->grade($grade, $insurance_type),
                     'father_name' => $this->form['father_name'],
-                    'applicannt_photo' => $application->photo,
+                    'applicannt_photo' => $applicant->photo,
                     'insurance_type' => $insurance_type,
                 ]);
 
@@ -515,7 +519,6 @@ new class extends Component {
                     'institute_type' => $insurance_type,
                     'graduate_end_year' => $yearend,
                     'graduate_start_year' => $yearstart,
-                    'certificate_path' => $path,
                 ]);
             }
 
@@ -536,7 +539,7 @@ new class extends Component {
                     'designation' => $candidate_exp['designation'],
                     'experience' => $experience,
                     'father_name' => $this->form['father_name'],
-                    'applicannt_photo' => $application->photo,
+                    'applicannt_photo' => $applicant->photo,
                 ]);
                 $letter_name = 'experience_letter-' . str()->slug($this->form['full_name']) . time() . $degree . '.pdf';
 
@@ -574,7 +577,7 @@ new class extends Component {
                 'expiry_date' => Carbon::today()->addYears(5)->format('Y-m-d'),
                 'issue_date' => Carbon::today()->format('Y-m-d'),
                 'address' => $this->form['address'],
-                'applicannt_photo' => $application->photo,
+                'applicannt_photo' => $applicant->photo,
                 'cnic' => $this->form['cnic'],
             ])->render();
 
@@ -596,19 +599,19 @@ new class extends Component {
             ];
 
             $data = [
-                'candidate' => $application->full_name,
-                'email' => $application->email,
-                'phone' => $application->phone,
-                'linkedin' => $application->linkedin,
-                'photo' => $application->photo,
+                'candidate' => $this->form['full_name'],
+                'email' => $this->form['email'],
+                'phone' => $this->form['phone'],
+                'linkedin' => $this->form['linkedin'],
+                'photo' => $applicant->photo,
                 'experiences' => $application->works,
                 'educations' => $application->educations,
                 'personal_details' => [
-                    'father_name' => $application->father_name,
-                    'dob' => date('d F Y', strtotime($application->date_of_birth)),
-                    'gender' => $application->gender,
-                    'cnic' => $application->cnic,
-                    'address' => $application->address,
+                    'father_name' => $this->form['father_name'],
+                    'dob' => date('d F Y', strtotime($this->form['dob'])),
+                    'gender' => $this->form['gender'],
+                    'cnic' => $this->form['cnic'],
+                    'address' => $this->form['address'],
                 ],
             ];
 
@@ -630,6 +633,7 @@ new class extends Component {
                 'file_path' => 'storage/' . $path,
                 'mime_type' => $mimeType,
             ];
+            return $application;
         });
 
         foreach ($this->documents as $document) {
@@ -642,7 +646,7 @@ new class extends Component {
                 'mime_type' => $document['mime_type'],
             ]);
         }
-
+        dd($applicationData);
         $this->reset(['form', 'educations', 'experiences', 'documents', 'photo', 'coverLetter', 'certificates']);
         session()->flash(
             'success',
@@ -836,7 +840,7 @@ new class extends Component {
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-semibold">Email Address <span
                                     class="text-danger">*</span></label>
-                            <input type="email" wire:model.live="form.email"
+                            <input type="email" wire:model.live="form.email" autocomplete="off"
                                 class="form-control @error('form.email') is-invalid @enderror"
                                 placeholder="Enter your email address">
                             @error('form.email')
@@ -854,6 +858,16 @@ new class extends Component {
                             @enderror
                         </div>
                         <div class="col-md-6 mb-4">
+                            <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+                            <input type="password" wire:model.live="form.password" autocomplete="off"
+                                class="form-control @error('form.password') is-invalid @enderror"
+                                placeholder="Enter your password">
+                            @error('form.password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6 mb-4">
                             <label class="form-label fw-semibold">CNIC</label>
                             <input wire:model.live="form.cnic" class="form-control"
                                 placeholder="Enter your CNIC number">
@@ -870,6 +884,16 @@ new class extends Component {
                                 <option value="other">Other</option>
                             </select>
                         </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-semibold">Martial Status</label>
+                            <select wire:model.live="form.martial_status" class="form-select">
+                                @foreach ($maritalStatuses as $key => $maritalStatus)
+                                    <option value="{{ $key }}">{{ $maritalStatus }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+
                     </div>
                 </div>
             </div>

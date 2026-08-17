@@ -15,10 +15,10 @@ return new class extends Migration
               //
        
                 $table->decimal("notice_period");
-                  $table->text("bio")->nullable();
+                 
                     $table->text("reason_to_join")->nullable();
                     $table->boolean("night_available")->default(0);
-                      $table->string("linkedin")->nullable();
+                  
         });
     }
 

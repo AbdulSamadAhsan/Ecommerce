@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadApplications(): void
     {
-        $this->applications = JobApplication::with(['jobPosting.department'])
+        $this->applications = JobApplication::with(['jobPosting.department', 'applicant'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('full_name', 'like', '%' . $this->search . '%')
@@ -86,19 +86,19 @@ new class extends Component {
                             <td>
                                 <div class="d-flex align-items-center gap-2">
 
-                                    @if (!empty($application['photo']))
-                                        <img src="{{ asset('storage/candidate/' . $application['photo']) }}"
+                                    @if (!empty($application['applicant']['photo']))
+                                        <img src="{{ asset('storage/candidate/' . $application['applicant']['photo']) }}"
                                             width="45" height="45" class="rounded-circle object-fit-cover"
-                                            alt="{{ $application['full_name'] }}">
+                                            alt="{{ $application['applicant']['full_name'] }}">
                                     @endif
 
                                     <div>
                                         <div class="fw-semibold">
-                                            {{ $application['full_name'] }}
+                                            {{ $application['applicant']['full_name'] }}
                                         </div>
 
                                         <small class="text-muted">
-                                            {{ ucfirst($application['gender']) }}
+                                            {{ ucfirst($application['applicant']['gender']) }}
                                         </small>
                                     </div>
 
@@ -111,11 +111,11 @@ new class extends Component {
 
 
                             <td>
-                                {{ $application['email'] }}
+                                {{ $application['applicant']['email'] }}
                             </td>
 
                             <td>
-                                {{ $application['phone'] }}
+                                {{ $application['applicant']['phone'] }}
                             </td>
 
 
@@ -142,12 +142,12 @@ new class extends Component {
                             <td>
                                 <div class="d-flex gap-1">
 
-                                    <a href="{{ route('job_applications.edit', $application['id']) }}"
+                                    <a href="{{ route('jobs.applications.edit', $application['id']) }}"
                                         class="btn btn-sm btn-info rounded-pill text-white">
                                         Edit
                                     </a>
 
-                                    <a href="{{ route('job_applications.show', $application['id']) }}"
+                                    <a href="{{ route('jobs.applications.show', $application['id']) }}"
                                         class="btn btn-sm btn-primary rounded-pill">
                                         View
                                     </a>

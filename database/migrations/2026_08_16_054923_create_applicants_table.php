@@ -22,10 +22,29 @@ return new class extends Migration
             $table->string('cnic');
             $table->text("address");
             $table->enum('gender',["male","female"])->default("female");
-            $table->string('month_of_exprience');
-            $table->decimal("current_salary");
-            $table->string("current_company");
+            $table->string("linkedin")->nullable();
+            $tbale->enum("martial_status",["single",'married',"divorced"])->default('single');
+         $table->text("bio")->nullable();
             $table->timestamps();
+        });
+
+        Schema::table('job_applications', function (Blueprint $table) {
+            $table->foreignId('applicant_id')
+            ->constrained('applicants')
+            ->cascadeOnDelete();
+        });
+     
+        Schema::table('interviews', function (Blueprint $table) {
+            $table->foreignId('applicant_id')
+            ->constrained('applicants')
+            ->cascadeOnDelete();
+             $table->foreignId('interviewer_id')
+            ->constrained('users')
+           ->cascadeOnDelete();
+
+     
+
+
         });
     }
 

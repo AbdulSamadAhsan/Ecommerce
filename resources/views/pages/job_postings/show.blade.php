@@ -12,7 +12,11 @@ new class extends Component {
     {
         $this->id = (int) $id;
 
-        $job = JobPosting::with(['department:name,id', 'creator', 'applications:id,job_posting_id,father_name,full_name,cnic,created_at,status'])->findOrFail($this->id);
+        $job = JobPosting::with([
+            'applications' => function ($query) {
+                $query->select(['id', 'job_posting_id', 'applicant_id', 'created_at', 'status'])->with(['applicant:id,full_name,father_name,cnic']);
+            },
+        ])->findOrFail($this->id);
         $this->jobApplications = $job->applications->toArray();
 
         $this->jobPosting = [
@@ -67,7 +71,7 @@ new class extends Component {
             </p>
         </div>
 
-        <a href="{{ route('job_postings.index') }}" class="btn btn-secondary rounded-pill">
+        <a href="{{ route('jobs.index') }}" class="btn btn-secondary rounded-pill">
             Back
         </a>
 
@@ -522,20 +526,20 @@ new class extends Component {
                             {{ $key + 1 }}
                         </td>
                         <td>
-                            {{ $application['full_name'] }}
+                            {{ $application['applicant']['full_name'] }}
                         </td>
                         <td>
-                            {{ $application['father_name'] }}
+                            {{ $application['applicant']['father_name'] }}
                         </td>
                         <td>
-                            {{ $application['cnic'] }}
+                            {{ $application['applicant']['cnic'] }}
                         </td>
                         <td>
                             {{ date('d-M-Y', strtotime($application['created_at'])) }}
                         </td>
                         <td>
 
-                            <a href="{{ route('job_applications.show', $application['id']) }}"
+                            <a href="{{ route('jobs.applications.show', $application['id']) }}"
                                 class="btn btn-sm btn-primary rounded-pill">
                                 View
                             </a>

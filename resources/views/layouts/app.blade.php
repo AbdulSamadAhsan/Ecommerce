@@ -849,6 +849,46 @@
             </li>
 
 
+            <li class="nav-item sidebar-dropdown {{ openRoute('jobs.*') }}">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                    <span><i class="bi bi-briefcase"></i> Jobs</span>
+                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('jobs.*') }}"></i>
+                </a>
+
+                <div class="sidebar-dropdown-menu {{ showRoute('shifts.*') }}">
+                    <a href="{{ adminRoute('jobs.applications.index') }}"
+                        class="nav-link {{ activeRoute('jobs.applications.*') }}">
+
+                        <i class="bi bi-file-earmark-person-fill"></i>
+
+                        Job Applications
+                    </a>
+                    <a href="{{ adminRoute('jobs.index') }}" class="nav-link {{ activeRoute('jobs.index') }}">
+
+                        <i class="bi bi-briefcase-fill"></i>
+
+                        Job Postings
+                    </a>
+                    <a href="{{ adminRoute('jobs.interviews.index') }}"
+                        class="nav-link {{ activeRoute('jobs.interviews.index') }}">
+
+                        <i class="bi bi-person-workspace"></i>
+
+                        Interview
+                    </a>
+
+                    <a href="{{ adminRoute('jobs.applicants.index') }}"
+                        class="nav-link {{ activeRoute('jobs.applicants.index') }}">
+
+                        <i class="bi bi-person-vcard-fill"></i>
+
+                        Applicant
+                    </a>
+
+                </div>
+            </li>
+
+
             <li class="nav-item">
                 <a href="{{ adminRoute('attendances.index') }}"
                     class="nav-link {{ activeRoute('attendances.*') }}">
@@ -906,24 +946,8 @@
                     Contact Messages
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ adminRoute('job_postings.index') }}"
-                    class="nav-link {{ activeRoute('job_postings.*') }}">
 
-                    <i class="bi bi-briefcase-fill"></i>
 
-                    Job Postings
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ adminRoute('job_applications.index') }}"
-                    class="nav-link {{ activeRoute('job_applications.*') }}">
-
-                    <i class="bi bi-file-earmark-person-fill"></i>
-
-                    Job Applications
-                </a>
-            </li>
             <li class="nav-item">
                 <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
 

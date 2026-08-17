@@ -10,28 +10,29 @@ new class extends Component {
     public array $educations = [];
     public array $workExperiences = [];
     public array $documents = [];
+    public array $interview = [];
     public function mount($id): void
     {
         $this->id = (int) $id;
 
-        $applicationData = JobApplication::with(['jobPosting.department'])->findOrFail($this->id);
+        $applicationData = JobApplication::with(['jobPosting.department', 'interview'])->findOrFail($this->id);
 
         $this->application = [
             'id' => $applicationData->id,
-            'full_name' => $applicationData->full_name,
-            'father_name' => $applicationData->father_name,
+            'full_name' => $applicationData->applicant->full_name,
+            'father_name' => $applicationData->applicant->father_name,
             'date_of_birth' => $applicationData->date_of_birth,
-            'photo' => $applicationData->photo,
-            'email' => $applicationData->email,
-            'phone' => $applicationData->phone,
+            'photo' => $applicationData->applicant->photo,
+            'email' => $applicationData->applicant->email,
+            'phone' => $applicationData->applicant->phone,
             'last_education' => $applicationData->last_education,
             'last_institute' => $applicationData->last_institute,
             'month_of_exprience' => $applicationData->month_of_exprience,
-            'cnic' => $applicationData->cnic,
-            'address' => $applicationData->address,
+            'cnic' => $applicationData->applicant->cnic,
+            'address' => $applicationData->applicant->address,
             'expected_salary' => $applicationData->expected_salary,
             'available_from' => $applicationData->available_from,
-            'gender' => $applicationData->gender,
+            'gender' => $applicationData->applicant->gender,
             'status' => $applicationData->status,
 
             'job_title' => $applicationData->jobPosting?->job_title ?? 'N/A',
@@ -48,6 +49,22 @@ new class extends Component {
 
             'created_at' => $applicationData->created_at?->format('d M Y h:i A'),
         ];
+
+        if ($applicationData->interview) {
+            $interviewData = $applicationData->interview;
+
+            $this->interview = [
+                'id' => $interviewData->id,
+                'interviewer_id' => $interviewData->interviewer_id,
+                'interviewer_name' => $interviewData->interviewer?->name ?? 'N/A',
+                'interviewer_email' => $interviewData->interviewer?->email ?? 'N/A',
+                'scheduled_at' => $interviewData->scheduled_at?->format('d M Y h:i A'),
+                'type' => $interviewData->type ?? null,
+                'meeting_link' => $interviewData->meeting_link ?? null,
+                'status' => $interviewData->status ?? 'pending',
+            ];
+        }
+
         $this->educations = $applicationData->educations
             ->map(function ($education) {
                 return [
@@ -112,11 +129,11 @@ new class extends Component {
 
         <div class="d-flex gap-2">
 
-            <a href="{{ route('job_applications.edit', $application['id']) }}" class="btn btn-primary rounded-pill">
+            <a href="{{ route('jobs.applications.edit', $application['id']) }}" class="btn btn-primary rounded-pill">
                 Edit
             </a>
 
-            <a href="{{ route('job_applications.index') }}" class="btn btn-secondary rounded-pill">
+            <a href="{{ route('jobs.applications.index') }}" class="btn btn-secondary rounded-pill">
                 Back
             </a>
 
@@ -746,5 +763,202 @@ new class extends Component {
 
         </div>
     </div>
+
+    @if ($application['status'] === 'interview')
+
+        <div class="card border-0 shadow mb-4">
+
+            <div class="card-header bg-light">
+
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        Interview Information
+                    </h5>
+
+                    @php
+                        $interviewStatusClass = 'bg-primary';
+
+                        if (($interview['status'] ?? '') === 'completed') {
+                            $interviewStatusClass = 'bg-success';
+                        } elseif (($interview['status'] ?? '') === 'cancelled') {
+                            $interviewStatusClass = 'bg-danger';
+                        } elseif (($interview['status'] ?? '') === 'rescheduled') {
+                            $interviewStatusClass = 'bg-warning text-dark';
+                        }
+                    @endphp
+
+                    <span class="badge {{ $interviewStatusClass }}">
+                        {{ ucfirst($interview['status']) }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="row g-4">
+
+                    {{-- Interviewer --}}
+                    <div class="col-md-6">
+
+                        <strong>
+                            Interviewer
+                        </strong>
+
+                        <p class="text-muted mb-0">
+                            {{ $interview['interviewer_name'] }}
+                        </p>
+
+                    </div>
+
+
+                    {{-- Interviewer Email --}}
+                    <div class="col-md-6">
+
+                        <strong>
+                            Interviewer Email
+                        </strong>
+
+                        <p class="text-muted mb-0">
+                            {{ $interview['interviewer_email'] }}
+                        </p>
+
+                    </div>
+
+
+                    {{-- Scheduled Date --}}
+                    <div class="col-md-6">
+
+                        <strong>
+                            Scheduled At
+                        </strong>
+
+                        <p class="text-muted mb-0">
+
+                            <i class="bi bi-calendar-event me-1"></i>
+
+                            {{ $interview['scheduled_at'] ?? 'N/A' }}
+
+                        </p>
+
+                    </div>
+
+
+                    {{-- Interview Type --}}
+                    <div class="col-md-6">
+
+                        <strong>
+                            Interview Type
+                        </strong>
+
+                        <p class="mt-1 mb-0">
+
+                            @php
+                                $typeClass = match ($interview['type']) {
+                                    'online' => 'bg-info',
+                                    'physical' => 'bg-success',
+                                    'phone' => 'bg-secondary',
+                                    default => 'bg-dark',
+                                };
+                            @endphp
+
+                            <span class="badge {{ $typeClass }}">
+                                {{ ucfirst($interview['type']) }}
+                            </span>
+
+                        </p>
+
+                    </div>
+
+
+                    {{-- Meeting Link --}}
+                    @if ($interview['type'] === 'online' && !empty($interview['meeting_link']))
+                        <div class="col-md-6">
+
+                            <strong>
+                                Meeting Link
+                            </strong>
+
+                            <p class="mb-0 mt-1">
+
+                                <a href="{{ $interview['meeting_link'] }}" target="_blank"
+                                    class="btn btn-sm btn-primary rounded-pill">
+                                    <i class="bi bi-camera-video me-1"></i>
+                                    Join Interview
+                                </a>
+
+                            </p>
+
+                        </div>
+                    @endif
+
+
+                    {{-- Interview Status --}}
+                    <div class="col-md-6">
+
+                        <strong>
+                            Interview Status
+                        </strong>
+
+                        <p class="mt-1 mb-0">
+
+                            <span class="badge {{ $interviewStatusClass }}">
+                                {{ ucfirst($interview['status']) }}
+                            </span>
+
+                        </p>
+
+                    </div>
+
+
+                    {{-- Rating --}}
+                    @if (!empty($interview['rating']))
+                        <div class="col-md-6">
+
+                            <strong>
+                                Rating
+                            </strong>
+
+                            <p class="text-muted mb-0">
+
+                                {{ $interview['rating'] }} / 5
+
+                                <i class="bi bi-star-fill text-warning"></i>
+
+                            </p>
+
+                        </div>
+                    @endif
+
+
+                    {{-- Feedback --}}
+                    @if (!empty($interview['feedback']))
+                        <div class="col-12">
+
+                            <strong>
+                                Interview Feedback
+                            </strong>
+
+                            <div class="bg-light rounded p-3 mt-2">
+
+                                {{ $interview['feedback'] }}
+
+                            </div>
+
+                        </div>
+                    @endif
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
 
 </div>

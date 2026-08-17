@@ -40,7 +40,7 @@ new class extends Component {
             <p class="text-muted mb-0">Manage company job postings</p>
         </div>
 
-        <a href="{{ route('job_postings.create') }}" class="btn btn-primary rounded-pill">
+        <a href="{{ route('jobs.create') }}" class="btn btn-primary rounded-pill">
             Add Job Posting
         </a>
     </div>
@@ -107,12 +107,12 @@ new class extends Component {
 
                             <td>
 
-                                <a href="{{ route('job_postings.edit', $job['id']) }}"
+                                <a href="{{ route('jobs.edit', $job['id']) }}"
                                     class="btn btn-sm btn-info text-white rounded-pill">
                                     Edit
                                 </a>
 
-                                <a href="{{ route('job_postings.show', $job['id']) }}"
+                                <a href="{{ route('jobs.show', $job['id']) }}"
                                     class="btn btn-sm btn-success rounded-pill">
                                     View
                                 </a>

@@ -17,7 +17,9 @@ return new class extends Migration
     $table->foreignId('job_posting_id')
         ->constrained()
         ->cascadeOnDelete();
-
+    $table->string('month_of_exprience');
+            $table->decimal("current_salary");
+            $table->string("current_company");
 
     $table->string('last_education');
     $table->date('available_from')->nullable();
