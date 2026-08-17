@@ -49,7 +49,7 @@ new class extends Component {
 
             'created_at' => $applicationData->created_at?->format('d M Y h:i A'),
         ];
-
+        $interview = $applicationData->interview;
         if ($applicationData->interview) {
             $interviewData = $applicationData->interview;
 
