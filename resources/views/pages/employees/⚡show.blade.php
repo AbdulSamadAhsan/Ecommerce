@@ -118,7 +118,7 @@ new class extends Component {
         </div>
         <div class="row">
             <div class="col-md-6">
-                <a href="{{ route('employees.employees.report', $employee['id']) }}" class="btn rounded-pill btn-danger">
+                <a href="{{ route('employees.report', $employee['id']) }}" class="btn rounded-pill btn-danger">
                     Report
                 </a>
             </div>
@@ -348,8 +348,7 @@ new class extends Component {
                     </a>
                 </div>
                 <div class="col-md-6">
-                    <a href="{{ route('employees.employees.cnic.download', $employee['id']) }}"
-                        class="btn btn-success">
+                    <a href="{{ route('employees.cnic.download', $employee['id']) }}" class="btn btn-success">
                         CNIC
                     </a>
                 </div>

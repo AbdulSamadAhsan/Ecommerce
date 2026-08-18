@@ -13,6 +13,17 @@ return new class extends Migration
     {
         Schema::create('applicant_works', function (Blueprint $table) {
             $table->id();
+             $table->foreignId('applicant_id')
+            ->constrained('applicants')
+            ->cascadeOnDelete();
+                 $table->decimal("month_of_experience");
+            $table->string('designation');
+            $table->string('company');
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->enum('experience_type', ['cooperate', 'freelance'])->default('cooperate');
+            $table->text('responsibility')->nullable();
+          $table->text('benefits')->nullable();
             $table->timestamps();
         });
     }
