@@ -22,5 +22,10 @@ public function applications()
         'job_posting_id'
     );
 }
+public function designation()
+{
+    return $this->belongsTo(Designation::class);
+}
+
 
 }

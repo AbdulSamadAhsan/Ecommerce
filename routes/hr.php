@@ -1,11 +1,19 @@
 <?php
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ReportController;
 
     Route::prefix("departments")->name("departments.")->group(function () {
         Route::livewire("/", "pages::departments.all")->name("index");
         Route::livewire("/create", "pages::departments.create")->name("create");
         Route::livewire("/{id}", "pages::departments.show")->name("show");
         Route::livewire('/{id}/edit','pages::departments.edit')->name('edit');
+    });
+    Route::prefix("designation")->name("departments.designations.")->group(function(){
+        Route::livewire("/", "pages::departments.designations.all")->name("index");
+        Route::livewire("/create", "pages::departments.designations.create")->name("create");
+        Route::livewire("/{id}", "pages::departments.designations.show")->name("show");
+        Route::livewire('/{id}/edit','pages::departments.designations.edit')->name('edit');
     });
 
     Route::prefix("institutions")->name("institutions.")->group(function () {

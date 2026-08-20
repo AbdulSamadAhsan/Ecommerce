@@ -2,19 +2,15 @@
 
 use Livewire\Component;
 use App\Models\JobPosting;
+use App\Models\Department;
 new class extends Component {
     public string $search = '';
     public $openFaq = 1;
     public array $departments = [];
-
     public array $jobs = [];
-
     public array $benefits = [];
-
     public array $hiringProcess = [];
-
     public array $testimonials = [];
-
     public array $faqs = [];
     public function toggleFaq($id): void
     {
@@ -24,7 +20,9 @@ new class extends Component {
     }
     public function mount(): void
     {
-        $this->departments = [['name' => 'Engineering', 'jobs' => 12, 'icon' => 'bi-code-slash'], ['name' => 'Human Resources', 'jobs' => 2, 'icon' => 'bi-people'], ['name' => 'Finance', 'jobs' => 3, 'icon' => 'bi-cash-stack'], ['name' => 'Marketing', 'jobs' => 4, 'icon' => 'bi-megaphone'], ['name' => 'Sales', 'jobs' => 5, 'icon' => 'bi-graph-up'], ['name' => 'Customer Support', 'jobs' => 2, 'icon' => 'bi-headset']];
+        $this->departments = Department::withCount(['job'])
+            ->get()
+            ->toArray();
 
         $this->jobs = [
             [
@@ -58,7 +56,6 @@ new class extends Component {
         $this->benefits = ['Competitive Salary', 'Medical Insurance', 'Annual Bonus', 'Paid Leave', 'Learning Budget', 'Flexible Working Hours'];
 
         $this->hiringProcess = ['Application', 'HR Screening', 'Technical Interview', 'Final Interview', 'Offer Letter'];
-
         $this->testimonials = [
             [
                 'name' => 'Muhammad Ali',
@@ -486,7 +483,7 @@ new class extends Component {
 
                             <p class="text-muted">
 
-                                {{ $department['jobs'] }}
+                                {{ $department['job_count'] }}
                                 Open Positions
 
                             </p>

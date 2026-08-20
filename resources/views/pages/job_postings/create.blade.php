@@ -46,44 +46,27 @@ new class extends Component {
     {
         return [
             'department_id' => ['required', 'exists:departments,id'],
-
-            'job_title' => ['required', 'string', 'max:255'],
-
+            'job_title' => ['required', 'string', 'max:255', 'unique:job_postings,job_title'],
             'description' => ['required', 'string'],
-
             'responsibilities' => ['nullable', 'string'],
-
             'requirements' => ['nullable', 'string'],
-
             'benefits' => ['nullable', 'string'],
-
             'vacancies' => ['required', 'integer', 'min:1'],
-
             'minimum_salary' => ['nullable', 'numeric', 'min:0'],
-
             'maximum_salary' => ['nullable', 'numeric', 'gte:minimum_salary'],
-
             'employment_type' => ['required', 'in:permanent,part-time,contract,intern'],
-
             'work_mode' => ['required', 'in:onsite,remote,hybrid'],
-
             'closing_date' => ['required', 'date', 'after_or_equal:today'],
-
             'is_active' => ['required', 'boolean'],
         ];
     }
 
     protected $messages = [
         'department_id.required' => 'Please select a department.',
-
         'job_title.required' => 'Job title is required.',
-
         'description.required' => 'Job description is required.',
-
         'vacancies.min' => 'Vacancies must be at least 1.',
-
         'maximum_salary.gte' => 'Maximum salary must be greater than or equal to minimum salary.',
-
         'closing_date.after_or_equal' => 'Closing date cannot be in the past.',
     ];
 

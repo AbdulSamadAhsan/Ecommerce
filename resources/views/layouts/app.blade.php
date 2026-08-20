@@ -563,6 +563,10 @@
                         class="nav-link {{ activeRoute('departments.create') }}">
                         <i class="bi bi-plus-circle-fill"></i> Add Department
                     </a>
+                    <a href="{{ adminRoute('departments.designations.index') }}"
+                        class="nav-link {{ activeRoute('departments.designations.index') }}">
+                        <i class="bi bi-person-badge-fill"></i> Designations
+                    </a>
                 </div>
             </li>
 

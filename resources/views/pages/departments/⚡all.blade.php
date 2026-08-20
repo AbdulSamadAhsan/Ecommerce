@@ -8,7 +8,7 @@ new class extends Component {
     public $departments;
     public function mount()
     {
-        $this->departments = Department::withCount(['employees', 'job'])->get();
+        $this->departments = Department::withCount(['employees', 'job', 'designations'])->get();
     }
 };
 ?>
@@ -37,6 +37,7 @@ new class extends Component {
                         <th>Department</th>
                         <th>Employees</th>
                         <th>Job Open</th>
+                        <th>Designation</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -49,6 +50,7 @@ new class extends Component {
                             <td>{{ $department['name'] }}</td>
                             <td>{{ $department['employees_count'] }}</td>
                             <td>{{ $department['job_count'] }}</td>
+                            <td>{{ $department['designations_count'] }}</td>
                             <td>
                                 <span class="badge {{ $department['status'] ? 'bg-success' : 'bg-danger' }}">
                                     {{ $department['status'] ? 'Active' : 'Inactive' }}
