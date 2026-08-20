@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadApplications(): void
     {
-        $this->applications = JobApplication::with(['jobPosting.department', 'applicant'])
+        $this->applications = JobApplication::with(['jobPosting.department', 'applicant', 'JobPosting.designation'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('full_name', 'like', '%' . $this->search . '%')
@@ -106,7 +106,7 @@ new class extends Component {
                             </td>
 
                             <td>
-                                {{ $application['job_posting']['job_title'] ?? '-' }}
+                                {{ $application['job_posting']['designation']['name'] ?? '-' }}
                             </td>
 
 

@@ -20,7 +20,7 @@ $table->foreignId('department_id')->constrained();
     $table->foreignId('created_by')
         ->constrained('users');
 
-    $table->string('job_title');
+   
 
     $table->text('description');
 

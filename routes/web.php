@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
-
+use App\Http\Controllers\GoogleDrive;
 use App\Http\Controllers\InvoiceController;
 
 
@@ -26,7 +26,7 @@ Route::livewire("/cart", "pages::frontend.cart")->name("cart");
 
 Route::livewire('/product/{value}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
-
+Route::get("uploadImage",[GoogleDrive::class,"uploadImage"]);
 /*
 |--------------------------------------------------------------------------
 | Admin Routes

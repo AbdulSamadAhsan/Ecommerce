@@ -26,7 +26,7 @@ new class extends Component {
 
             'created_by' => $job->creator?->name ?? 'Unknown',
 
-            'job_title' => $job->job_title,
+            'job_title' => $job->designation->name,
 
             'description' => $job->description,
 

@@ -19,7 +19,7 @@ class Designation extends Model
 }
     public function jobPostings()
 {
-    return $this->hasMany(JobPosting::class);
+    return $this->hasOne(JobPosting::class);
 }
     public function jobApplications()
     {

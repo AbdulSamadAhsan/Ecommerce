@@ -240,7 +240,7 @@ new class extends Component {
         ];
         $jobData = \App\Models\JobPosting::findOrFail($id);
         $this->job = [
-            'job_title' => $jobData->job_title,
+            'job_title' => $jobData->designation->name,
             'employment_type' => str()->headline($jobData->employment_type),
             'department' => $jobData->department->name,
             'experience' => $jobData->min_experience,

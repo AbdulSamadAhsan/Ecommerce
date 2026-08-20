@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadJobPostings(): void
     {
-        $this->jobPostings = JobPosting::with(['department', 'creator'])
+        $this->jobPostings = JobPosting::with(['department', 'creator', 'designation'])
             ->when($this->search, function ($query) {
                 $query->where('job_title', 'like', '%' . $this->search . '%')->orWhereHas('department', function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%');
@@ -76,7 +76,7 @@ new class extends Component {
                             <td>#{{ $job['id'] }}</td>
 
                             <td>
-                                <strong>{{ $job['job_title'] }}</strong>
+                                <strong>{{ $job['designation']['name'] }}</strong>
                             </td>
 
                             <td>

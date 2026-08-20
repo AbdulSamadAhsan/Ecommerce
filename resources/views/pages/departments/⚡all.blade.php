@@ -9,6 +9,13 @@ new class extends Component {
     public function mount()
     {
         $this->departments = Department::withCount(['employees', 'job', 'designations'])->get();
+        $departments = Department::query()
+            ->with([
+                'designations' => function ($query) {
+                    $query->whereDoesntHave('jobPostings')->orderBy('id')->get();
+                },
+            ])
+            ->get();
     }
 };
 ?>

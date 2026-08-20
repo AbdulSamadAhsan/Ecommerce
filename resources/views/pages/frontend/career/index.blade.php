@@ -50,7 +50,7 @@ new class extends Component {
                 'salary' => 'PKR 90,000',
             ],
         ];
-        $this->jobs = JobPosting::with(['creator', 'department'])
+        $this->jobs = JobPosting::with(['creator', 'department', 'designation'])
             ->get()
             ->toArray();
         $this->benefits = ['Competitive Salary', 'Medical Insurance', 'Annual Bonus', 'Paid Leave', 'Learning Budget', 'Flexible Working Hours'];
@@ -551,7 +551,7 @@ CURRENT OPENINGS
 
                             <h4 class="fw-bold">
 
-                                {{ $job['job_title'] }}
+                                {{ $job['designation']['name'] }}
 
                             </h4>
 

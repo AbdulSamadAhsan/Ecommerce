@@ -9,7 +9,7 @@ new class extends Component {
     public array $designation = [];
 
     public array $jobs = [];
-
+    public $applications = [];
     public function mount($id): void
     {
         $this->id = (int) $id;
@@ -17,7 +17,8 @@ new class extends Component {
         $designationData = Designation::withCount('jobPostings')
             ->with(['department', 'jobPostings.department', 'jobApplications'])
             ->findOrFail($this->id);
-        dd($designationData);
+        $this->applications = $designationData->jobApplications;
+
         $this->designation = [
             'id' => $designationData->id,
             'name' => $designationData->name,
@@ -27,19 +28,18 @@ new class extends Component {
             'jobs_count' => $designationData->job_postings_count,
             'created_at' => $designationData->created_at?->format('d M Y'),
         ];
-
-        $this->jobs = $designationData->jobPostings
-            ->map(function ($job) {
-                return [
-                    'id' => $job->id,
-                    'job_title' => $job->job_title,
-                    'work_mode' => $job->work_mode ?? 'N/A',
-                    'department' => $job->department?->name ?? 'No Department',
-                    'status' => (bool) $job->status,
-                ];
-            })
-            ->values()
-            ->toArray();
+        if ($designationData->jobPostings) {
+            $this->jobs = [
+                [
+                    'id' => $designationData->jobPostings?->id,
+                    'work_mode' => $designationData->jobPostings?->work_mode,
+                    'minimum_salary' => $designationData->jobPostings?->minimum_salary,
+                    'maximum_salary' => $designationData->jobPostings?->maximum_salary,
+                ],
+            ];
+        } else {
+            $this->jobs = [];
+        }
     }
 };
 ?>
@@ -146,10 +146,9 @@ new class extends Component {
 
                     <tr>
                         <th>ID</th>
-                        <th>Job Title</th>
-                        <th>Department</th>
+
                         <th>Work Mode</th>
-                        <th>Status</th>
+
                         <th>Action</th>
                     </tr>
 
@@ -157,38 +156,24 @@ new class extends Component {
 
                 <tbody>
 
-                    @forelse ($jobs as $job)
+                    @foreach ($jobs as $job)
                         <tr>
 
-                            <td>
-                                #{{ $job['id'] }}
-                            </td>
 
-                            <td>
-                                {{ $job['job_title'] }}
-                            </td>
 
-                            <td>
-                                {{ $job['department'] }}
-                            </td>
+
 
                             <td>
                                 {{ ucfirst($job['work_mode']) }}
                             </td>
 
                             <td>
-
-                                @if ($job['status'])
-                                    <span class="badge bg-success">
-                                        Active
-                                    </span>
-                                @else
-                                    <span class="badge bg-danger">
-                                        Inactive
-                                    </span>
-                                @endif
-
+                                {{ ucfirst($job['minimum_salary']) }}
                             </td>
+                            <td>
+                                {{ ucfirst($job['maximum_salary']) }}
+                            </td>
+
 
                             <td>
 
@@ -202,21 +187,85 @@ new class extends Component {
                             </td>
 
                         </tr>
+                    @endforeach
+                    @if (empty($this->jobs))
+                        <tr>
+                            <td>No Job </td>
+                        </tr>
+                    @endif
+                </tbody>
 
-                    @empty
+            </table>
 
+        </div>
+
+    </div>
+    <div class="card border-0 shadow">
+
+        <div class="card-header bg-light">
+
+            <h5 class="mb-0">
+                Applications for this Designation
+            </h5>
+
+        </div>
+
+        <div class="card-body table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+
+                    <tr>
+
+
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach ($applications as $application)
                         <tr>
 
-                            <td colspan="6" class="text-center text-danger fw-bold py-4">
 
-                                No Job Posting For
-                                {{ $designation['name'] }}
+
+
+
+                            <td>
+                                {{ ucwords($application->applicant->full_name) }}
+                            </td>
+
+                            <td>
+                                {{ $application->applicant->email }}
+                            </td>
+                            <td>
+                                {{ ucfirst($application->applicant->phone) }}
+                            </td>
+
+
+                            <td>
+
+                                <a href="{{ route('jobs.applications.show', $application['id']) }}"
+                                    class="btn btn-sm btn-primary rounded-pill">
+
+                                    View
+
+                                </a>
 
                             </td>
 
                         </tr>
-                    @endforelse
-
+                    @endforeach
+                    @if (empty($this->applications))
+                        <tr>
+                            <td>No Application</td>
+                        </tr>
+                    @endif
                 </tbody>
 
             </table>

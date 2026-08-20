@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Department;
+use App\Models\Designation;
 use App\Models\JobPosting;
 
 new class extends Component {
@@ -34,7 +35,8 @@ new class extends Component {
     public $is_active = 1;
 
     public $departments = [];
-
+    public $designations = [];
+    public $designation_id = '';
     public function mount()
     {
         $this->departments = Department::where('status', 1)->orderBy('name')->get();
@@ -56,8 +58,9 @@ new class extends Component {
             'maximum_salary' => ['nullable', 'numeric', 'gte:minimum_salary'],
             'employment_type' => ['required', 'in:permanent,part-time,contract,intern'],
             'work_mode' => ['required', 'in:onsite,remote,hybrid'],
-            'closing_date' => ['required', 'date', 'after_or_equal:today'],
+            'closing_date' => ['required', 'date', 'after:today'],
             'is_active' => ['required', 'boolean'],
+            'designation_id' => ['required', 'exists:designations,id', 'unique:job_postings,designation_id'],
         ];
     }
 
@@ -72,6 +75,19 @@ new class extends Component {
 
     public function updated($property)
     {
+        if (str_contains($property, 'department_id')) {
+            $designation_id_job = JobPosting::get()->pluck('designation_id')->toArray();
+
+            //whereNotIn('id', $excludedIds);
+            //dd($designation_id_job);
+            $this->designations = Designation::where('department_id', $this->department_id)->whereNotIn('id', $designation_id_job)->get();
+        }
+        if (str_contains($property, 'designation_id')) {
+            $designation_id_job = JobPosting::get()->pluck('designation_id')->toArray();
+
+            $designation = Designation::where('id', $this->designation_id)->first();
+            $this->job_title = $designation->name;
+        }
         $this->validateOnly($property);
     }
 
@@ -80,32 +96,20 @@ new class extends Component {
         $this->validate();
 
         JobPosting::create([
+            'designation_id' => $this->designation_id,
             'department_id' => $this->department_id,
-
             'created_by' => auth()->id(),
-
             'job_title' => $this->job_title,
-
             'description' => $this->description,
-
             'responsibilities' => $this->responsibilities,
-
             'requirements' => $this->requirements,
-
             'benefits' => $this->benefits,
-
             'vacancies' => $this->vacancies,
-
             'minimum_salary' => $this->minimum_salary,
-
             'maximum_salary' => $this->maximum_salary,
-
             'employment_type' => $this->employment_type,
-
             'work_mode' => $this->work_mode,
-
             'closing_date' => $this->closing_date,
-
             'is_active' => $this->is_active,
             'min_experience' => $this->year_experience,
         ]);
@@ -176,10 +180,41 @@ new class extends Component {
                         <div class="col-md-6 mb-3">
 
                             <label class="form-label">
+                                Designations
+                            </label>
+
+                            <select wire:model.live="designation_id"
+                                class="form-select @error('designation_id') is-invalid @enderror">
+
+                                <option value="">
+                                    Select Designation
+                                </option>
+
+                                @foreach ($designations as $designation)
+                                    <option value="{{ $designation->id }}">
+
+                                        {{ $designation->name }}
+
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                            @error('designation_id')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+
+                            <label class="form-label">
                                 Job Title
                             </label>
 
-                            <input type="text" class="form-control @error('job_title') is-invalid @enderror"
+                            <input type="text" class="form-control @error('job_title') is-invalid @enderror" readonly
                                 placeholder="Senior Laravel Developer" wire:model.live="job_title">
 
                             @error('job_title')
@@ -396,8 +431,8 @@ new class extends Component {
 
                         </label>
 
-                        <textarea rows="5" wire:model.live="description" class="form-control @error('description') is-invalid @enderror"
-                            placeholder="Enter complete job description..."></textarea>
+                        <textarea rows="5" wire:model.live="description"
+                            class="form-control @error('description') is-invalid @enderror" placeholder="Enter complete job description..."></textarea>
 
                         @error('description')
                             <div class="invalid-feedback">
