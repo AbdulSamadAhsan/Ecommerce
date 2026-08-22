@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadApplicants(): void
     {
-        $this->applicants = Applicant::with(['jobApplications.jobPosting.department'])
+        $this->applicants = Applicant::with(['jobApplications.jobPosting.department', 'jobApplications.jobPosting.designation'])
             ->withCount('jobApplications')
 
             ->when($this->search, function ($query) {
@@ -185,7 +185,7 @@ new class extends Component {
 
                                         <span class="fw-semibold">
 
-                                            {{ $application['job_posting']['job_title'] ?? 'N/A' }}
+                                            {{ $application['job_posting']['designation']['name'] ?? 'N/A' }}
 
                                         </span>
 

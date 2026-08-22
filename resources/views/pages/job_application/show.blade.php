@@ -35,7 +35,7 @@ new class extends Component {
             'gender' => $applicationData->applicant->gender,
             'status' => $applicationData->status,
 
-            'job_title' => $applicationData->jobPosting?->job_title ?? 'N/A',
+            'job_title' => $applicationData->jobPosting?->designation->name ?? 'N/A',
 
             'department' => $applicationData->jobPosting?->department?->name ?? 'N/A',
 

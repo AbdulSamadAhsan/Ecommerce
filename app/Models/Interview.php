@@ -34,6 +34,10 @@ class Interview extends Model
 {
     return $this->belongsTo(Applicant::class);
 }
+  public function feedback(){
+       return $this->hasOne(InterviewFeedback::class);
+  }
+
 public function interviewer()
 {
     return $this->belongsTo(User::class, 'interviewer_id');

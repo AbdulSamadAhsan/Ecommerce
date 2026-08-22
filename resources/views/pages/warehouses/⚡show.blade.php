@@ -81,7 +81,7 @@ new class extends Component {
             <hr>
 
 
-            <p><strong>Manager:</strong> {{ $warehouse->manager->user->name }}</p>
+            <p><strong>Manager:</strong> {{ $warehouse->manager?->user?->name ?? 'No Manager' }}</p>
             <p><strong>Phone:</strong> {{ $warehouse['phone'] }}</p>
 
             <p>

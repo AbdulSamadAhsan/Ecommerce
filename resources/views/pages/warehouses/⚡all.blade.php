@@ -48,7 +48,7 @@ new class extends Component {
                             <td>#{{ $warehouse['id'] }}</td>
                             <td>{{ $warehouse->name }}</td>
 
-                            <td>{{ $warehouse->manager->user->name }}</td>
+                            <td>{{ $warehouse->manager->user->name ?? 'No manager' }}</td>
                             <td>
                                 <span class="badge {{ $warehouse['status'] ? 'bg-success' : 'bg-danger' }}">
                                     {{ $warehouse['status'] ? 'Active' : 'Inactive' }}

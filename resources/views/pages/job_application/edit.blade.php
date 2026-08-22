@@ -10,15 +10,11 @@ new class extends Component {
     public int $id;
 
     public $application;
-
     public string $status = '';
-
     public ?int $interviewer_id = null;
-
     public ?string $scheduled_at = null;
-
     public string $type = '';
-
+    public string $mode = '';
     public ?string $meeting_link = null;
 
     public $interviewers = [];
@@ -54,7 +50,7 @@ new class extends Component {
         }
     }
 
-    public function updatedType($value): void
+    public function updatedMode($value): void
     {
         if ($value !== 'online') {
             $this->meeting_link = null;
@@ -65,13 +61,9 @@ new class extends Component {
     {
         $this->validate([
             'status' => ['required', 'in:pending,shortlisted,interview,rejected,hired'],
-
             'interviewer_id' => ['nullable', 'required_if:status,interview', 'exists:users,id'],
-
             'scheduled_at' => ['nullable', 'required_if:status,interview', 'date'],
-
             'type' => ['nullable', 'required_if:status,interview', 'in:online,physical,phone'],
-
             'meeting_link' => ['nullable', 'required_if:type,online', 'url', 'max:255'],
         ]);
 
@@ -79,7 +71,7 @@ new class extends Component {
             $this->application->update([
                 'status' => $this->status,
             ]);
-
+            dd($this->status === 'hired');
             if ($this->status === 'interview') {
                 Interview::updateOrCreate(
                     [
@@ -135,8 +127,8 @@ new class extends Component {
                             Applied Job
                         </label>
 
-                        <input type="text" class="form-control" value="{{ $application->jobPosting->job_title }}"
-                            disabled>
+                        <input type="text" class="form-control"
+                            value="{{ $application->jobPosting->designation->name }}" disabled>
                     </div>
 
                 </div>
@@ -265,12 +257,12 @@ new class extends Component {
                             <div class="col-md-6 mb-3">
 
                                 <label class="form-label">
-                                    Interview Type
+                                    Interview Mode
                                 </label>
 
-                                <select wire:model.live="type"
+                                <select wire:model.live="mode"
                                     class="form-select
-                    @error('type') is-invalid @enderror">
+                    @error('mode') is-invalid @enderror">
 
                                     <option value="">
                                         Select Interview Type
@@ -290,6 +282,40 @@ new class extends Component {
 
                                 </select>
 
+                                @error('mode')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Interview Type
+                                </label>
+
+                                <select wire:model.live="type"
+                                    class="form-select
+                    @error('type') is-invalid @enderror">
+
+                                    <option value="">
+                                        Select Interview Type
+                                    </option>
+
+                                    <option value="technical">
+                                        Technical
+                                    </option>
+
+                                    <option value="hr">
+                                        Hr
+                                    </option>
+
+
+
+                                </select>
+
                                 @error('type')
                                     <div class="invalid-feedback">
                                         {{ $message }}
@@ -299,8 +325,10 @@ new class extends Component {
                             </div>
 
 
+
+
                             {{-- Meeting Link --}}
-                            @if ($type === 'online')
+                            @if ($mode === 'online')
                                 <div class="col-md-6 mb-3">
 
                                     <label class="form-label">

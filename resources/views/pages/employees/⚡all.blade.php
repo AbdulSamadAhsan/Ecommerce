@@ -58,6 +58,7 @@ new class extends Component {
                                 </span>
                             </td>
                             <td>
+                            
                                 <a href="{{ route('employees.show', $employee['id']) }}"
                                     class="btn btn-sm btn-info rounded-pill text-white">View</a>
                                 <a href="{{ route('employees.edit', $employee['id']) }}"

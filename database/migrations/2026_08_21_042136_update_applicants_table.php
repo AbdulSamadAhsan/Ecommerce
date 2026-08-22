@@ -11,13 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('job_applications', function (Blueprint $table) {
+        Schema::table('applicants', function (Blueprint $table) {
             //
-                   $table->string("father_name")->after("full_name");
-                   $table->string("photo")->after("father_name");
-                     $table->date("date_of_birth")->after("father_name");
-                    $table->string("password"); 
-
+             $table->timestamp('email_verified_at')->nullable()->after("email");
         });
     }
 
@@ -26,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('applicants', function (Blueprint $table) {
+            //
+        });
     }
 };

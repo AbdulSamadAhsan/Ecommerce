@@ -15,6 +15,10 @@ class Applicant
      */
     public function handle(Request $request, Closure $next): Response
     {
+
+          if (! auth('applicant')->check()) {
+            return redirect()->route('applicantauth');
+          }
         return $next($request);
     }
 }

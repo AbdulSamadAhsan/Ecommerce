@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadInterviews(): void
     {
-        $this->interviews = Interview::with(['jobApplication.applicant', 'jobApplication.jobPosting.department', 'interviewer'])
+        $this->interviews = Interview::with(['jobApplication.applicant', 'jobApplication.jobPosting.department', 'jobApplication.jobPosting.designation', 'interviewer'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     // Applicant
@@ -160,7 +160,7 @@ new class extends Component {
                             {{-- Job Title --}}
                             <td>
 
-                                {{ $interview['job_application']['job_posting']['job_title'] ?? 'N/A' }}
+                                {{ $interview['job_application']['job_posting']['designation']['name'] ?? 'N/A' }}
 
                                 <br>
 
@@ -217,7 +217,7 @@ new class extends Component {
                             <td>
 
                                 @php
-                                    $typeClass = match ($interview['type'] ?? '') {
+                                    $typeClass = match ($interview['mode'] ?? '') {
                                         'online' => 'bg-info',
                                         'physical' => 'bg-success',
                                         'phone' => 'bg-secondary',
@@ -228,7 +228,7 @@ new class extends Component {
 
                                 <span class="badge {{ $typeClass }}">
 
-                                    {{ ucfirst($interview['type'] ?? 'N/A') }}
+                                    {{ ucfirst($interview['mode'] ?? 'N/A') }}
 
                                 </span>
 
@@ -238,18 +238,18 @@ new class extends Component {
                             {{-- Meeting --}}
                             <td>
 
-                                @if (($interview['type'] ?? '') === 'online' && !empty($interview['meeting_link']))
+                                @if (($interview['mode'] ?? '') === 'online' && !empty($interview['meeting_link']))
                                     <a href="{{ $interview['meeting_link'] }}" target="_blank"
                                         class="btn btn-sm btn-primary rounded-pill">
                                         <i class="bi bi-camera-video"></i>
 
                                         Join
                                     </a>
-                                @elseif (($interview['type'] ?? '') === 'physical')
+                                @elseif (($interview['mode'] ?? '') === 'physical')
                                     <span class="text-muted">
                                         Physical
                                     </span>
-                                @elseif (($interview['type'] ?? '') === 'phone')
+                                @elseif (($interview['mode'] ?? '') === 'phone')
                                     <span class="text-muted">
                                         Phone
                                     </span>

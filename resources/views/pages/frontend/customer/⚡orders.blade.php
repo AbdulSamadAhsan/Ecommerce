@@ -16,8 +16,8 @@ new #[\Livewire\Attributes\Layout('components.layouts.ecommerce')] class extends
     {
         $this->loadOrders();
         $setting = Setting::first();
-        $this->cancellation_window = (int) $setting->cancellation_window;
-        $this->cancellation_penalty = (int) $setting->cancellation_penalty;
+        $this->cancellation_window = (int) $setting?->cancellation_window ?? 35;
+        $this->cancellation_penalty = (int) $setting?->cancellation_penalty ?? 0;
     }
 
     public function loadOrders()

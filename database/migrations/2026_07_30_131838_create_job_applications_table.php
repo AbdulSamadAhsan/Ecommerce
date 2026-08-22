@@ -29,6 +29,7 @@ return new class extends Migration
         'shortlisted',
         'interview',
         'rejected',
+        'saved',
         'hired'
     ])->default('pending');
 

@@ -16,7 +16,7 @@ use App\Http\Controllers\ProductReportController;
     });
  Route::name('products.')->group(function () {
    Route::prefix('products')->group(function () {
-        Route::livewire('/', 'pages::products.all')->name('index');
+        Route::livewire('/', 'pages::products.all')->name('all');
         Route::livewire('/create', 'pages::products.create')->name('create');
         Route::livewire('/{id}/edit', 'pages::products.edit')->name('edit');
         Route::livewire('/{id}', 'pages::products.show')->name('show');

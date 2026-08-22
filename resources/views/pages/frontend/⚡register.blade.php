@@ -36,6 +36,7 @@ new class extends Component {
             'phone' => $this->phone,
             'status' => 1,
             'user_id' => $user_id,
+            'referral_bonus' => 50,
         ]);
         Wallet::create(['customer_id' => $customer->id, 'balance' => 0]);
         session()->flash('success', 'Account created successfully.');

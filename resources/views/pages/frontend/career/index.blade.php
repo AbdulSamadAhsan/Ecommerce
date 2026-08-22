@@ -585,6 +585,17 @@ CURRENT OPENINGS
 
                             <div class="mt-4 d-grid">
 
+
+
+                                @if (auth('applicant')->check())
+                                    <button class="btn btn-primary apply-btn"
+                                        wire:click="savedJob({{ $job['id'] }})">
+                                        <i class="bi bi-bookmark-fill me-2"></i>
+
+                                        Save Job
+
+                                    </button>
+                                @endif
                                 <button class="btn btn-primary apply-btn" wire:click="applyJob({{ $job['id'] }})">
 
                                     <i class="bi bi-send me-2"></i>

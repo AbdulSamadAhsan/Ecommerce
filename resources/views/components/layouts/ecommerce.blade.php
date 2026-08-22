@@ -114,7 +114,11 @@
                             Career
                         </a>
                     </li>
-
+                    <li class="nav-item">
+                        <a href="{{ route('applicantportal') }}" class="nav-link fw-semibold">
+                            Applicant Portal
+                        </a>
+                    </li>
 
                 </ul>
 

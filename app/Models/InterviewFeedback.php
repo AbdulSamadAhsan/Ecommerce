@@ -8,4 +8,8 @@ class InterviewFeedback extends Model
 {
     //
       protected $guarded=[];
+         public function interview()
+    {
+        return $this->belongsTo(Interview::class);
+    }
 }

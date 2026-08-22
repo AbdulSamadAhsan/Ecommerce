@@ -17,12 +17,12 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
             $table->date('graduate_start_year');
-                 $table->date('graduate_end_year');
+            $table->date('graduate_end_year');
             $table->decimal("grade");
             $table->string('degree_name')->nullable()->default(null);
-                   $table->string('institute_type')->nullable()->default(null);
-             $table->string('institute')->nullable()->default(null);
-             $table->text('certificate_path')->nullable()->default(null);
+            $table->string('institute_type')->nullable()->default(null);
+            $table->string('institute')->nullable()->default(null);
+            $table->text('certificate_path')->nullable()->default(null);
             $table->timestamps();
         });
     }

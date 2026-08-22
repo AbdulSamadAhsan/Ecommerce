@@ -433,7 +433,7 @@
                 </a>
 
                 <div class="sidebar-dropdown-menu {{ showRoute('products.*') }}">
-                    <a href="{{ adminRoute('products.index') }}" class="nav-link {{ activeRoute('products.index') }}">
+                    <a href="{{ adminRoute('products.all') }}" class="nav-link {{ activeRoute('products.index') }}">
                         <i class="bi bi-grid"></i> All Products
                     </a>
 

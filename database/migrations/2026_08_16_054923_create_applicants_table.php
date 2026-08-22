@@ -23,8 +23,10 @@ return new class extends Migration
             $table->text("address");
             $table->enum('gender',["male","female"])->default("female");
             $table->string("linkedin")->nullable();
-            $tbale->enum("martial_status",["single",'married',"divorced"])->default('single');
+            $table->enum("martial_status",["single",'married',"divorced"])->default('single');
          $table->text("bio")->nullable();
+$table->unique(['email', 'cnic']);
+
             $table->timestamps();
         });
 

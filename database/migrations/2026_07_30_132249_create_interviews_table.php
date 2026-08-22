@@ -21,12 +21,15 @@ return new class extends Migration
 
     $table->dateTime('scheduled_at');
 
-    $table->enum('type',[
+    $table->enum('mode',[
         'online',
         'physical',
         'phone'
     ]);
-
+   $table->enum('type',[
+        'technical',
+        'hr'
+    ]);
     $table->string('meeting_link')->nullable();
 
     $table->enum('status',[

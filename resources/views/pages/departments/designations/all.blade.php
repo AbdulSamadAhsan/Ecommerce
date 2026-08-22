@@ -20,7 +20,7 @@ new class extends Component {
 
     public function loadDesignations(): void
     {
-        $this->designations = Designation::with('department')
+        $this->designations = Designation::with(['department',"designations"])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')->orWhereHas('department', function ($department) {

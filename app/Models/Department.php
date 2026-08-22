@@ -17,8 +17,18 @@ class Department extends Model
     {
         return $this->hasMany(Employee::class);
     }
+
     public function job(){
         return $this->hasMany(JobPosting::class);
+    }
+        public function holidays()
+    {
+        return $this->belongsToMany(
+            Holiday::class,
+            'department_holiday',
+            'department_id',
+            'holiday_id'
+        );
     }
     public function applications()
 {
@@ -30,5 +40,6 @@ class Department extends Model
         'id',              // PK on departments
         'id'               // PK on job_postings
     );
+
 }
 }

@@ -11,23 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stocks', function (Blueprint $table) {
+        Schema::create('warehouse_holidays', function (Blueprint $table) {
             $table->id();
-              $table->foreignId('product_id')
+         $table->foreignId('warehouse_id')
         ->constrained()
         ->cascadeOnDelete();
-            $table->foreignId('warehouse_id')
+    $table->foreignId('holiday_id')
         ->constrained()
         ->cascadeOnDelete();
-
-
-  
-    $table->integer('quantity')->default(0);
-
-
-
-    $table->integer('minimum_stock')->default(5);
-      $table->unique(['product_id','warehouse_id']);
+           $table->unique([
+        'warehouse_id',
+        'holiday_id'
+    ]);
             $table->timestamps();
         });
     }
@@ -37,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stocks');
+        Schema::dropIfExists('warehouse_holidays');
     }
 };

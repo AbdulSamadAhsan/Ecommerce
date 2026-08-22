@@ -20,7 +20,7 @@ return new class extends Migration
     $table->string('return_no')->unique();
 
     $table->decimal('total_amount', 12, 2);
-
+    $table->enum("status",["approved","pending"]);
     $table->text('reason')->nullable();
             $table->timestamps();
         });

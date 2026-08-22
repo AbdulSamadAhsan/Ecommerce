@@ -20,7 +20,7 @@
        Route::livewire('/{id}/edit', 'pages::shipments.shipping-methods.edit')->name('edit');
        Route::livewire('/{id}', 'pages::shipments.shipping-methods.show')->name('show');
      });
-       Route::prefix("shipments")->name("shipments.")->group(function(){
+    Route::prefix("shipments")->name("shipments.")->group(function(){
       Route::livewire("/","pages::shipments.all")->name("index");
       Route::livewire("/create","pages::shipments.create")->name("create");
       Route::livewire("/{id}/edit","pages::shipments.edit")->name("edit");

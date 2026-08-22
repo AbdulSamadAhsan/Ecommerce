@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Models;
-
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 
-class Applicant extends Model
+class Applicant extends Authenticatable
 {
     //
       protected $guarded=[];
@@ -12,6 +12,13 @@ class Applicant extends Model
 {
     return $this->hasMany(JobApplication::class, 'applicant_id');
 }
+   protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 public function educations()
 {
     return $this->hasMany(

@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-         
-           
-
-            $table->string('bank_name');
+        Schema::create('employee_bank_accounts', function (Blueprint $table) {
+            $table->id();
+                   $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
+  $table->string('bank_name');
             $table->string('account_title');
             $table->string('account_number')->unique();
 
@@ -31,7 +30,7 @@ return new class extends Migration
 
             $table->text('notes')
                 ->nullable();
-         
+            $table->timestamps();
         });
     }
 
@@ -40,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-       
+        Schema::dropIfExists('employee_bank_accounts');
     }
 };

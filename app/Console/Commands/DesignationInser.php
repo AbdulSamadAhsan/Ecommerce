@@ -45,7 +45,7 @@ class DesignationInser extends Command
 
         // Remove heading rows
         array_shift($rows);
-        array_shift($rows);
+       
 
         $designations = [];
 

@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Livewire;
-
+use App\Models\JobApplication as Application;
+use App\Models\Interview;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -51,15 +52,27 @@ new class extends Component {
     public function getStatsProperty()
     {
         return [
-            'total_applications' => 12,
-            'pending' => 5,
-            'interview' => 3,
-            'rejected' => 2,
-            'offered' => 2,
-            'saved_jobs' => 8,
-            'upcoming_interviews' => 3,
-            'total_interviews' => 8,
-            'completed_interviews' => 4,
+            'total_applications' => Application::where('applicant_id', auth('applicant')->id())->count(),
+            'pending' => Application::where('applicant_id', auth('applicant')->id())
+                ->where('status', 'pending')
+                ->count(),
+            'interview' => Application::where('applicant_id', auth('applicant')->id())
+                ->where('status', 'interview')
+                ->count(),
+            'rejected' => Application::where('applicant_id', auth('applicant')->id())
+                ->where('status', 'rejected')
+                ->count(),
+            'offered' => Application::where('applicant_id', auth('applicant')->id())
+                ->where('status', 'offered')
+                ->count(),
+            'saved_jobs' => 10,
+            'upcoming_interviews' => Interview::where('applicant_id', auth('applicant')->id())
+                ->where('scheduled_at', '>', now())
+                ->count(),
+            'total_interviews' => Interview::where('applicant_id', auth('applicant')->id())->count(),
+            'completed_interviews' => Interview::where('applicant_id', auth('applicant')->id())
+                ->where('status', 'completed')
+                ->count(),
         ];
     }
 

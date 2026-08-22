@@ -44,25 +44,17 @@ new class extends Component {
             ->map(function ($application) {
                 return [
                     'id' => $application->id,
-
                     'status' => $application->status,
-
-                    'job_title' => $application->jobPosting?->job_title ?? 'N/A',
-
+                    'job_title' => $application->jobPosting?->designation->name ?? 'N/A',
                     'department' => $application->jobPosting?->department?->name ?? 'N/A',
                     'created_at' => $application->created_at,
                     'interview' => $application->interview
                         ? [
                             'id' => $application->interview->id,
-
                             'scheduled_at' => $application->interview->scheduled_at?->format('d M Y h:i A'),
-
                             'type' => $application->interview->type,
-
                             'status' => $application->interview->status,
-
                             'meeting_link' => $application->interview->meeting_link,
-
                             'interviewer' => $application->interview->interviewer?->name ?? 'N/A',
                         ]
                         : null,

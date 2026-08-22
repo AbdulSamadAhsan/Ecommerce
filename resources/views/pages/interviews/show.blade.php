@@ -77,7 +77,7 @@ new class extends Component {
         $this->job = [
             'id' => $jobPosting?->id,
 
-            'job_title' => $jobPosting?->job_title ?? 'N/A',
+            'job_title' => $jobPosting?->designation->name ?? 'N/A',
 
             'department' => $jobPosting?->department?->name ?? 'N/A',
 

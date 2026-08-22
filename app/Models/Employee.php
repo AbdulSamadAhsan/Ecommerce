@@ -112,4 +112,11 @@ public function documents()
 {
     return $this->hasMany(EmployeeDocument::class, 'employee_id');
 }
+public function holidays()
+{
+    return $this->belongsToMany(
+        Holiday::class,
+        'employee_holiday'
+    );
+}
 }

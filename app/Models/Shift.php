@@ -12,4 +12,12 @@ class Shift extends Model
 {
     return $this->hasMany(Employee::class, 'shift', 'name');
 }
+public function holidays()
+{
+    return $this->belongsToMany(
+        Holiday::class,
+        'shift_holiday'
+    );
+}
+
 }
