@@ -1383,8 +1383,8 @@ new class extends Component {
                                 <i class="bi bi-bookmark fs-1 text-muted d-block mb-3"></i>
                                 <h5 class="fw-bold fs-6">No Saved Jobs</h5>
                                 <p class="text-muted small">Start saving jobs you're interested in.</p>
-                                <a href="{{ route('applicant.jobs') }}"
-                                    class="btn btn-primary rounded-pill small">Browse Jobs</a>
+                                <a href="{{ route('career') }}" class="btn btn-primary rounded-pill small">Browse
+                                    Jobs</a>
                             </div>
                         </div>
                     </div>
