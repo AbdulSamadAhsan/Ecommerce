@@ -496,7 +496,7 @@ new class extends Component {
             }
 
             $this->applicantPassword = '';
-
+            auth('applicant')->user()->update($applicantPayload);
             session()->flash('success', 'Profile Updated Successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             session()->flash('error', $e->validator->errors()->first());
