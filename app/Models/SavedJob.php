@@ -18,5 +18,4 @@ public function applicant()
     return $this->belongsTo(Applicant::class, 'applicant_id');
 }
 
-    
 }

@@ -262,7 +262,6 @@ new class extends Component {
             $this->form['gender'] = auth('applicant')->user()->gender;
             $this->form['address'] = auth('applicant')->user()->address;
             $this->photo = auth('applicant')->user()?->photo;
-            $this->form['current_salary'] = auth('applicant')->user()->previous_salary;
         } else {
             $this->educations[] = [
                 'degree' => '',

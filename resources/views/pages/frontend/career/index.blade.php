@@ -74,10 +74,19 @@ new class extends Component {
     }
     public function savedJob($id)
     {
+        $jobApplicationJobIds = auth('applicant')->user()->jobApplications->pluck('job_posting_id')->toArray();
+
+        $jobSavedIds = auth('applicant')->user()->savedJobs->pluck('job_posting_id')->toArray();
+        if (in_array($id, $jobApplicationJobIds) || in_array($id, $jobSavedIds)) {
+            session()->flash('error', 'You have Already Applied Or Save the Job');
+            return;
+        }
+
         $user = SavedJob::firstOrCreate([
             'job_posting_id' => $id,
             'applicant_id' => auth('applicant')->user()->id,
         ]);
+        session()->flash('success', 'You have  Save the Job Successfully');
     }
     public function applyJob($job_id)
     {
@@ -327,7 +336,33 @@ new class extends Component {
     <div class="container py-5">
 
         <!-- HERO -->
+        @if (session()->has('success'))
+            <div class="alert alert-success rounded-4 shadow-sm">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Application Submitted Successfully</h5>
+                        <p class="mb-0">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
 
+        @if (session()->has('error'))
+            <div class="alert alert-success rounded-4 shadow-sm">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="bi bi-x-circle-fill fs-2 text-danger"></i>
+                    </div>
+                    <div>
+
+                        <p class="mb-0">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
         <section class="hero p-4 p-lg-5 mb-5">
 
             <div class="row align-items-center">

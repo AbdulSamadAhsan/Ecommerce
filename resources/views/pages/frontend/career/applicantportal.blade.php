@@ -30,6 +30,8 @@ new class extends Component {
     public $selectedDocumentId = null;
 
     // Profile photo upload
+    public $savedJobs;
+
     public $photo = null;
     public $photoPreview = null;
 
@@ -116,12 +118,16 @@ new class extends Component {
     {
         $this->documents = ApplicantDocument::where('applicant_id', auth('applicant')->id())->get();
     }
-
+    public function loadSavedJobs()
+    {
+        $this->savedJobs = auth('applicant')->user()->savedJobs;
+    }
     public function mount()
     {
         $this->loadEducations();
         $this->loadExperiences();
         $this->loadDocuments();
+        $this->loadSavedJobs();
         $this->applicantName = auth('applicant')->user()->full_name;
         $this->applicantEmail = auth('applicant')->user()->email;
         $this->applicantFatherName = auth('applicant')->user()->father_name;
@@ -132,7 +138,6 @@ new class extends Component {
         $this->applicantMaritalStatus = auth('applicant')->user()->martial_status;
         $this->applicantAddress = auth('applicant')->user()->address;
         $this->applicantGender = ucfirst(strtolower(auth('applicant')->user()->gender));
-        $this->previousSalary = auth('applicant')->user()->previous_salary;
     }
 
     public function getStatsProperty()
@@ -149,7 +154,7 @@ new class extends Component {
             'offered' => Application::where('applicant_id', auth('applicant')->id())
                 ->where('status', 'job_offered')
                 ->count(),
-            'saved_jobs' => 18,
+            'saved_jobs' => $this->savedJobs->count(),
             'upcoming_interviews' => Interview::where('applicant_id', auth('applicant')->id())
                 ->where('scheduled_at', '>', now())
                 ->count(),
@@ -481,27 +486,55 @@ new class extends Component {
 
     public function updateProfile()
     {
-        $applicantPayload = [
-            'full_name' => $this->applicantName,
-            'email' => $this->applicantEmail,
-            'phone' => $this->applicantPhone,
-            'father_name' => $this->applicantFatherName,
-            'gender' => $this->applicantGender,
-            'cnic' => $this->applicantCNIC,
-            'martial_status' => $this->applicantMaritalStatus,
-            'date_of_birth' => $this->applicantDateOfBirth,
-            'linkedin' => $this->applicantLinkedIn,
-            //applicantPassword
-            // other fields...
-        ];
+        try {
+            $this->validate([
+                'applicantPassword' => [
+                    'nullable',
+                    'string',
+                    'min:8',
 
-        $this->applicantName = $this->applicantName;
-        session()->flash('success', 'Profile Updated Successfully');
+                    function ($attribute, $value, $fail) {
+                        if (!empty($value) && Hash::check($value, auth('applicant')->user()->password)) {
+                            $fail('New password must be different from your current password.');
+                        }
+                    },
+                ],
+            ]);
+
+            $applicantPayload = [
+                'full_name' => $this->applicantName,
+                'email' => $this->applicantEmail,
+                'phone' => $this->applicantPhone,
+                'father_name' => $this->applicantFatherName,
+                'gender' => $this->applicantGender,
+                'cnic' => $this->applicantCNIC,
+                'martial_status' => $this->applicantMaritalStatus,
+                'date_of_birth' => $this->applicantDateOfBirth,
+                'linkedin' => $this->applicantLinkedIn,
+                'address' => $this->applicantAddress,
+            ];
+
+            if (!empty($this->applicantPassword)) {
+                $applicantPayload['password'] = Hash::make($this->applicantPassword);
+            }
+
+            $this->applicantPassword = '';
+
+            session()->flash('success', 'Profile Updated Successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            session()->flash('error', $e->validator->errors()->first());
+
+            // Optional:
+            // Do not throw it again if you only want session flash.
+        } catch (\Throwable $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function saveEducation()
     {
         try {
+            set_time_limit(0);
             $this->validate([
                 'educationInstitution' => 'required|string|max:255',
                 'educationDegree' => 'required|string|max:255',
@@ -534,7 +567,7 @@ new class extends Component {
                 \App\Models\ApplicantEducation::where('id', $this->editingEducationId)->update($payload);
                 $education_id = $this->editingEducationId;
             }
-            \App\Jobs\UpdateEducation::dispatch($education_id);
+            \App\Jobs\UpdateEducation::dispatchSync($education_id);
 
             // UpdateImage::dispatch(auth('applicant')->user()->id);
             session()->flash('success', $this->editingEducationId ? 'Education updated successfully!' : 'Education added successfully!');
@@ -616,6 +649,7 @@ new class extends Component {
 
     public function saveExperience()
     {
+        set_time_limit(0);
         $this->validate([
             'experienceCompany' => 'required|string|max:255',
             'experienceTitle' => 'required|string|max:255',
@@ -658,7 +692,7 @@ new class extends Component {
             $applicant_work = \App\Models\ApplicantWork::create($payload);
             $work_id = $applicant_work->id;
         }
-        \App\Jobs\UpdateWork::dispatch($work_id);
+        \App\Jobs\UpdateWork::dispatchSync($work_id);
         $this->loadExperiences();
         $this->loadDocuments();
         session()->flash('success', $this->editingExperienceId ? 'Experience updated successfully!' : 'Experience added successfully!');
@@ -691,7 +725,9 @@ new class extends Component {
 
     public function removeSavedJob($id)
     {
+        auth('applicant')->user()->savedJobs()->where('id', $id)->delete();
         session()->flash('success', 'Job removed from saved list.');
+        $this->loadSavedJobs();
     }
 
     public function joinMeeting($link)
@@ -1298,38 +1334,49 @@ new class extends Component {
         {{-- SAVED JOBS --}}
         @if ($activeTab === 'saved')
             <div class="row g-3">
-                @forelse ($this->savedJobs as $job)
-                    <div class="col-12 col-md-6" wire:key="saved-{{ $job['id'] }}">
-                        <div class="card border-0 shadow rounded-4 h-100">
-                            <div class="card-body p-3 p-md-4">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h5 class="fw-bold mb-1 fs-6">{{ $job['title'] }}</h5>
+                @if (count($savedJobs) > 0)
+                    @foreach ($savedJobs as $job)
+                        <div class="col-12 col-md-6" wire:key="saved-{{ $job['id'] }}">
+                            <div class="card border-0 shadow rounded-4 h-100">
+                                <div class="card-body p-3 p-md-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="fw-bold mb-1 fs-6">{{ $job->jobPosting->designation->name }}
+                                            </h5>
+                                        </div>
+                                        <button wire:click="removeSavedJob({{ $job['id'] }})"
+                                            class="btn btn-sm btn-outline-danger rounded-pill px-2"><i
+                                                class="bi bi-bookmark-fill"></i></button>
                                     </div>
-                                    <button wire:click="removeSavedJob({{ $job['id'] }})"
-                                        class="btn btn-sm btn-outline-danger rounded-pill px-2"><i
-                                            class="bi bi-bookmark-fill"></i></button>
-                                </div>
-                                <div class="mb-3 d-flex flex-wrap gap-1">
-                                    <span class="badge bg-secondary small">{{ $job['type'] }}</span>
-                                    <span class="badge bg-light text-dark small">{{ $job['location'] }}</span>
-                                </div>
-                                <div class="d-flex flex-wrap justify-content-between align-items-center">
-                                    <div><small class="text-muted d-block small">Salary</small>
-                                        <p class="fw-semibold mb-0 small">PKR {{ $job['salary'] }}</p>
+                                    <div class="mb-3 d-flex flex-wrap gap-1">
+                                        <span
+                                            class="badge bg-secondary small">{{ str()->headline($job->JobPosting->employment_type) }}</span>
+                                        <span
+                                            class="badge bg-primary small">{{ str()->headline($job->JobPosting->work_mode) }}</span>
+                                        <span
+                                            class="badge bg-danger small">{{ date('d-M-Y', strtotime($job->JobPosting->closing_date)) }}</span>
+
+
                                     </div>
-                                    <div class="text-end"><small class="text-muted d-block small">Posted</small>
-                                        <p class="mb-0 small">
-                                            {{ \Carbon\Carbon::parse($job['posted_date'])->diffForHumans() }}</p>
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center">
+                                        <div><small class="text-muted d-block small">Salary</small>
+                                            <p class="fw-semibold mb-0 small">PKR
+                                                {{ $job->jobPosting->minimum_salary }}
+                                                -{{ $job->jobPosting->maximum_salary }} </p>
+                                        </div>
+                                        <div class="text-end"><small class="text-muted d-block small">Posted</small>
+                                            <p class="mb-0 small">
+                                                {{ \Carbon\Carbon::parse($job['created_at'])->diffForHumans() }}</p>
+                                        </div>
                                     </div>
+                                    <div class="mt-3"><button wire:click="applyJob({{ $job['job_posting_id'] }})"
+                                            class="btn btn-primary w-100 rounded-pill small"><i
+                                                class="bi bi-send me-2"></i>Apply Now</button></div>
                                 </div>
-                                <div class="mt-3"><button wire:click="applyJob({{ $job['id'] }})"
-                                        class="btn btn-primary w-100 rounded-pill small"><i
-                                            class="bi bi-send me-2"></i>Apply Now</button></div>
                             </div>
                         </div>
-                    </div>
-                @empty
+                    @endforeach
+                @else
                     <div class="col-12">
                         <div class="card border-0 shadow rounded-4">
                             <div class="card-body p-4 text-center">
@@ -1341,7 +1388,7 @@ new class extends Component {
                             </div>
                         </div>
                     </div>
-                @endforelse
+                @endif
             </div>
         @endif
 
@@ -1440,6 +1487,13 @@ new class extends Component {
                                             class="form-label fw-semibold small">Password</label><input type="text"
                                             class="form-control form-control-sm" wire:model="applicantPassword"
                                             value=""></div>
+
+                                    @error('applicantPassword')
+                                        <div class="alert alert-danger">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+
                                     <div class="row mt-3">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label d-block">Marital Status</label>
@@ -1465,16 +1519,12 @@ new class extends Component {
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6"><label class="form-label fw-semibold small">Address</label>
+                                    <div class="col-md-12"><label class="form-label fw-semibold small">Address</label>
                                         <textarea rows="2" wire:model="applicantAddress" class="form-control form-control-sm">
                                         
                                         </textarea>
                                     </div>
-                                    <div class="col-md-6"><label class="form-label fw-semibold small">Previous
-                                            Salary</label>
-                                        <input type="text" class="form-control form-control-sm"
-                                            wire:model="previousSalary">
-                                    </div>
+
 
                                     <div class="col-12"><label class="form-label fw-semibold small">About</label>
                                         <textarea rows="2" class="form-control form-control-sm">Experienced Laravel developer with 5+ years of experience...</textarea>
