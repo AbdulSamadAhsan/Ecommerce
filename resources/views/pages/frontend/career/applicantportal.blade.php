@@ -194,29 +194,6 @@ new class extends Component {
     }
 
     // Saved Jobs (dummy data – replace with real DB)
-    public function getSavedJobsProperty()
-    {
-        return [
-            [
-                'id' => 1,
-                'title' => 'Full Stack Developer',
-                'company' => 'Tech Startup',
-                'location' => 'Karachi',
-                'type' => 'Full Time',
-                'salary' => '150,000 - 200,000',
-                'posted_date' => '2024-01-18',
-            ],
-            [
-                'id' => 2,
-                'title' => 'Mobile App Developer',
-                'company' => 'App Solutions',
-                'location' => 'Lahore',
-                'type' => 'Full Time',
-                'salary' => '120,000 - 160,000',
-                'posted_date' => '2024-01-16',
-            ],
-        ];
-    }
 
     public function switchTab($tab)
     {
