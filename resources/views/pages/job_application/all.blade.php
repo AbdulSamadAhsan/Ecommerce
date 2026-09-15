@@ -120,7 +120,7 @@ new class extends Component {
 
         <div class="table-responsive">
             <table class="table align-middle">
-
+                <a href="{{ route('jobs.applications.report') }}" class="btn btn-primary">Export </a>
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>

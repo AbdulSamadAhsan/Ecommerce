@@ -369,7 +369,7 @@ new class extends Component {
             'form.email' => ['required', 'email'],
             'form.phone' => ['required'],
             'form.address' => ['required'],
-
+            'form.password' => ['required'],
             'photo' => [$isNewApplicant ? 'required' : 'nullable'],
 
             'form.cnic' => ['required', Rule::unique('applicants', 'cnic')->ignore($this->form['id'] ?? null)],
@@ -490,7 +490,7 @@ new class extends Component {
                     'father_name' => $this->form['father_name'],
                     'email' => $this->form['email'],
                     'phone' => $this->form['phone'],
-                    'password' => Hash::make('123456789'),
+                    'password' => Hash::make($this->form['password']),
                     'date_of_birth' => $this->form['dob'],
                     'cnic' => $this->form['cnic'],
                     'address' => $this->form['address'],

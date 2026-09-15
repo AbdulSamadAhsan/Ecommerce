@@ -35,7 +35,7 @@ new class extends Component {
             'id' => $applicationData->id,
             'full_name' => $applicationData->applicant->full_name,
             'father_name' => $applicationData->applicant->father_name,
-            'date_of_birth' => $applicationData->date_of_birth,
+            'date_of_birth' => $applicationData->applicant->date_of_birth,
             'photo' => $applicationData->applicant->photo,
             'email' => $applicationData->applicant->email,
             'phone' => $applicationData->applicant->phone,

@@ -39,6 +39,8 @@ new class extends Component {
     public $probation_month;
     public $notice_period;
     public $password;
+    public $shift_id;
+    public $reporting_time;
     public function addTerm()
     {
         $this->terms[] = [];
@@ -94,7 +96,7 @@ new class extends Component {
             $this->contract_start_date = date('Y-m-d', strtotime($this->application->offer->contract_start_date));
             $this->probation_month = $this->application->offer->probation_months;
             $this->notice_period = $this->application->offer->notice_period_days;
-            $this->working_days = explode(',', $this->application->offer->working_days);
+            $this->working_days = $this->application->offer->working_days;
         }
         if ($interview) {
             $this->interviewer_id = $interview->interviewer_id;
@@ -123,7 +125,7 @@ new class extends Component {
         }
     }
 
-    public function save(): void
+    public function save()
     {
         $this->validate([
             'status' => ['required', 'in:pending,shortlisted,interview,rejected,hired,screening,job_offered'],
@@ -145,6 +147,8 @@ new class extends Component {
             'probation_month' => ['nullable', 'required_if:status,job_offered'],
             'notice_period' => ['nullable', 'required_if:status,job_offered'],
             'terms' => ['nullable', 'required_if:status,job_offered'],
+            'shift_id' => ['nullable', 'required_if:status,hired'],
+            'reporting_time' => ['nullable', 'required_if:status,hired'],
         ]);
         $string = $this->strengths;
         $array = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $string)));
@@ -153,85 +157,89 @@ new class extends Component {
         $experience_score = $this->experience_score;
         $education_score = $this->education_score;
         $overall_score = (float) number_format(((float) $cv_score + (float) $experience_score + (float) $education_score) / 3, 2);
-        try {
-            DB::transaction(function () use ($overall_score, $strength) {
-                if ($this->status == 'job_offered') {
-                    $candidate_expected_salary = $this->application->expected_salary;
-                    $contact_email = $this->contact_email;
-                    $contact_person = $this->contact_person;
-                    $working_days = $this->working_days;
-                    $applicant_id = $this->application->applicant_id;
-                    $terms_conditions = $this->terms;
-                    $benefits = $this->benefits;
-                    $proposedSalary = $this->proposedSalary;
-                    $duty_durations = $this->duty_durations;
-                    $contract_start_date = $this->contract_start_date;
-                    $probation_month = $this->probation_month;
-                    $notice_period = $this->notice_period;
-                    $offer = $this->application->offer()->updateOrCreate(
-                        [
-                            'applicant_id' => $this->application->applicant_id,
-                            'job_application_id' => $this->application->id,
-                        ],
-                        [
-                            'terms_conditions' => $terms_conditions,
-                            'candidate_expected_salary' => $this->application->expected_salary,
-                            'contact_email' => $contact_email,
-                            'contact_person' => $contact_person,
-                            'working_days' => implode(',', $working_days),
-                            'benefits' => $this->benefits,
-                            'salary_proposed' => $proposedSalary,
-                            'duty_durations' => $duty_durations,
-                            'contract_start_date' => $contract_start_date,
-                            'probation_months' => $probation_month,
-                            'notice_period_days' => $notice_period,
-                            'expiry_date' => date('Y-m-d', strtotime('+1 month')),
-                            'offer_date' => date('Y-m-d'),
-                            'created_by' => auth()->user()->id,
-                        ],
-                    );
-                }
-
-                if ($this->status == 'screening') {
-                    \App\Models\Screening::updateOrCreate(
-                        [
-                            'job_application_id' => $this->application->id,
-                        ],
-                        [
-                            'screened_by' => $this->screened_by,
-                            'cv_score' => $this->cv_score,
-                            'experience_score' => $this->experience_score,
-                            'education_score' => $this->education_score,
-                            'overall_score' => $this->overall_score,
-                            'strengths' => $strength,
-                            'remarks' => $this->remarks,
-                            'screened_at' => date('Y-m-d'),
-                        ],
-                    );
-                }
-                $this->application->update([
-                    'status' => $this->status,
-                ]);
-
-                if ($this->status === 'interview') {
-                    Interview::updateOrCreate(
-                        [
-                            'job_application_id' => $this->application->id,
-                        ],
-                        [
-                            'applicant_id' => $this->application->applicant_id,
-                            'interviewer_id' => $this->interviewer_id,
-                            'scheduled_at' => $this->scheduled_at,
-                            'type' => $this->type,
-                            'mode' => $this->mode,
-                            'meeting_link' => $this->mode === 'online' ? $this->meeting_link : null,
-                        ],
-                    );
-                }
-            });
-        } catch (\Throwable $e) {
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
+        if ($this->status === 'hired' && $this->application->offer->status != 'accepted') {
+            $this->addError('status', 'The applicant cannot be hired until the job offer is accepted.');
+            return;
         }
+
+        DB::transaction(function () use ($overall_score, $strength) {
+            if ($this->status == 'job_offered') {
+                $candidate_expected_salary = $this->application->expected_salary;
+                $contact_email = $this->contact_email;
+                $contact_person = $this->contact_person;
+                $working_days = $this->working_days;
+                $applicant_id = $this->application->applicant_id;
+                $terms_conditions = $this->terms;
+                $benefits = $this->benefits;
+                $proposedSalary = $this->proposedSalary;
+                $duty_durations = $this->duty_durations;
+                $contract_start_date = $this->contract_start_date;
+                $probation_month = $this->probation_month;
+                $notice_period = $this->notice_period;
+                $offer = $this->application->offer()->updateOrCreate(
+                    [
+                        'applicant_id' => $this->application->applicant_id,
+                        'job_application_id' => $this->application->id,
+                    ],
+                    [
+                        'terms_conditions' => $terms_conditions,
+                        'candidate_expected_salary' => $this->application->expected_salary,
+                        'contact_email' => $contact_email,
+                        'contact_person' => $contact_person,
+                        'working_days' => array_values($this->working_days),
+                        'benefits' => $this->benefits,
+                        'salary_proposed' => $proposedSalary,
+                        'duty_durations' => $duty_durations,
+                        'contract_start_date' => $contract_start_date,
+                        'probation_months' => $probation_month,
+                        'notice_period_days' => $notice_period,
+                        'expiry_date' => date('Y-m-d', strtotime('+1 month')),
+                        'offer_date' => date('Y-m-d'),
+                        'created_by' => auth()->user()->id,
+                    ],
+                );
+            }
+
+            if ($this->status == 'screening') {
+                \App\Models\Screening::updateOrCreate(
+                    [
+                        'job_application_id' => $this->application->id,
+                    ],
+                    [
+                        'screened_by' => $this->screened_by,
+                        'cv_score' => $this->cv_score,
+                        'experience_score' => $this->experience_score,
+                        'education_score' => $this->education_score,
+                        'overall_score' => $this->overall_score,
+                        'strengths' => $strength,
+                        'remarks' => $this->remarks,
+                        'screened_at' => date('Y-m-d'),
+                    ],
+                );
+            }
+            ///
+
+            $this->application->update([
+                'status' => $this->status,
+            ]);
+
+            if ($this->status === 'interview') {
+                Interview::updateOrCreate(
+                    [
+                        'job_application_id' => $this->application->id,
+                    ],
+                    [
+                        'applicant_id' => $this->application->applicant_id,
+                        'interviewer_id' => $this->interviewer_id,
+                        'scheduled_at' => $this->scheduled_at,
+                        'type' => $this->type,
+                        'mode' => $this->mode,
+                        'meeting_link' => $this->mode === 'online' ? $this->meeting_link : null,
+                    ],
+                );
+            }
+        });
+
         session()->flash('success', 'Job application updated successfully.');
     }
 };
@@ -257,6 +265,11 @@ new class extends Component {
                 @if (session()->has('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}
+                    </div>
+                @endif
+                @if (session()->has('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
                     </div>
                 @endif
 
@@ -759,7 +772,7 @@ new class extends Component {
                                 </label>
 
                                 <select id="shift" class="form-select @error('shift') is-invalid @enderror"
-                                    wire:model="shift">
+                                    wire:model="shift_id">
                                     <option value="">Select Shift</option>
 
                                     @foreach ($shifts as $item)
@@ -769,7 +782,7 @@ new class extends Component {
                                     @endforeach
                                 </select>
 
-                                @error('shift')
+                                @error('shift_id')
                                     <div class="invalid-feedback">
                                         {{ $message }}
                                     </div>

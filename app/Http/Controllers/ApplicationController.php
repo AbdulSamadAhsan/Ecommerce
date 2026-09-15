@@ -8,6 +8,9 @@ use App\Exports\JobApplication;
 class ApplicationController extends Controller
 {
     public function report(){
-        
+         return Excel::download(
+            new JobApplication(),
+            'application-report'.time().'.xlsx'
+        );
     }
 }

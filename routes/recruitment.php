@@ -1,14 +1,19 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApplicantController;
-
+use App\Http\Controllers\ApplicationController;
  Route::name('jobs.')->group(function () {
-
+     
       Route::prefix('job-applicants')->group(function () {
         Route::livewire('/', 'pages::applicants.all')->name('applicants.index');
         Route::livewire('/{id}', 'pages::applicants.show')->name('applicants.show');
 
       });
+
+   Route::get(
+    '/application-report',
+    [ApplicationController::class, 'report']
+)->name('applications.report');
          Route::prefix("job-screenings")->group(function(){
              Route::livewire('/',"pages::screenings.index")->name("screenings.index");
             Route::livewire('/{id}/edit',"pages::screenings.edit")->name("screenings.edit");
