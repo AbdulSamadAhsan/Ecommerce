@@ -6,7 +6,12 @@ use App\Models\Interview;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Role;
+use App\Models\Employee;
+use App\Models\Salary;
+use App\Models\Tax;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 new class extends Component {
     public int $id;
     public array $working_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -41,6 +46,7 @@ new class extends Component {
     public $password;
     public $shift_id;
     public $reporting_time;
+    public $allowance = '';
     public function addTerm()
     {
         $this->terms[] = [];
@@ -149,6 +155,7 @@ new class extends Component {
             'terms' => ['nullable', 'required_if:status,job_offered'],
             'shift_id' => ['nullable', 'required_if:status,hired'],
             'reporting_time' => ['nullable', 'required_if:status,hired'],
+            'allowance' => ['nullable', 'required_if:status,hired'],
         ]);
         $string = $this->strengths;
         $array = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $string)));
@@ -219,10 +226,6 @@ new class extends Component {
             }
             ///
 
-            $this->application->update([
-                'status' => $this->status,
-            ]);
-
             if ($this->status === 'interview') {
                 Interview::updateOrCreate(
                     [
@@ -238,8 +241,77 @@ new class extends Component {
                     ],
                 );
             }
-        });
+            if ($this->status === 'hired') {
+                $role = Role::where('name', 'Employee')->first();
+                $role_id = $role->id;
+                $userPayload = [
+                    'name' => $this->application->applicant->full_name,
+                    'email' => $this->application->applicant->email,
+                    'password' => Hash::make('123456789'),
+                    'role_id' => $role->id,
+                ];
+                $user = User::create($userPayload);
+                $disk = Storage::disk('local');
+                $joining_date = date('Y-m-d');
+                $tax = Tax::where('category', 'salary')->first();
+                $basic_salary = $this->application->offer->approved_salary;
+                $tax_deduction = round(($tax->rate / 100) * $basic_salary);
+                $disk = Storage::disk('public');
 
+                // Get the original database value, especially if photo has an accessor.
+                $source = $this->application->applicant->getRawOriginal('photo');
+
+                // The expected value is: applicant/photo.jpg
+                $source = ltrim($source, '/');
+
+                $fileName = basename($source);
+                $newPath = 'employees/' . $fileName;
+
+                if (!$disk->exists('applicant/' . $source)) {
+                    throw new \RuntimeException("Source file does not exist: {$source}");
+                }
+
+                if (!$disk->copy('applicant/' . $source, $newPath)) {
+                    throw new \RuntimeException("Could not copy {$source} to {$newPath}");
+                }
+
+                $net_salary = $this->allowance + ($basic_salary - $tax_deduction);
+                $employee_payload = [
+                    'user_id' => $user->id,
+                    'shift_id' => (int) $this->shift_id,
+                    'designation_id ' => $this->application->JobPosting->designation_id,
+                    'department_id' => $this->application->JobPosting->department_id,
+                    'father_name' => $this->application->applicant->father_name,
+                    'cnic' => $this->application->applicant->cnic,
+                    'date_of_birth' => $this->application->applicant->date_of_birth,
+                    'gender' => $this->application->applicant->gender,
+                    'phone' => $this->application->applicant->phone,
+                    'address' => $this->application->applicant->address,
+                    'marital_status' => $this->application->applicant->martial_status,
+                    'linkedin' => $this->application->applicant->linkedin,
+                    'notice_period' => $this->application->offer->notice_period_days,
+                    'probation_period' => $this->application->offer->probation_months,
+                    'employment_type' => $this->application->jobPosting->employment_type,
+                    'joining_date' => $joining_date,
+                    'photo' => $newPath,
+                    'bank_name' => 'MCB',
+                ];
+                $employee = Employee::create($employee_payload);
+                $salaryPayload = [
+                    'employee_id' => $employee->id,
+                    'allowance' => $this->allowance,
+                    'effective_from' => $joining_date,
+                    'tax_deduction' => $tax_deduction,
+                    'basic_salary' => $basic_salary,
+                    'net_salary' => $net_salary,
+                ];
+                Salary::create($salaryPayload);
+            }
+            $this->application->update([
+                'status' => $this->status,
+            ]);
+        });
+        $this->application->refresh();
         session()->flash('success', 'Job application updated successfully.');
     }
 };
@@ -766,12 +838,12 @@ new class extends Component {
                             Employee Creation
                         </h5>
                         <div class="row g-3">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="shift" class="form-label fw-semibold">
                                     Shift <span class="text-danger">*</span>
                                 </label>
 
-                                <select id="shift" class="form-select @error('shift') is-invalid @enderror"
+                                <select id="shift" class="form-select @error('shift_id') is-invalid @enderror"
                                     wire:model="shift_id">
                                     <option value="">Select Shift</option>
 
@@ -790,7 +862,7 @@ new class extends Component {
                             </div>
 
                             {{-- Reporting Time --}}
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="reporting_time" class="form-label fw-semibold">
                                     Reporting Time
                                 </label>
@@ -799,6 +871,38 @@ new class extends Component {
                                     class="form-control @error('reporting_time') is-invalid @enderror">
 
                                 @error('reporting_time')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+
+
+                            <div class="col-md-3 mb-3">
+                                <label for="reporting_time" class="form-label fw-semibold">
+                                    Allowance
+                                </label>
+
+                                <input type="number" id="reporting_time" autocomplete="off" wire:model="allowance"
+                                    value="" class="form-control @error('allowance') is-invalid @enderror">
+
+                                @error('allowance')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="password" class="form-label fw-semibold">
+                                    Password
+                                </label>
+
+                                <input type="password" id="password" wire:model="password"
+                                    class="form-control @error('password') is-invalid @enderror"
+                                    placeholder="Enter contact name">
+
+                                @error('password')
                                     <div class="invalid-feedback">
                                         {{ $message }}
                                     </div>
@@ -821,21 +925,6 @@ new class extends Component {
                                 @enderror
                             </div>
 
-                            <div class="col-md-4">
-                                <label for="password" class="form-label fw-semibold">
-                                    Password
-                                </label>
-
-                                <input type="password" id="password" wire:model="password"
-                                    class="form-control @error('password') is-invalid @enderror"
-                                    placeholder="Enter contact name">
-
-                                @error('password')
-                                    <div class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
                             {{-- Emergency Contact Number --}}
                             <div class="col-md-4">
                                 <label for="emergency_contact_number" class="form-label fw-semibold">

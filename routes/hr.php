@@ -22,12 +22,18 @@ use App\Http\Controllers\ReportController;
         Route::livewire("/create", "pages::employees.create")->name("create");
         Route::livewire("/{id}", "pages::employees.show")->name("show");
         Route::livewire("/{id}/edit", "pages::employees.edit")->name("edit");
-       
+                          
         Route::get('/{employee}/report', [ReportController::class, 'report'])->name('report');
         Route::get('/{employee}/cnic/download', [EmployeeController::class, 'downloadCnic'])->name('cnic.download');
         Route::get('/{employee}/card/download',[EmployeeController::class, 'downloadCard'])->name('card.download');
         Route::get('/{employee}/{salary_payment_id}/payslip/download', [EmployeeController::class, 'downloadPayslip'])->name('payslip.download');
     });
+        Route::livewire("employees-documents/create","pages::employees.employee_documents.create")->name("employees.documents.create");
+    Route::livewire("employees-documents/","pages::employees.employee_documents.all")->name("employees.documents.index");
+
+Route::livewire("employees-cards/","pages::employees.employeecard.all")->name("employees.employee_card");
+Route::livewire("employee-cards/create","pages::employees.employeecard.issue")->name("employees.employee_card.create");
+
     Route::get("all-employee",[ReportController::class,"allemployee"])->name("employees.all");
       Route::livewire("/salary-payment", "pages::employees.salary")->name("employees.salary");
 

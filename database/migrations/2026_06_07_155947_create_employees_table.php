@@ -16,7 +16,7 @@ return new class extends Migration
    
 $table->string('phone')->nullable();
 
-$table->string('designation')->nullable();
+
 
 $table->date('joining_date')->nullable();
 

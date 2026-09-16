@@ -27,7 +27,7 @@ protected $fillable = [
     "account_title",	
 		"account_number",
 		"iban",
-        "bank_name",
+   
 		"branch_name",	
 		"branch_code",	
 		"swift_code",

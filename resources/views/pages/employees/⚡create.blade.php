@@ -165,11 +165,10 @@ new class extends Component {
 
                 $employee = Employee::create([
                     'user_id' => $user->id,
-                    'institution_id' => $this->institution_id,
-                    'education_id' => $this->education_id,
+
                     'department_id' => $this->department_id,
                     'phone' => $this->phone,
-                    'designation' => $this->designation,
+
                     'joining_date' => $this->joining_date,
                     'address' => $this->address,
                     'cnic' => $this->cnic,

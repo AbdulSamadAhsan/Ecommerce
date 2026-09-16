@@ -490,7 +490,7 @@ new class extends Component {
                     'father_name' => $this->form['father_name'],
                     'email' => $this->form['email'],
                     'phone' => $this->form['phone'],
-                    'password' => Hash::make($this->form['password']),
+                    'password' => Hash::make('123456789'),
                     'date_of_birth' => $this->form['dob'],
                     'cnic' => $this->form['cnic'],
                     'address' => $this->form['address'],

@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Models\JobApplication as Application;
 use App\Models\Interview;
-use App\Models\Offer;
+use App\Models\JobOffer as Offer;
 use App\Models\ApplicantDocument;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -351,6 +351,12 @@ new class extends Component {
     public function submitAccept()
     {
         // Update offer status to 'accepted' (business logic placeholder)
+
+        $offer = Offer::findOrFail($this->acceptingOfferId);
+        $offer->approved_salary = $offer->salary_proposed;
+        $offer->status = 'accepted';
+        $offer->save();
+        $offer->refresh();
         session()->flash('success', 'Offer accepted successfully!');
         $this->dispatch('show-alert', ['message' => 'Offer accepted successfully!']);
         $this->closeAccept();
