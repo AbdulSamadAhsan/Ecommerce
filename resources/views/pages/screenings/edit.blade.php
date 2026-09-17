@@ -75,7 +75,7 @@ new class extends Component {
             'experience_score' => 'required|integer|min:1|max:5',
             'education_score' => 'required|integer|min:1|max:5',
 
-            'status' => 'required|in:pending,completed,rejected,shortlisted',
+            'status' => 'required|in:pending,passed,in_review,failed',
 
             'strengths' => 'nullable|max:2000',
             'weaknesses' => 'nullable|max:2000',
@@ -106,8 +106,6 @@ new class extends Component {
 
     public function updated($property)
     {
-        $this->validateOnly($property);
-
         if (in_array($property, ['cv_score', 'experience_score', 'education_score'])) {
             $this->calculateOverallScore();
         }
@@ -457,15 +455,15 @@ new class extends Component {
                                         Pending
                                     </option>
 
-                                    <option value="completed">
-                                        Completed
+                                    <option value="passed">
+                                        Passed
                                     </option>
 
-                                    <option value="shortlisted">
-                                        Shortlisted
+                                    <option value="in_review">
+                                        In Review
                                     </option>
 
-                                    <option value="rejected">
+                                    <option value="failed">
                                         Rejected
                                     </option>
 

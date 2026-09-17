@@ -12,6 +12,7 @@ use App\Models\Salary;
 use App\Models\Tax;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+
 new class extends Component {
     public int $id;
     public array $working_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -55,6 +56,22 @@ new class extends Component {
     {
         $this->benefits[] = [];
     }
+
+    public function calculateOverallScore()
+    {
+        if ($this->cv_score && $this->experience_score && $this->education_score) {
+            $this->overall_score = round(((int) $this->cv_score + (int) $this->experience_score + (int) $this->education_score) / 3, 2);
+        } else {
+            $this->overall_score = 0;
+        }
+    }
+    public function updated($property)
+    {
+        if (in_array($property, ['cv_score', 'experience_score', 'education_score'])) {
+            $this->calculateOverallScore();
+        }
+    }
+
     public function removeTerm($index): void
     {
         unset($this->terms[$index]);
@@ -164,8 +181,20 @@ new class extends Component {
         $experience_score = $this->experience_score;
         $education_score = $this->education_score;
         $overall_score = (float) number_format(((float) $cv_score + (float) $experience_score + (float) $education_score) / 3, 2);
+
+        if ($this->status === 'shortlisted') {
+            if ($this->application?->screening?->status !== 'passed') {
+                $this->addError('status', 'The application cannot be shortlisted until it has passed the screening process.');
+
+                return; // exits the entire current method
+            }
+        }
         if ($this->status === 'hired' && $this->application->offer->status != 'accepted') {
             $this->addError('status', 'The applicant cannot be hired until the job offer is accepted.');
+            return;
+        }
+        if (Employee::where('cnic', $this->application->applicant->cnic)->exists() && $this->status != 'rejected') {
+            session()->flash('error', 'Cannot be processed because employee Already with this cnic');
             return;
         }
 
@@ -208,21 +237,31 @@ new class extends Component {
             }
 
             if ($this->status == 'screening') {
-                \App\Models\Screening::updateOrCreate(
-                    [
-                        'job_application_id' => $this->application->id,
-                    ],
-                    [
-                        'screened_by' => $this->screened_by,
-                        'cv_score' => $this->cv_score,
-                        'experience_score' => $this->experience_score,
-                        'education_score' => $this->education_score,
-                        'overall_score' => $this->overall_score,
-                        'strengths' => $strength,
-                        'remarks' => $this->remarks,
-                        'screened_at' => date('Y-m-d'),
-                    ],
-                );
+                $cnic = $this->application->applicant->cnic;
+                try {
+                    if (Employee::where('cnic', $cnic)->exists()) {
+                        throw new \Exception('Cannot be processed because employee Already with this cnic.');
+                    }
+                    \App\Models\Screening::updateOrCreate(
+                        [
+                            'job_application_id' => $this->application->id,
+                        ],
+                        [
+                            'screened_by' => $this->screened_by,
+                            'cv_score' => $this->cv_score,
+                            'experience_score' => $this->experience_score,
+                            'education_score' => $this->education_score,
+                            'overall_score' => $this->overall_score,
+                            'strengths' => $strength,
+                            'remarks' => $this->remarks,
+                            'screened_at' => date('Y-m-d'),
+                        ],
+                    );
+                } catch (\Throwable $e) {
+                    session()->flash('error', $e->getMessage());
+
+                    return;
+                }
             }
             ///
 
@@ -242,77 +281,85 @@ new class extends Component {
                 );
             }
             if ($this->status === 'hired') {
-                $role = Role::where('name', 'Employee')->first();
-                $role_id = $role->id;
-                $userPayload = [
-                    'name' => $this->application->applicant->full_name,
-                    'email' => $this->application->applicant->email,
-                    'password' => Hash::make('123456789'),
-                    'role_id' => $role->id,
-                ];
-                $user = User::create($userPayload);
-                $disk = Storage::disk('local');
-                $joining_date = date('Y-m-d');
-                $tax = Tax::where('category', 'salary')->first();
-                $basic_salary = $this->application->offer->approved_salary;
-                $tax_deduction = round(($tax->rate / 100) * $basic_salary);
-                $disk = Storage::disk('public');
+                try {
+                    $role = Role::where('name', 'Employee')->first();
+                    $role_id = $role->id;
+                    $userPayload = [
+                        'name' => $this->application->applicant->full_name,
+                        'email' => $this->application->applicant->email,
+                        'password' => Hash::make('123456789'),
+                        'role_id' => $role->id,
+                    ];
 
-                // Get the original database value, especially if photo has an accessor.
-                $source = $this->application->applicant->getRawOriginal('photo');
+                    $disk = Storage::disk('local');
+                    $joining_date = date('Y-m-d');
+                    $tax = Tax::where('category', 'salary')->first();
+                    $basic_salary = $this->application->offer->approved_salary;
+                    $tax_deduction = round(($tax->rate / 100) * $basic_salary);
+                    $disk = Storage::disk('public');
 
-                // The expected value is: applicant/photo.jpg
-                $source = ltrim($source, '/');
+                    // Get the original database value, especially if photo has an accessor.
+                    $source = $this->application->applicant->getRawOriginal('photo');
 
-                $fileName = basename($source);
-                $newPath = 'employees/' . $fileName;
+                    // The expected value is: applicant/photo.jpg
+                    $source = ltrim($source, '/');
 
-                if (!$disk->exists('applicant/' . $source)) {
-                    throw new \RuntimeException("Source file does not exist: {$source}");
+                    $fileName = basename($source);
+                    $newPath = 'employees/' . $fileName;
+
+                    if (!$disk->exists('applicant/' . $source)) {
+                        throw new \RuntimeException("Source file does not exist: {$source}");
+                    }
+
+                    if (!$disk->copy('applicant/' . $source, $newPath)) {
+                        throw new \RuntimeException("Could not copy {$source} to {$newPath}");
+                    }
+
+                    $net_salary = $this->allowance + ($basic_salary - $tax_deduction);
+
+                    $employee_payload = [
+                        'user_id' => 6,
+                        'shift_id' => $this->shift_id,
+                        'designation_id' => $this->application->jobPosting->designation_id,
+                        'department_id' => $this->application->jobPosting->department_id,
+                        'father_name' => $this->application->applicant->father_name,
+                        'cnic' => $this->application->applicant->cnic,
+                        'date_of_birth' => $this->application->applicant->date_of_birth,
+                        'gender' => $this->application->applicant->gender,
+                        'phone' => $this->application->applicant->phone,
+                        'address' => $this->application->applicant->address,
+                        'marital_status' => $this->application->applicant->martial_status,
+                        'linkedin' => $this->application->applicant->linkedin,
+                        'notice_period' => $this->application->offer->notice_period_days,
+                        'probation_period' => $this->application->offer->probation_months,
+                        'employment_type' => $this->application->jobPosting->employment_type,
+                        'joining_date' => $joining_date,
+                        'photo' => $newPath,
+                        'bank_name' => 'MCB',
+                    ];
+
+                    $employee = Employee::create($employee_payload);
+
+                    $salaryPayload = [
+                        'allowance' => $this->allowance,
+                        'effective_from' => $joining_date,
+                        'tax_deduction' => $tax_deduction,
+                        'basic_salary' => $basic_salary,
+                        'net_salary' => $net_salary,
+                    ];
+                } catch (\Throwable $e) {
+                    session()->flash('error', $e->getMessage());
+
+                    return;
                 }
-
-                if (!$disk->copy('applicant/' . $source, $newPath)) {
-                    throw new \RuntimeException("Could not copy {$source} to {$newPath}");
-                }
-
-                $net_salary = $this->allowance + ($basic_salary - $tax_deduction);
-                $employee_payload = [
-                    'user_id' => $user->id,
-                    'shift_id' => (int) $this->shift_id,
-                    'designation_id ' => $this->application->JobPosting->designation_id,
-                    'department_id' => $this->application->JobPosting->department_id,
-                    'father_name' => $this->application->applicant->father_name,
-                    'cnic' => $this->application->applicant->cnic,
-                    'date_of_birth' => $this->application->applicant->date_of_birth,
-                    'gender' => $this->application->applicant->gender,
-                    'phone' => $this->application->applicant->phone,
-                    'address' => $this->application->applicant->address,
-                    'marital_status' => $this->application->applicant->martial_status,
-                    'linkedin' => $this->application->applicant->linkedin,
-                    'notice_period' => $this->application->offer->notice_period_days,
-                    'probation_period' => $this->application->offer->probation_months,
-                    'employment_type' => $this->application->jobPosting->employment_type,
-                    'joining_date' => $joining_date,
-                    'photo' => $newPath,
-                    'bank_name' => 'MCB',
-                ];
-                $employee = Employee::create($employee_payload);
-                $salaryPayload = [
-                    'employee_id' => $employee->id,
-                    'allowance' => $this->allowance,
-                    'effective_from' => $joining_date,
-                    'tax_deduction' => $tax_deduction,
-                    'basic_salary' => $basic_salary,
-                    'net_salary' => $net_salary,
-                ];
-                Salary::create($salaryPayload);
             }
+
             $this->application->update([
                 'status' => $this->status,
             ]);
+            $this->application->refresh();
+            session()->flash('success', 'Job application updated successfully.');
         });
-        $this->application->refresh();
-        session()->flash('success', 'Job application updated successfully.');
     }
 };
 ?>
@@ -1128,7 +1175,7 @@ new class extends Component {
                                     CV Score
                                 </label>
 
-                                <input type="number" wire:model="cv_score" min="0" max="100"
+                                <input type="number" wire:model.live="cv_score" min="0" max="100"
                                     class="form-control @error('cv_score') is-invalid @enderror"
                                     placeholder="Enter CV score">
 
@@ -1146,7 +1193,8 @@ new class extends Component {
                                     Experience Score
                                 </label>
 
-                                <input type="number" wire:model="experience_score" min="0" max="100"
+                                <input type="number" wire:model.live="experience_score" min="0"
+                                    max="100"
                                     class="form-control @error('experience_score') is-invalid @enderror"
                                     placeholder="Enter experience score">
 
@@ -1164,7 +1212,8 @@ new class extends Component {
                                     Education Score
                                 </label>
 
-                                <input type="number" wire:model="education_score" min="0" max="100"
+                                <input type="number" wire:model.live="education_score" min="0"
+                                    max="100"
                                     class="form-control @error('education_score') is-invalid @enderror"
                                     placeholder="Enter education score">
 
@@ -1182,8 +1231,8 @@ new class extends Component {
                                     Overall Score
                                 </label>
 
-                                <input type="number" wire:model="overall_score" min="0" max="100"
-                                    class="form-control @error('overall_score') is-invalid @enderror"
+                                <input type="number" disabled wire:model.live="overall_score" min="0"
+                                    max="100" class="form-control @error('overall_score') is-invalid @enderror"
                                     placeholder="Enter overall score">
 
                                 @error('overall_score')

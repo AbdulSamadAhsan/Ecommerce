@@ -25,12 +25,14 @@ new class extends Component {
     public function mount($id): void
     {
         $this->id = (int) $id;
-        $employeedata = Employee::with(['education', 'department', 'institute', 'user', 'salaryData', 'salaryPayments', 'payroll', 'attendance', 'leave'])->findOrFail($this->id);
+        $employeedata = Employee::with(['designation', 'department', 'shift', 'user', 'salaryData', 'salaryPayments', 'payroll', 'attendance', 'leave'])->findOrFail($this->id);
         /*   dd($employeedata->toArray());*/
         $this->salaryPaymentUnpaid = \App\Models\SalaryPayment::where('employee_id', $id)->where('status', 'pending')->sum('amount');
         $this->salaryPaymentpaid = \App\Models\SalaryPayment::where('employee_id', $id)->where('status', 'paid')->sum('amount');
         $this->leaveCount = $employeedata->attendance->where('status', 'leave')->count();
         $this->lateCount = $employeedata->attendance->where('status', 'late')->count();
+        dd($employeedata);
+
         $this->employee = [
             'id' => $this->id,
             'name' => $employeedata->user->name,
@@ -38,7 +40,7 @@ new class extends Component {
             'phone' => $employeedata->phone,
             'code' => $employeedata->employee_code,
             'department' => $employeedata->department->name,
-            'designation' => $employeedata->designation,
+            'designation' => $employeedata->designation->name,
             'salary' => $employeedata->salaryData->basic_salary,
             'joining_date' => $employeedata->joining_date,
             'address' => $employeedata->address,
@@ -406,7 +408,7 @@ new class extends Component {
                         Rs {{ $employee['net_salary'] }}
                     </p>
                 </div>
-
+                {{--
                 <div class="col-md-3 mb-3">
                     <strong>Bank Name</strong>
                     <p class="mb-0">
@@ -434,7 +436,7 @@ new class extends Component {
                         {{ $employee['iban'] }}
                     </p>
                 </div>
-
+             --}}
             </div>
 
         </div>

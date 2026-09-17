@@ -11,8 +11,8 @@ class Employee extends Model
 
 protected $fillable = [
     'user_id',
-    'institution_id',
-    'education_id',
+    'designation_id',
+    'shift_id',
     'department_id',
     'phone',
     'designation',
@@ -45,8 +45,9 @@ protected $fillable = [
 protected $appends = [
     "annual_salary",
     'age',
-    "employee_code"
-
+    "employee_code",
+  
+ 
 ];
 
 public function getEmployeeCodeAttribute(){
@@ -77,14 +78,7 @@ public function getAgeAttribute()
      public function department(){
         return $this->belongsTo(Department::class);
      }
-  public function education()
-{
-    return $this->belongsTo(Education::class, 'education_id');
-}
-    public function institute()
-{
-    return $this->belongsTo(Institution::class, 'institution_id');
-}
+
    public function salaryData(){
      return $this->hasOne(Salary::class, 'employee_id');   
    }
@@ -112,6 +106,18 @@ public function documents()
 {
     return $this->hasMany(EmployeeDocument::class, 'employee_id');
 }
+
+public function shift(){
+return $this->belongsTo(Shift::class, 'shift_id');
+
+}
+
+public function designation()
+{
+    return $this->belongsTo(Designation::class);
+}
+
+
 public function holidays()
 {
     return $this->belongsToMany(
