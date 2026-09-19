@@ -14,6 +14,13 @@ class ProductData implements FromCollection,WithHeadings,ShouldAutoSize
      public function collection()
     {
              return Product::with(['supplier', 'category'])
+              ->when(
+        auth()->user()->role?->name === 'Supplier',
+        fn ($query) => $query->where(
+            'supplier_id',
+            auth()->user()->supplier_id
+        )
+    )
         ->get()
         ->map(function ($product) {
             return [

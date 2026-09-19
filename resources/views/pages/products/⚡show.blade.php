@@ -40,7 +40,7 @@ new class extends Component {
             'discount_amount' => $productData->discount_amount,
             'price_after_discount' => $productData->price_after_discount,
         ];
-
+        $this->authorize('view', $productData);
         $this->reviews = $productData->reviews;
         // $productData
         //     ->salesitem

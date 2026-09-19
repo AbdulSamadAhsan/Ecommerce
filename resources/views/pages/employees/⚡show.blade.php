@@ -25,13 +25,12 @@ new class extends Component {
     public function mount($id): void
     {
         $this->id = (int) $id;
-        $employeedata = Employee::with(['designation', 'department', 'shift', 'user', 'salaryData', 'salaryPayments', 'payroll', 'attendance', 'leave'])->findOrFail($this->id);
+        $employeedata = Employee::with(['department', 'user', 'salaryData', 'salaryPayments', 'payroll', 'attendance', 'leave'])->findOrFail($this->id);
         /*   dd($employeedata->toArray());*/
         $this->salaryPaymentUnpaid = \App\Models\SalaryPayment::where('employee_id', $id)->where('status', 'pending')->sum('amount');
         $this->salaryPaymentpaid = \App\Models\SalaryPayment::where('employee_id', $id)->where('status', 'paid')->sum('amount');
         $this->leaveCount = $employeedata->attendance->where('status', 'leave')->count();
         $this->lateCount = $employeedata->attendance->where('status', 'late')->count();
-        dd($employeedata);
 
         $this->employee = [
             'id' => $this->id,
@@ -40,15 +39,14 @@ new class extends Component {
             'phone' => $employeedata->phone,
             'code' => $employeedata->employee_code,
             'department' => $employeedata->department->name,
-            'designation' => $employeedata->designation->name,
+            'designation' => $employeedata->designation,
             'salary' => $employeedata->salaryData->basic_salary,
             'joining_date' => $employeedata->joining_date,
             'address' => $employeedata->address,
             'status' => $employeedata->status,
             'cnic' => $employeedata->cnic,
             'gender' => $employeedata->gender,
-            'education' => $employeedata->education?->name,
-            'institution' => $employeedata?->institute?->name,
+
             'photo' => asset('storage/' . $employeedata->photo),
             'education' => $employeedata->education?->name,
             'allowance' => $employeedata->salaryData->allowance,
@@ -68,7 +66,7 @@ new class extends Component {
             'paid_salary' => $this->salaryPaymentpaid,
             'reporting_time' => date('h:i a', strtotime($employeedata->reporting_time)),
         ];
-
+        dd($this->employee);
         $this->attendance = $employeedata->attendance->toArray();
         $this->leaves = $employeedata->leave->toArray();
         $this->total_presence = $employeedata->attendance->where('status', 'present')->count();

@@ -46,9 +46,27 @@ protected $appends = [
     "annual_salary",
     'age',
     "employee_code",
-  
- 
+   'designation',
+    'shift'
 ];
+public function designationRelation()
+{
+    return $this->belongsTo(Designation::class, 'designation_id');
+}
+
+public function getDesignationAttribute()
+{
+    return $this->designationRelation?->name ?? 'Not Assigned';
+}
+public function shiftRelation()
+{
+    return $this->belongsTo(Shift::class, 'shift_id');
+}
+
+public function getShiftAttribute()
+{
+    return $this->shiftRelation?->name ?? 'Not Assigned';
+}
 
 public function getEmployeeCodeAttribute(){
     $name =substr($this->user->name, 0, 3);

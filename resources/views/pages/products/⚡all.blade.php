@@ -6,6 +6,8 @@ new class extends Component {
     public $products;
     public function mount()
     {
+        $this->authorize('viewAny', Product::class);
+
         $loginedUserRole = auth()->user()->role->name;
         if ($loginedUserRole != 'Supplier') {
             $this->products = Product::with(['category', 'brand', 'supplier', 'warehouse'])->get();

@@ -90,6 +90,7 @@ new class extends Component {
         $this->shifts = \App\Models\Shift::get();
         $this->application = JobApplication::with(['applicant', 'jobPosting.designation'])->findOrFail($id);
 
+        $this->authorize('update', $this->application);
         $this->status = $this->application->status;
         $this->currentStatus = $this->application->status;
         $this->interviewers = User::select('id', 'name', 'email')->get();
@@ -290,7 +291,7 @@ new class extends Component {
                         'password' => Hash::make('123456789'),
                         'role_id' => $role->id,
                     ];
-
+                    $user = User::create($userPayload);
                     $disk = Storage::disk('local');
                     $joining_date = date('Y-m-d');
                     $tax = Tax::where('category', 'salary')->first();
@@ -318,7 +319,7 @@ new class extends Component {
                     $net_salary = $this->allowance + ($basic_salary - $tax_deduction);
 
                     $employee_payload = [
-                        'user_id' => 6,
+                        'user_id' => $user->id,
                         'shift_id' => $this->shift_id,
                         'designation_id' => $this->application->jobPosting->designation_id,
                         'department_id' => $this->application->jobPosting->department_id,
@@ -341,12 +342,14 @@ new class extends Component {
                     $employee = Employee::create($employee_payload);
 
                     $salaryPayload = [
+                        'employee_id' => $employee->id,
                         'allowance' => $this->allowance,
                         'effective_from' => $joining_date,
                         'tax_deduction' => $tax_deduction,
                         'basic_salary' => $basic_salary,
                         'net_salary' => $net_salary,
                     ];
+                    Salary::create($salaryPayload);
                 } catch (\Throwable $e) {
                     session()->flash('error', $e->getMessage());
 

@@ -427,25 +427,27 @@
             </li>
 
             <li class="nav-item sidebar-dropdown {{ openRoute('products.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-box-seam-fill"></i> Products</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('products.*') }}"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ showRoute('products.*') }}">
-                    <a href="{{ adminRoute('products.all') }}" class="nav-link {{ activeRoute('products.index') }}">
-                        <i class="bi bi-grid"></i> All Products
+                @can('viewAny', App\Models\Product::class)
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-box-seam-fill"></i> Products</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('products.*') }}"></i>
                     </a>
 
-                    <a href="{{ adminRoute('products.create') }}"
-                        class="nav-link {{ activeRoute('products.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Product
-                    </a>
+                    <div class="sidebar-dropdown-menu {{ showRoute('products.*') }}">
+                        <a href="{{ adminRoute('products.all') }}" class="nav-link {{ activeRoute('products.index') }}">
+                            <i class="bi bi-grid"></i> All Products
+                        </a>
 
-                    <a href="{{ adminRoute('products.review') }}"
-                        class="nav-link {{ activeRoute('products.review') }}">
-                        <i class="bi bi-star-fill"></i> Reviews
-                    </a>
+                        <a href="{{ adminRoute('products.create') }}"
+                            class="nav-link {{ activeRoute('products.create') }}">
+                            <i class="bi bi-plus-circle-fill"></i> Add Product
+                        </a>
+
+                        <a href="{{ adminRoute('products.review') }}"
+                            class="nav-link {{ activeRoute('products.review') }}">
+                            <i class="bi bi-star-fill"></i> Reviews
+                        </a>
+                    @endcan
                 </div>
             </li>
 
