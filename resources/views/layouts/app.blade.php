@@ -906,12 +906,13 @@
                     <i class="bi bi-wallet2"></i> Payroll
                 </a>
             </li>
-
-            <li class="nav-item">
-                <a href="{{ adminRoute('customers.index') }}" class="nav-link {{ activeRoute('customers.*') }}">
-                    <i class="bi bi-people-fill"></i> Customers
-                </a>
-            </li>
+            @can('access')
+                <li class="nav-item">
+                    <a href="{{ adminRoute('customers.index') }}" class="nav-link {{ activeRoute('customers.*') }}">
+                        <i class="bi bi-people-fill"></i> Customers
+                    </a>
+                </li>
+            @endcan
 
             <li class="nav-item">
                 <a href="{{ adminRoute('stocks.index') }}" class="nav-link {{ activeRoute('stocks.*') }}">

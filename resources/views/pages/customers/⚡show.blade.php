@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Models\Customer;
 use App\Models\Sale;
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public int $id;
 
@@ -13,6 +14,7 @@ new class extends Component {
     public $lastOrder;
     public function mount($id): void
     {
+        Gate::authorize('access');
         $this->id = (int) $id;
 
         $this->customer = Customer::findOrFail($id);

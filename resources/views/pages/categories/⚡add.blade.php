@@ -3,7 +3,7 @@
 use App\Models\Category;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Gate;
+
 new class extends Component {
     public $name = '';
     public $description = '';

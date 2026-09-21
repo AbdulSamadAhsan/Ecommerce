@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Models\Customer;
 use App\Models\Wallet;
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public string $search = '';
 
@@ -10,6 +11,7 @@ new class extends Component {
 
     public function mount(): void
     {
+        Gate::authorize('access');
         $this->customers = Customer::get();
     }
 
