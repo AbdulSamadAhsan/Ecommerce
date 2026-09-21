@@ -118,6 +118,9 @@ new class extends Component {
         } else {
             $this->overall_score = 0;
         }
+        if ($this->overall_score < 3) {
+            $this->status = 'failed';
+        }
     }
 
     public function update()

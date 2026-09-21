@@ -36,7 +36,7 @@ class RegisterController extends Controller
      * @return void
      */
     public function __construct()
-    {
+    {   abort(403,"Your Are Not Allowed");
         $this->middleware('guest');
     }
 

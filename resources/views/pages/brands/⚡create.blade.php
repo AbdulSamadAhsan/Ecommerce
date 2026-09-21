@@ -4,7 +4,7 @@ use App\Models\Brand;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     use WithFileUploads;
 
@@ -20,6 +20,10 @@ new class extends Component {
         'status' => 'required|boolean',
     ];
 
+    public function mount()
+    {
+        Gate::authorize('access');
+    }
     protected $messages = [
         'title.required' => 'Brand name is required.',
         'title.min' => 'Brand name must contain at least 2 characters.',

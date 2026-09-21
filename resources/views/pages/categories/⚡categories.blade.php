@@ -2,7 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Category;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public string $search = '';
 
@@ -10,6 +10,7 @@ new class extends Component {
 
     public function mount(): void
     {
+        Gate::authorize('access');
         $this->loadCategories();
     }
 

@@ -4,14 +4,17 @@ use App\Models\Brand;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     use WithPagination;
 
     protected string $paginationTheme = 'bootstrap';
 
     public string $search = '';
-
+    public function mount()
+    {
+        Gate::authorize('access');
+    }
     public function updatingSearch(): void
     {
         $this->resetPage();

@@ -20,13 +20,13 @@ Route::get('/home', [HomeController::class, 'index'])
 | Frontend Routes
 |--------------------------------------------------------------------------
 */
-Route::get("transfer",[ApplicantController::class,'transfer']);
+
 Route::livewire("/", "pages::frontend.home")->name("front");
 Route::livewire("/cart", "pages::frontend.cart")->name("cart");
 
 Route::livewire('/product/{value}', 'pages::frontend.products.product-detail')
     ->name('product.detail');
-Route::get("uploadImage",[GoogleDrive::class,"uploadImage"]);
+
 
 
 Route::get(

@@ -2,7 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Brand;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public int $id;
 
@@ -16,6 +16,7 @@ new class extends Component {
 
     public function mount($id): void
     {
+        Gate::authorize('access');
         $this->id = (int) $id;
 
         $this->branddata = Brand::with(['products.category'])->findOrFail($this->id);

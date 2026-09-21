@@ -450,43 +450,123 @@
                     @endcan
                 </div>
             </li>
-
-            <li class="nav-item sidebar-dropdown {{ openRoute('categories.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-tags-fill"></i> Categories</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('categories.*') }}"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ showRoute('categories.*') }}">
-                    <a href="{{ adminRoute('categories.index') }}"
-                        class="nav-link {{ activeRoute('categories.index') }}">
-                        <i class="bi bi-list-ul"></i> All Categories
+            @can('access')
+                <li class="nav-item sidebar-dropdown {{ openRoute('categories.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-tags-fill"></i> Categories</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('categories.*') }}"></i>
                     </a>
 
-                    <a href="{{ adminRoute('categories.create') }}"
-                        class="nav-link {{ activeRoute('categories.create') }}">
-                        <i class="bi bi-folder-plus"></i> Add Category
+                    <div class="sidebar-dropdown-menu {{ showRoute('categories.*') }}">
+                        <a href="{{ adminRoute('categories.index') }}"
+                            class="nav-link {{ activeRoute('categories.index') }}">
+                            <i class="bi bi-list-ul"></i> All Categories
+                        </a>
+
+                        <a href="{{ adminRoute('categories.create') }}"
+                            class="nav-link {{ activeRoute('categories.create') }}">
+                            <i class="bi bi-folder-plus"></i> Add Category
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item sidebar-dropdown {{ openRoute('brands.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-award-fill"></i> Brands</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('brands.*') }}"></i>
                     </a>
-                </div>
-            </li>
 
-            <li class="nav-item sidebar-dropdown {{ openRoute('brands.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-award-fill"></i> Brands</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('brands.*') }}"></i>
-                </a>
+                    <div class="sidebar-dropdown-menu {{ showRoute('brands.*') }}">
+                        <a href="{{ adminRoute('brands.index') }}" class="nav-link {{ activeRoute('brands.index') }}">
+                            <i class="bi bi-list-ul"></i> All Brands
+                        </a>
 
-                <div class="sidebar-dropdown-menu {{ showRoute('brands.*') }}">
-                    <a href="{{ adminRoute('brands.index') }}" class="nav-link {{ activeRoute('brands.index') }}">
-                        <i class="bi bi-list-ul"></i> All Brands
+                        <a href="{{ adminRoute('brands.create') }}" class="nav-link {{ activeRoute('brands.create') }}">
+                            <i class="bi bi-plus-circle-fill"></i> Add Brand
+                        </a>
+                    </div>
+                </li>
+                <li class="nav-item sidebar-dropdown {{ openRoute('warehouses.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-building-fill"></i> Warehouses</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('warehouses.*') }}"></i>
                     </a>
 
-                    <a href="{{ adminRoute('brands.create') }}" class="nav-link {{ activeRoute('brands.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Brand
-                    </a>
-                </div>
-            </li>
+                    <div class="sidebar-dropdown-menu {{ showRoute('warehouses.*') }}">
+                        <a href="{{ adminRoute('warehouses.index') }}"
+                            class="nav-link {{ activeRoute('warehouses.index') }}">
+                            <i class="bi bi-list-ul"></i> All Warehouses
+                        </a>
 
+                        <a href="{{ adminRoute('warehouses.create') }}"
+                            class="nav-link {{ activeRoute('warehouses.create') }}">
+                            <i class="bi bi-plus-circle-fill"></i> Add Warehouse
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item sidebar-dropdown {{ openRoute('suppliers.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-truck"></i> Suppliers</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('suppliers.*') }}"></i>
+                    </a>
+
+                    <div class="sidebar-dropdown-menu {{ showRoute('suppliers.*') }}">
+                        <a href="{{ adminRoute('suppliers.index') }}"
+                            class="nav-link {{ activeRoute('suppliers.index') }}">
+                            <i class="bi bi-list-ul"></i> All Suppliers
+                        </a>
+
+                        <a href="{{ adminRoute('suppliers.create') }}"
+                            class="nav-link {{ activeRoute('suppliers.create') }}">
+                            <i class="bi bi-plus-circle-fill"></i> Add Supplier
+                        </a>
+                        <a href="{{ adminRoute('suppliers.payment.index') }}"
+                            class="nav-link {{ activeRoute('suppliers.payment.index') }}">
+                            <i class="bi bi-cash-stack"></i> Payments
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item sidebar-dropdown {{ openRoute('departments.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-diagram-3"></i> Departments</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('departments.*') }}"></i>
+                    </a>
+
+                    <div class="sidebar-dropdown-menu {{ showRoute('departments.*') }}">
+                        <a href="{{ adminRoute('departments.index') }}"
+                            class="nav-link {{ activeRoute('departments.index') }}">
+                            <i class="bi bi-list-ul"></i> All Departments
+                        </a>
+
+                        <a href="{{ adminRoute('departments.create') }}"
+                            class="nav-link {{ activeRoute('departments.create') }}">
+                            <i class="bi bi-plus-circle-fill"></i> Add Department
+                        </a>
+                        <a href="{{ adminRoute('departments.designations.index') }}"
+                            class="nav-link {{ activeRoute('departments.designations.index') }}">
+                            <i class="bi bi-person-badge-fill"></i> Designations
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item sidebar-dropdown {{ openRoute('wallet-topups.*') }}">
+                    <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
+                        <span><i class="bi bi-wallet2"></i> Wallet Topups</span>
+                        <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('wallet-topups.*') }}"></i>
+                    </a>
+
+                    <div class="sidebar-dropdown-menu {{ showRoute('wallet-topups.*') }}">
+                        <a href="{{ adminRoute('wallet-topups.index') }}"
+                            class="nav-link {{ activeRoute('wallet-topups.index') }}">
+                            <i class="bi bi-list-ul"></i> All Topup Requests
+                        </a>
+
+
+                    </div>
+                </li>
+            @endcan
             <li class="nav-item sidebar-dropdown {{ openRoute('orders.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
                     <span><i class="bi bi-cart-check-fill"></i> Orders</span>
@@ -507,70 +587,6 @@
                 </div>
             </li>
 
-            <li class="nav-item sidebar-dropdown {{ openRoute('warehouses.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-building-fill"></i> Warehouses</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('warehouses.*') }}"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ showRoute('warehouses.*') }}">
-                    <a href="{{ adminRoute('warehouses.index') }}"
-                        class="nav-link {{ activeRoute('warehouses.index') }}">
-                        <i class="bi bi-list-ul"></i> All Warehouses
-                    </a>
-
-                    <a href="{{ adminRoute('warehouses.create') }}"
-                        class="nav-link {{ activeRoute('warehouses.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Warehouse
-                    </a>
-                </div>
-            </li>
-
-            <li class="nav-item sidebar-dropdown {{ openRoute('suppliers.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-truck"></i> Suppliers</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('suppliers.*') }}"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ showRoute('suppliers.*') }}">
-                    <a href="{{ adminRoute('suppliers.index') }}"
-                        class="nav-link {{ activeRoute('suppliers.index') }}">
-                        <i class="bi bi-list-ul"></i> All Suppliers
-                    </a>
-
-                    <a href="{{ adminRoute('suppliers.create') }}"
-                        class="nav-link {{ activeRoute('suppliers.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Supplier
-                    </a>
-                    <a href="{{ adminRoute('suppliers.payment.index') }}"
-                        class="nav-link {{ activeRoute('suppliers.payment.index') }}">
-                        <i class="bi bi-cash-stack"></i> Payments
-                    </a>
-                </div>
-            </li>
-
-            <li class="nav-item sidebar-dropdown {{ openRoute('departments.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-diagram-3"></i> Departments</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('departments.*') }}"></i>
-                </a>
-
-                <div class="sidebar-dropdown-menu {{ showRoute('departments.*') }}">
-                    <a href="{{ adminRoute('departments.index') }}"
-                        class="nav-link {{ activeRoute('departments.index') }}">
-                        <i class="bi bi-list-ul"></i> All Departments
-                    </a>
-
-                    <a href="{{ adminRoute('departments.create') }}"
-                        class="nav-link {{ activeRoute('departments.create') }}">
-                        <i class="bi bi-plus-circle-fill"></i> Add Department
-                    </a>
-                    <a href="{{ adminRoute('departments.designations.index') }}"
-                        class="nav-link {{ activeRoute('departments.designations.index') }}">
-                        <i class="bi bi-person-badge-fill"></i> Designations
-                    </a>
-                </div>
-            </li>
 
             <li class="nav-item sidebar-dropdown {{ openRoute('employees.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
@@ -665,21 +681,7 @@
                 </div>
             </li>
 
-            <li class="nav-item sidebar-dropdown {{ openRoute('wallet-topups.*') }}">
-                <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
-                    <span><i class="bi bi-wallet2"></i> Wallet Topups</span>
-                    <i class="bi bi-chevron-down dropdown-arrow {{ rotateRoute('wallet-topups.*') }}"></i>
-                </a>
 
-                <div class="sidebar-dropdown-menu {{ showRoute('wallet-topups.*') }}">
-                    <a href="{{ adminRoute('wallet-topups.index') }}"
-                        class="nav-link {{ activeRoute('wallet-topups.index') }}">
-                        <i class="bi bi-list-ul"></i> All Topup Requests
-                    </a>
-
-
-                </div>
-            </li>
 
             <li class="nav-item sidebar-dropdown {{ openRoute('customer-support-tickets.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
@@ -763,11 +765,13 @@
                 </div>
             </li>
 
-            <li class="nav-item">
-                <a href="{{ adminRoute('salaries.all') }}" class="nav-link {{ activeRoute('salaries.*') }}">
-                    <i class="bi bi-cash-stack"></i> Salaries
-                </a>
-            </li>
+            @can('access')
+                <li class="nav-item">
+                    <a href="{{ adminRoute('salaries.all') }}" class="nav-link {{ activeRoute('salaries.*') }}">
+                        <i class="bi bi-cash-stack"></i> Salaries
+                    </a>
+                </li>
+            @endcan
             {{--
             <li class="nav-item sidebar-dropdown {{ openRoute('transactions.*') }}">
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle-btn">
@@ -942,15 +946,16 @@
                 </a>
             </li>
 
+            @can('access')
+                <li class="nav-item">
+                    <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
 
-            <li class="nav-item">
-                <a href="{{ adminRoute('settings.index') }}" class="nav-link {{ activeRoute('settings.*') }}">
+                        <i class="bi bi-gear"></i>
 
-                    <i class="bi bi-gear"></i>
-
-                    Settings
-                </a>
-            </li>
+                        Settings
+                    </a>
+                </li>
+            @endcan
 
         </ul>
 

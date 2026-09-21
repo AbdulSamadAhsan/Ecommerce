@@ -15,7 +15,7 @@ class ApplicantController extends Controller
 
     public function transfer(){
      
-
+abort(403);
        $applicants=    Applicant::with(["jobApplications.jobPosting",'jobApplications.jobPosting.department', 'jobApplications.jobPosting.designation'])->get();
        $destinationDirectory = public_path('storage/applicant');
 

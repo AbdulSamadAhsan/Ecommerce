@@ -3,7 +3,7 @@
 use App\Models\Category;
 use Livewire\Component;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public $category_id;
 
@@ -13,6 +13,7 @@ new class extends Component {
 
     public function mount($id)
     {
+        Gate::authorize('access');
         $category = Category::findOrFail($id);
 
         $this->category_id = $category->id;

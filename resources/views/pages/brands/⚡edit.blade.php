@@ -6,7 +6,7 @@ use App\Models\Brand;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     use WithFileUploads;
 
@@ -21,6 +21,8 @@ new class extends Component {
 
     public function mount($id): void
     {
+        Gate::authorize('access');
+
         $brand = Brand::findOrFail($id);
 
         $this->brandId = $brand->id;

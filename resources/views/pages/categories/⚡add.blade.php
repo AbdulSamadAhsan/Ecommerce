@@ -2,7 +2,8 @@
 
 use App\Models\Category;
 use Livewire\Component;
-
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 new class extends Component {
     public $name = '';
     public $description = '';
@@ -20,7 +21,10 @@ new class extends Component {
         'name.unique' => 'Category already exists.',
         'description.max' => 'Description must not exceed 1000 characters.',
     ];
-
+    public function mount()
+    {
+        Gate::authorize('access');
+    }
     public function updated($property)
     {
         $this->validateOnly($property);
